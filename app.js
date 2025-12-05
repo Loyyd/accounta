@@ -22,9 +22,21 @@ const totalExpenseEl = $('#totalExpense')
 const netTotalEl = $('#netTotal')
 const categoryListEl = $('#categoryList')
 const clearAllBtn = $('#clearAll')
+const timelineFilter = $('#timelineFilter')
+const customDateRange = $('#customDateRange')
+const customStartDate = $('#customStartDate')
+const customEndDate = $('#customEndDate')
 
 let entries = []
 let categories = {expense: [], income: []}
+let currentTimeline = 'this-month'
+let customStart = null
+let customEnd = null
+
+// Chart instances
+let expenseChart = null
+let compareChart = null
+let trendChart = null
 
 // Tab switching
 function switchTab(tabName) {
@@ -284,6 +296,317 @@ function breakdownByCategory(){
   const totals = {}
   let expenseTotal = 0
   for(const e of entries){
+    if(e.type === 'expense'){
+      totals[e.category] = (totals[e.category] || 0) + e.amount
+      expenseTotal += e.amount
+    }
+  }
+  return {expenseTotal, totals}
+}
+
+// Timeline filtering
+function getFilteredEntries() {
+  const now = new Date()
+  let startDate, endDate
+  
+  switch(currentTimeline) {
+    case 'this-month':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      break
+    case 'last-month':
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0)
+      break
+    case 'this-year':
+      startDate = new Date(now.getFullYear(), 0, 1)
+      endDate = new Date(now.getFullYear(), 11, 31)
+      break
+    case 'last-year':
+      startDate = new Date(now.getFullYear() - 1, 0, 1)
+      endDate = new Date(now.getFullYear() - 1, 11, 31)
+      break
+    case 'custom':
+      if (!customStart || !customEnd) return entries
+      startDate = new Date(customStart)
+      endDate = new Date(customEnd)
+      break
+    case 'all':
+    default:
+      return entries
+  }
+  
+  return entries.filter(e => {
+    const entryDate = new Date(e.date)
+    return entryDate >= startDate && entryDate <= endDate
+  })
+}
+
+function totalsFiltered() {
+  const filtered = getFilteredEntries()
+  const out = {income: 0, expense: 0}
+  for(const e of filtered){
+    if(e.type === 'income') out.income += e.amount
+    else out.expense += e.amount
+  }
+  out.net = out.income - out.expense
+  return out
+}
+
+function breakdownByCategoryFiltered() {
+  const filtered = getFilteredEntries()
+  const totals = {}
+  let expenseTotal = 0
+  for(const e of filtered){
+    if(e.type === 'expense'){
+      totals[e.category] = (totals[e.category] || 0) + e.amount
+      expenseTotal += e.amount
+    }
+  }
+  return {expenseTotal, totals}
+}
+
+// Chart rendering
+function destroyCharts() {
+  if (expenseChart) {
+    expenseChart.destroy()
+    expenseChart = null
+  }
+  if (compareChart) {
+    compareChart.destroy()
+    compareChart = null
+  }
+  if (trendChart) {
+    trendChart.destroy()
+    trendChart = null
+  }
+}
+
+function renderCharts() {
+  destroyCharts()
+  
+  const filtered = getFilteredEntries()
+  if (filtered.length === 0) {
+    // Show empty state
+    return
+  }
+  
+  // Expense Breakdown Chart (Doughnut)
+  const {expenseTotal, totals: catTotals} = breakdownByCategoryFiltered()
+  if (expenseTotal > 0) {
+    const ctx1 = document.getElementById('expenseChart')
+    const sortedCategories = Object.entries(catTotals).sort((a,b) => b[1] - a[1])
+    const labels = sortedCategories.map(([cat]) => cat)
+    const data = sortedCategories.map(([,val]) => val)
+    
+    // Get colors from category definitions
+    const colors = labels.map(catName => {
+      const catObj = categories.expense.find(c => c.name === catName)
+      return catObj ? catObj.color : '#9aa5b1'
+    })
+    
+    expenseChart = new Chart(ctx1, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: colors,
+          borderColor: '#0f1724',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.parsed
+                const total = context.dataset.data.reduce((a,b) => a + b, 0)
+                const percentage = ((value / total) * 100).toFixed(1)
+                return `${context.label}: ${fmt(value)} (${percentage}%)`
+              }
+            }
+          }
+        }
+      }
+    })
+    
+    // Create custom legend
+    const legendEl = document.getElementById('expenseChartLegend')
+    legendEl.innerHTML = ''
+    sortedCategories.forEach(([cat, val], idx) => {
+      const percent = ((val / expenseTotal) * 100).toFixed(1)
+      const item = document.createElement('div')
+      item.className = 'chart-legend-item'
+      item.innerHTML = `
+        <div class="chart-legend-color" style="background: ${colors[idx]}"></div>
+        <span>${cat}: ${fmt(val)} (${percent}%)</span>
+      `
+      legendEl.appendChild(item)
+    })
+  }
+  
+  // Income vs Expense Chart (Bar)
+  const ctx2 = document.getElementById('compareChart')
+  const t = totalsFiltered()
+  
+  compareChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['Income', 'Expense'],
+      datasets: [{
+        data: [t.income, t.expense],
+        backgroundColor: ['#6ee7b7', '#ff6b6b'],
+        borderColor: ['#6ee7b7', '#ff6b6b'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return fmt(context.parsed.y)
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '$' + value.toLocaleString()
+            },
+            color: '#9aa5b1'
+          },
+          grid: {
+            color: 'rgba(255,255,255,0.05)'
+          }
+        },
+        x: {
+          ticks: {
+            color: '#e6eef6'
+          },
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  })
+  
+  // Trend Chart (Line) - Group by month
+  const monthlyData = {}
+  filtered.forEach(e => {
+    const date = new Date(e.date)
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = {income: 0, expense: 0}
+    }
+    
+    if (e.type === 'income') {
+      monthlyData[monthKey].income += e.amount
+    } else {
+      monthlyData[monthKey].expense += e.amount
+    }
+  })
+  
+  const sortedMonths = Object.keys(monthlyData).sort()
+  const monthLabels = sortedMonths.map(key => {
+    const [year, month] = key.split('-')
+    const date = new Date(year, parseInt(month) - 1)
+    return date.toLocaleDateString('en-US', {month: 'short', year: 'numeric'})
+  })
+  const incomeData = sortedMonths.map(key => monthlyData[key].income)
+  const expenseData = sortedMonths.map(key => monthlyData[key].expense)
+  
+  const ctx3 = document.getElementById('trendChart')
+  
+  trendChart = new Chart(ctx3, {
+    type: 'line',
+    data: {
+      labels: monthLabels,
+      datasets: [
+        {
+          label: 'Income',
+          data: incomeData,
+          borderColor: '#6ee7b7',
+          backgroundColor: 'rgba(110, 231, 183, 0.1)',
+          tension: 0.3,
+          fill: true
+        },
+        {
+          label: 'Expense',
+          data: expenseData,
+          borderColor: '#ff6b6b',
+          backgroundColor: 'rgba(255, 107, 107, 0.1)',
+          tension: 0.3,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: true,
+          labels: {
+            color: '#e6eef6',
+            usePointStyle: true
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: ${fmt(context.parsed.y)}`
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '$' + value.toLocaleString()
+            },
+            color: '#9aa5b1'
+          },
+          grid: {
+            color: 'rgba(255,255,255,0.05)'
+          }
+        },
+        x: {
+          ticks: {
+            color: '#9aa5b1'
+          },
+          grid: {
+            color: 'rgba(255,255,255,0.05)'
+          }
+        }
+      }
+    }
+  })
+}
+
+function breakdownByCategory(){
+  const totals = {}
+  let expenseTotal = 0
+  for(const e of entries){
     if(e.type !== 'expense') continue
     expenseTotal += e.amount
     const key = (e.category || 'Other').trim()
@@ -293,38 +616,30 @@ function breakdownByCategory(){
 }
 
 function render(){
-  // render totals
-  const t = totals()
+  // render totals with filtered data
+  const t = totalsFiltered()
   totalIncomeEl.textContent = fmt(t.income)
   totalExpenseEl.textContent = fmt(t.expense)
   netTotalEl.textContent = fmt(t.net)
 
-  // category breakdown
-  const {expenseTotal, totals: catTotals} = breakdownByCategory()
-  categoryListEl.innerHTML = ''
-  if(expenseTotal === 0){
-    categoryListEl.innerHTML = '<li class="muted">No expenses yet</li>'
-  } else {
-    const sorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1])
-    for(const [cat, value] of sorted){
-      const percent = Math.round((value/expenseTotal)*10000)/100
-      const li = document.createElement('li')
-      li.innerHTML = `<span>${cat}</span><span>${fmt(value)} <span class="muted">(${percent}%)</span></span>`
-      categoryListEl.appendChild(li)
-    }
-  }
+  // Render charts
+  renderCharts()
 
-  // render entries list
+  // render entries list (show filtered entries)
+  const filtered = getFilteredEntries()
   entriesEl.innerHTML = ''
-  if(entries.length === 0){
+  if(filtered.length === 0){
     const placeholder = document.createElement('div')
     placeholder.className = 'muted'
-    placeholder.textContent = 'No entries yet — add income or expense above.'
+    placeholder.textContent = 'No transactions in this period.'
     entriesEl.appendChild(placeholder)
     return
   }
 
-  for(const e of entries){
+  // Sort by date descending
+  const sorted = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date))
+  
+  for(const e of sorted){
     const div = document.createElement('div')
     div.className = 'entry'
     const left = document.createElement('div')
@@ -395,6 +710,38 @@ clearAllBtn.addEventListener('click', ()=>{
   if(!confirm('Clear ALL entries? This cannot be undone.')) return
   clearAll()
 })
+
+// Timeline filter event listeners
+if (timelineFilter) {
+  timelineFilter.addEventListener('change', (e) => {
+    currentTimeline = e.target.value
+    
+    if (currentTimeline === 'custom') {
+      customDateRange.style.display = 'block'
+    } else {
+      customDateRange.style.display = 'none'
+      render()
+    }
+  })
+}
+
+if (customStartDate) {
+  customStartDate.addEventListener('change', (e) => {
+    customStart = e.target.value
+    if (customStart && customEnd) {
+      render()
+    }
+  })
+}
+
+if (customEndDate) {
+  customEndDate.addEventListener('change', (e) => {
+    customEnd = e.target.value
+    if (customStart && customEnd) {
+      render()
+    }
+  })
+}
 
 // Initialization
 async function init(){
