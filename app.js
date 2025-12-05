@@ -1,12 +1,13 @@
 const STORAGE_KEY = 'finance-tracker.entries'
 const TOKEN_KEY = 'finance-tracker.token'
 const CATEGORIES_KEY = 'finance-tracker.categories'
+const SUBSCRIPTIONS_KEY = 'finance-tracker.subscriptions'
 const API_BASE = 'http://127.0.0.1:5000/api' // change if backend is hosted elsewhere
 
 // Helpers
 const $ = (s) => document.querySelector(s)
 const $all = (s) => document.querySelectorAll(s)
-const fmt = (n) => n.toLocaleString(undefined, {style: 'currency', currency: 'USD', maximumFractionDigits: 2})
+const fmt = (n) => n.toLocaleString(undefined, {style: 'currency', currency: 'EUR', maximumFractionDigits: 2})
 
 // DOM
 const entryForm = $('#entryForm')
@@ -29,7 +30,8 @@ const customEndDate = $('#customEndDate')
 
 let entries = []
 let categories = {expense: [], income: []}
-let currentTimeline = 'this-month'
+let subscriptions = []
+let currentTimeline = 'all'
 let customStart = null
 let customEnd = null
 
@@ -58,6 +60,192 @@ function switchTab(tabName) {
     }
   })
 }
+
+// Subscriptions Management
+function loadSubscriptions() {
+  const raw = localStorage.getItem(SUBSCRIPTIONS_KEY)
+  subscriptions = raw ? JSON.parse(raw) : []
+}
+
+function saveSubscriptions() {
+  localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
+}
+
+function addSubscription(type, amount, category, description, frequency, startDate) {
+  const sub = {
+    id: Date.now(),
+    type,
+    amount: parseFloat(amount),
+    category,
+    description,
+    frequency,
+    startDate,
+    active: true
+  }
+  subscriptions.push(sub)
+  saveSubscriptions()
+  renderSubscriptions()
+  processSubscriptions()
+  return true
+}
+
+function deleteSubscription(id) {
+  subscriptions = subscriptions.filter(s => s.id !== id)
+  saveSubscriptions()
+  renderSubscriptions()
+}
+
+function toggleSubscription(id) {
+  const sub = subscriptions.find(s => s.id === id)
+  if (sub) {
+    sub.active = !sub.active
+    saveSubscriptions()
+    renderSubscriptions()
+  }
+}
+
+function processSubscriptions() {
+  // Process active subscriptions and add entries if needed
+  const today = new Date()
+  
+  subscriptions.forEach(sub => {
+    if (!sub.active) return
+    
+    const start = new Date(sub.startDate)
+    if (start > today) return
+    
+    // Generate all missing entries from start date to today
+    if (sub.frequency === 'monthly') {
+      let current = new Date(start)
+      while (current <= today) {
+        const year = current.getFullYear()
+        const month = current.getMonth() + 1
+        const day = current.getDate()
+        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        
+        // Check if entry exists for this month
+        if (!hasSubscriptionEntry(sub, current)) {
+          addEntry({
+            type: sub.type,
+            description: sub.description,
+            amount: sub.amount,
+            category: sub.category,
+            date: date
+          })
+        }
+        
+        // Move to next month
+        current.setMonth(current.getMonth() + 1)
+      }
+    } else if (sub.frequency === 'weekly') {
+      let current = new Date(start)
+      while (current <= today) {
+        const year = current.getFullYear()
+        const month = current.getMonth() + 1
+        const day = current.getDate()
+        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        
+        if (!hasSubscriptionEntry(sub, current)) {
+          addEntry({
+            type: sub.type,
+            description: sub.description,
+            amount: sub.amount,
+            category: sub.category,
+            date: date
+          })
+        }
+        
+        // Move to next week
+        current.setDate(current.getDate() + 7)
+      }
+    } else if (sub.frequency === 'yearly') {
+      let current = new Date(start)
+      while (current <= today) {
+        const year = current.getFullYear()
+        const month = current.getMonth() + 1
+        const day = current.getDate()
+        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        
+        if (!hasSubscriptionEntry(sub, current)) {
+          addEntry({
+            type: sub.type,
+            description: sub.description,
+            amount: sub.amount,
+            category: sub.category,
+            date: date
+          })
+        }
+        
+        // Move to next year
+        current.setFullYear(current.getFullYear() + 1)
+      }
+    }
+  })
+}
+
+function hasSubscriptionEntry(sub, targetDate) {
+  // Check if there's already an entry for this subscription at this specific period
+  return entries.some(e => {
+    if (e.description !== sub.description) return false
+    if (e.type !== sub.type) return false
+    if (parseFloat(e.amount) !== sub.amount) return false
+    
+    const entryDate = new Date(e.date)
+    
+    if (sub.frequency === 'monthly') {
+      return entryDate.getMonth() === targetDate.getMonth() && 
+             entryDate.getFullYear() === targetDate.getFullYear()
+    } else if (sub.frequency === 'weekly') {
+      // Check if dates are within the same week
+      const daysDiff = Math.abs((entryDate - targetDate) / (1000 * 60 * 60 * 24))
+      return daysDiff < 7
+    } else if (sub.frequency === 'yearly') {
+      return entryDate.getFullYear() === targetDate.getFullYear()
+    }
+    return false
+  })
+}
+
+function renderSubscriptions() {
+  const subsList = $('#subscriptionsList')
+  if (!subsList) return
+  
+  if (subscriptions.length === 0) {
+    subsList.innerHTML = '<div class="muted" style="text-align:center;padding:20px">No subscriptions yet. Add one above!</div>'
+    return
+  }
+  
+  subsList.innerHTML = ''
+  subscriptions.forEach(sub => {
+    const div = document.createElement('div')
+    div.className = 'entry'
+    div.style.opacity = sub.active ? '1' : '0.5'
+    
+    const typeColor = sub.type === 'income' ? 'var(--accent)' : 'var(--danger)'
+    const freqText = sub.frequency.charAt(0).toUpperCase() + sub.frequency.slice(1)
+    
+    div.innerHTML = `
+      <div style="flex:1">
+        <div style="font-weight:600;margin-bottom:4px">${sub.description}</div>
+        <div style="font-size:13px;color:var(--muted)">${sub.category} • ${freqText} • Since ${new Date(sub.startDate).toLocaleDateString()}</div>
+      </div>
+      <div style="font-weight:600;color:${typeColor};margin-right:12px">${fmt(sub.amount)}</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="toggleSubscription(${sub.id})" class="btn-ghost" style="padding:6px 10px;font-size:12px" title="${sub.active ? 'Pause' : 'Activate'}">
+          ${sub.active ? '⏸' : '▶️'}
+        </button>
+        <button onclick="deleteSubscription(${sub.id})" class="btn-ghost" style="padding:6px 10px;font-size:12px;color:var(--danger)" title="Delete">
+          🗑️
+        </button>
+      </div>
+    `
+    subsList.appendChild(div)
+  })
+}
+
+// Make functions global for onclick handlers
+window.deleteSubscription = deleteSubscription
+window.toggleSubscription = toggleSubscription
 
 // Initialize tab listeners
 function initTabs() {
@@ -418,7 +606,7 @@ function renderCharts() {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             display: false
@@ -507,8 +695,10 @@ function renderCharts() {
     }
   })
   
-  // Trend Chart (Line) - Group by month
+  // Trend Chart (Line) - Group by month and category
   const monthlyData = {}
+  const categoryTrends = {}
+  
   filtered.forEach(e => {
     const date = new Date(e.date)
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
@@ -521,6 +711,15 @@ function renderCharts() {
       monthlyData[monthKey].income += e.amount
     } else {
       monthlyData[monthKey].expense += e.amount
+      
+      // Track category trends for expenses
+      if (!categoryTrends[e.category]) {
+        categoryTrends[e.category] = {}
+      }
+      if (!categoryTrends[e.category][monthKey]) {
+        categoryTrends[e.category][monthKey] = 0
+      }
+      categoryTrends[e.category][monthKey] += e.amount
     }
   })
   
@@ -532,6 +731,24 @@ function renderCharts() {
   })
   const incomeData = sortedMonths.map(key => monthlyData[key].income)
   const expenseData = sortedMonths.map(key => monthlyData[key].expense)
+  
+  // Create datasets for categories
+  const categoryDatasets = Object.entries(categoryTrends).map(([categoryName, monthData]) => {
+    const categoryObj = categories.expense.find(c => c.name === categoryName)
+    const color = categoryObj ? categoryObj.color : '#9aa5b1'
+    
+    return {
+      label: categoryName,
+      data: sortedMonths.map(key => monthData[key] || 0),
+      borderColor: color,
+      backgroundColor: color + '20',
+      tension: 0.3,
+      fill: false,
+      borderWidth: 2,
+      pointRadius: 3,
+      pointHoverRadius: 5
+    }
+  })
   
   const ctx3 = document.getElementById('trendChart')
   
@@ -546,16 +763,23 @@ function renderCharts() {
           borderColor: '#6ee7b7',
           backgroundColor: 'rgba(110, 231, 183, 0.1)',
           tension: 0.3,
-          fill: true
+          fill: true,
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 6
         },
         {
-          label: 'Expense',
+          label: 'Total Expense',
           data: expenseData,
           borderColor: '#ff6b6b',
           backgroundColor: 'rgba(255, 107, 107, 0.1)',
           tension: 0.3,
-          fill: true
-        }
+          fill: true,
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        },
+        ...categoryDatasets
       ]
     },
     options: {
@@ -566,7 +790,8 @@ function renderCharts() {
           display: true,
           labels: {
             color: '#e6eef6',
-            usePointStyle: true
+            usePointStyle: true,
+            padding: 10
           }
         },
         tooltip: {
@@ -659,7 +884,9 @@ function render(){
     chip.textContent = e.category
     
     const desc = document.createElement('div')
-    desc.innerHTML = `<div>${e.description}</div><div class="muted" style="font-size:12px">${new Date(e.date).toLocaleString()}</div>`
+    const entryDate = new Date(e.date)
+    const dateString = entryDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    desc.innerHTML = `<div>${e.description}</div><div class="muted" style="font-size:12px">${dateString}</div>`
     left.appendChild(chip)
     left.appendChild(desc)
 
@@ -747,15 +974,68 @@ if (customEndDate) {
 async function init(){
   initTabs()
   loadCategories()
+  loadSubscriptions()
   await loadEntries()
+  processSubscriptions() // Check and add subscription entries if needed
   render()
   renderCategories()
+  renderSubscriptions()
   
   // Set current month and year as default
   if (monthInput && yearInput) {
     const now = new Date()
     monthInput.value = (now.getMonth() + 1).toString() // getMonth() is 0-indexed
     yearInput.value = now.getFullYear().toString()
+  }
+  
+  // Setup subscription form
+  const subscriptionForm = $('#subscriptionForm')
+  if (subscriptionForm) {
+    const subType = $('#subType')
+    const subCategory = $('#subCategory')
+    const subStartDate = $('#subStartDate')
+    
+    // Set default date to today
+    if (subStartDate) {
+      subStartDate.value = new Date().toISOString().split('T')[0]
+    }
+    
+    // Update category dropdown based on type
+    const updateSubCategoryInput = () => {
+      if (!subCategory || !subType) return
+      const type = subType.value
+      subCategory.innerHTML = '<option value="">Select a category</option>'
+      categories[type].forEach(cat => {
+        const opt = document.createElement('option')
+        opt.value = cat.name
+        opt.textContent = cat.name
+        subCategory.appendChild(opt)
+      })
+    }
+    
+    if (subType) {
+      subType.addEventListener('change', updateSubCategoryInput)
+      updateSubCategoryInput()
+    }
+    
+    subscriptionForm.addEventListener('submit', (ev) => {
+      ev.preventDefault()
+      const type = $('#subType').value
+      const amount = $('#subAmount').value
+      const category = $('#subCategory').value
+      const description = $('#subDescription').value
+      const frequency = $('#subFrequency').value
+      const startDate = $('#subStartDate').value
+      
+      if (addSubscription(type, amount, category, description, frequency, startDate)) {
+        subscriptionForm.reset()
+        if (subStartDate) {
+          subStartDate.value = new Date().toISOString().split('T')[0]
+        }
+        updateSubCategoryInput()
+        render() // Re-render in case subscription added new entries
+      }
+    })
   }
   
   // Setup category form
@@ -820,6 +1100,7 @@ async function init(){
     const userHint = document.getElementById('userHint')
     const signOutBtn = document.getElementById('signOutBtn')
     const settingsLink = document.getElementById('settingsLink')
+    const adminLink = document.getElementById('adminLink')
     const footer = document.querySelector('.footer')
 
     if(isLoggedIn()){
@@ -832,6 +1113,11 @@ async function init(){
           const j = await res.json()
           if(userHint) userHint.textContent = j.username
           if(footer) footer.textContent = 'Saved to your account (server)'
+          
+          // Show admin link if user is admin
+          if(j.is_admin && adminLink){
+            adminLink.style.display = 'block'
+          }
         }
       } catch(e) {}
     } else {

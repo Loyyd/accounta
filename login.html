@@ -8,26 +8,26 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="app" style="max-width:520px;margin:36px auto;padding:20px">
-      <header class="header">
-        <h1>💰 FinFlow</h1>
-        <p class="lead">Sign in to access your financial dashboard.</p>
+    <main class="app login-container">
+      <header class="header" style="margin-bottom:48px">
+        <h1 style="font-size:3.5em;margin-bottom:12px">💰 FinFlow</h1>
+        <p class="lead" style="font-size:1.1em">Sign in to access your financial dashboard.</p>
       </header>
 
-      <section class="card input-card">
-        <div id="messages" class="muted" style="margin-bottom:12px"></div>
+      <section class="card input-card login-card">
+        <div id="messages" class="muted" style="margin-bottom:20px;min-height:20px;text-align:center"></div>
         <form id="authForm">
-          <div class="row">
-            <label>Username</label>
-            <input id="username" type="text" placeholder="username" required />
+          <div class="row" style="margin-bottom:24px">
+            <label style="font-size:14px;margin-bottom:10px">Username</label>
+            <input id="username" type="text" placeholder="Enter your username" required style="padding:14px;font-size:15px" />
           </div>
-          <div class="row">
-            <label>Password</label>
-            <input id="password" type="password" placeholder="password" required />
+          <div class="row" style="margin-bottom:32px">
+            <label style="font-size:14px;margin-bottom:10px">Password</label>
+            <input id="password" type="password" placeholder="Enter your password" required style="padding:14px;font-size:15px" />
           </div>
-          <div class="row actions" style="justify-content: center;">
-            <button id="loginBtn" type="button" class="btn-primary">Login</button>
-            <button id="regBtn" type="button" class="btn-ghost">Register</button>
+          <div class="row actions" style="justify-content:center;gap:16px;margin-bottom:0">
+            <button id="loginBtn" type="button" class="btn-primary" style="padding:14px 32px;font-size:15px;min-width:140px">Login</button>
+            <button id="regBtn" type="button" class="btn-ghost" style="padding:14px 32px;font-size:15px;min-width:140px">Register</button>
           </div>
         </form>
       </section>
@@ -77,6 +77,14 @@
         localStorage.setItem(TOKEN_KEY, j.token)
         showMsg('Account created — signing in...')
         setTimeout(()=>location.href='index.html', 700)
+      })
+
+      // Handle Enter key to submit login
+      $('#authForm').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          document.getElementById('loginBtn').click()
+        }
       })
     </script>
 

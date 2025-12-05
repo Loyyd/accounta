@@ -30,6 +30,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
 
     def set_password(self, raw):
         # Hash password using bcrypt
@@ -117,6 +118,9 @@ def login():
     user = User.query.filter_by(username=username).first()
     if not user or not user.verify_password(password):
         return jsonify({'error': 'invalid credentials'}), 401
+    
+    token = create_token(user.id)
+    return jsonify({'token': token, 'username': username, 'is_admin': user.is_admin})
     token = create_token(user.id)
     return jsonify({'token': token, 'username': username})
 
@@ -191,7 +195,76 @@ def profile():
     user = User.query.get(request.user_id)
     if not user:
         return jsonify({'error': 'not found'}), 404
-    return jsonify({'username': user.username, 'id': user.id})
+    return jsonify({'username': user.username, 'id': user.id, 'is_admin': user.is_admin})
+
+
+# Admin endpoints
+@app.route('/api/admin/users', methods=['GET'])
+@login_required
+def admin_get_users():
+    user = User.query.get(request.user_id)
+    if not user or not user.is_admin:
+        return jsonify({'error': 'admin access required'}), 403
+    
+    users = User.query.all()
+    users_list = []
+    for u in users:
+        entry_count = Entry.query.filter_by(user_id=u.id).count()
+        total_income = db.session.query(db.func.sum(Entry.amount)).filter_by(user_id=u.id, type='income').scalar() or 0
+        total_expense = db.session.query(db.func.sum(Entry.amount)).filter_by(user_id=u.id, type='expense').scalar() or 0
+        
+        users_list.append({
+            'id': u.id,
+            'username': u.username,
+            'is_admin': u.is_admin,
+            'created_at': u.created_at.isoformat() if hasattr(u, 'created_at') and u.created_at else None,
+            'entry_count': entry_count,
+            'total_income': float(total_income),
+            'total_expense': float(total_expense)
+        })
+    
+    return jsonify({'users': users_list})
+
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@login_required
+def admin_delete_user(user_id):
+    user = User.query.get(request.user_id)
+    if not user or not user.is_admin:
+        return jsonify({'error': 'admin access required'}), 403
+    
+    target_user = User.query.get(user_id)
+    if not target_user:
+        return jsonify({'error': 'user not found'}), 404
+    
+    # Prevent deleting yourself
+    if target_user.id == user.id:
+        return jsonify({'error': 'cannot delete yourself'}), 400
+    
+    db.session.delete(target_user)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/admin/users/<int:user_id>/toggle-admin', methods=['POST'])
+@login_required
+def admin_toggle_admin(user_id):
+    user = User.query.get(request.user_id)
+    if not user or not user.is_admin:
+        return jsonify({'error': 'admin access required'}), 403
+    
+    target_user = User.query.get(user_id)
+    if not target_user:
+        return jsonify({'error': 'user not found'}), 404
+    
+    # Prevent removing your own admin status
+    if target_user.id == user.id:
+        return jsonify({'error': 'cannot modify your own admin status'}), 400
+    
+    target_user.is_admin = not target_user.is_admin
+    db.session.commit()
+    return jsonify({'ok': True, 'is_admin': target_user.is_admin})
+
 
 
 if __name__ == '__main__':
