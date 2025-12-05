@@ -2,6 +2,7 @@ const STORAGE_KEY = 'finance-tracker.entries'
 const TOKEN_KEY = 'finance-tracker.token'
 const CATEGORIES_KEY = 'finance-tracker.categories'
 const SUBSCRIPTIONS_KEY = 'finance-tracker.subscriptions'
+const BUDGETS_KEY = 'finance-tracker.budgets'
 const API_BASE = 'http://127.0.0.1:5000/api' // change if backend is hosted elsewhere
 
 // Helpers
@@ -31,6 +32,7 @@ const customEndDate = $('#customEndDate')
 let entries = []
 let categories = {expense: [], income: []}
 let subscriptions = []
+let budgets = []
 let currentTimeline = 'all'
 let customStart = null
 let customEnd = null
@@ -246,6 +248,244 @@ function renderSubscriptions() {
 // Make functions global for onclick handlers
 window.deleteSubscription = deleteSubscription
 window.toggleSubscription = toggleSubscription
+
+// Budgeting Management
+function loadBudgets() {
+  const raw = localStorage.getItem(BUDGETS_KEY)
+  budgets = raw ? JSON.parse(raw) : []
+}
+
+function saveBudgets() {
+  localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets))
+}
+
+function setBudget(category, amount) {
+  const existing = budgets.find(b => b.category === category)
+  if (existing) {
+    existing.amount = parseFloat(amount)
+  } else {
+    budgets.push({
+      category,
+      amount: parseFloat(amount)
+    })
+  }
+  saveBudgets()
+  renderBudgets()
+  renderBudgetOverview()
+  return true
+}
+
+function deleteBudget(category) {
+  budgets = budgets.filter(b => b.category !== category)
+  saveBudgets()
+  renderBudgets()
+  renderBudgetOverview()
+}
+
+function getCategorySpending(category) {
+  const now = new Date()
+  const thisMonth = now.getMonth()
+  const thisYear = now.getFullYear()
+  
+  return entries
+    .filter(e => {
+      if (e.type !== 'expense') return false
+      if (e.category !== category) return false
+      const entryDate = new Date(e.date)
+      return entryDate.getMonth() === thisMonth && entryDate.getFullYear() === thisYear
+    })
+    .reduce((sum, e) => sum + parseFloat(e.amount), 0)
+}
+
+function renderBudgets() {
+  const budgetsList = $('#budgetsList')
+  if (!budgetsList) return
+  
+  if (budgets.length === 0) {
+    budgetsList.innerHTML = `
+      <div style="text-align:center;padding:30px 20px;color:var(--muted)">
+        <div style="font-size:32px;margin-bottom:8px">💰</div>
+        <div style="font-size:14px">No budgets yet</div>
+      </div>
+    `
+    return
+  }
+  
+  budgetsList.innerHTML = ''
+  budgets.forEach(budget => {
+    const div = document.createElement('div')
+    div.style.cssText = 'padding:14px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;transition:background 0.2s'
+    div.onmouseenter = () => div.style.background = 'rgba(255,255,255,0.03)'
+    div.onmouseleave = () => div.style.background = 'transparent'
+    
+    div.innerHTML = `
+      <div>
+        <div style="font-weight:600;margin-bottom:2px">${budget.category}</div>
+        <div style="font-size:13px;color:var(--accent)">${fmt(budget.amount)} / month</div>
+      </div>
+      <button onclick="deleteBudget('${budget.category}')" class="btn-ghost" style="padding:8px 12px;font-size:13px;color:var(--danger)" title="Delete budget">
+        🗑️ Remove
+      </button>
+    `
+    budgetsList.appendChild(div)
+  })
+}
+
+function renderBudgetOverview() {
+  const budgetOverviewCard = $('#budgetOverviewCard')
+  const budgetProgressList = $('#budgetProgressList')
+  const budgetMonth = $('#budgetMonth')
+  
+  if (!budgetOverviewCard || !budgetProgressList) return
+  
+  // Set current month
+  if (budgetMonth) {
+    const now = new Date()
+    const monthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    budgetMonth.textContent = monthName
+  }
+  
+  if (budgets.length === 0) {
+    budgetProgressList.innerHTML = `
+      <div style="text-align:center;padding:40px 20px">
+        <div style="font-size:48px;margin-bottom:12px">📊</div>
+        <div style="color:var(--muted);margin-bottom:8px">No budgets set yet</div>
+        <div style="font-size:13px;color:var(--muted)">Set a budget below to start tracking your spending</div>
+      </div>
+    `
+    return
+  }
+  
+  budgetProgressList.innerHTML = ''
+  
+  // Calculate overall budget health
+  let totalBudget = 0
+  let totalSpent = 0
+  let overBudgetCount = 0
+  let warningCount = 0
+  
+  budgets.forEach(budget => {
+    const spent = getCategorySpending(budget.category)
+    totalBudget += budget.amount
+    totalSpent += spent
+    const percentage = (spent / budget.amount) * 100
+    
+    if (spent > budget.amount) overBudgetCount++
+    else if (percentage > 80) warningCount++
+  })
+  
+  // Add summary card at top
+  const totalPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0
+  const summaryCard = document.createElement('div')
+  summaryCard.style.cssText = 'padding:20px;margin-bottom:20px;background:rgba(255,255,255,0.05);border-radius:12px;border:1px solid rgba(255,255,255,0.1)'
+  
+  let statusIcon = '✅'
+  let statusText = 'All budgets on track!'
+  let statusColor = 'var(--accent)'
+  
+  if (overBudgetCount > 0) {
+    statusIcon = '⚠️'
+    statusText = `${overBudgetCount} ${overBudgetCount === 1 ? 'budget' : 'budgets'} exceeded`
+    statusColor = 'var(--danger)'
+  } else if (warningCount > 0) {
+    statusIcon = '⚡'
+    statusText = `${warningCount} ${warningCount === 1 ? 'budget' : 'budgets'} at 80%+`
+    statusColor = '#fbbf24'
+  }
+  
+  const circumference = 2 * Math.PI * 70 // radius = 70
+  const offset = circumference - (Math.min(totalPercentage, 100) / 100) * circumference
+  
+  summaryCard.innerHTML = `
+    <div style="display:flex;gap:30px;align-items:center">
+      <div style="position:relative;width:160px;height:160px;flex-shrink:0">
+        <svg width="160" height="160" style="transform:rotate(-90deg)">
+          <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="12"></circle>
+          <circle cx="80" cy="80" r="70" fill="none" 
+            stroke="${totalPercentage > 100 ? 'var(--danger)' : totalPercentage > 80 ? '#fbbf24' : 'var(--accent)'}" 
+            stroke-width="12" 
+            stroke-dasharray="${circumference}" 
+            stroke-dashoffset="${offset}"
+            stroke-linecap="round"
+            style="transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;filter:drop-shadow(0 0 8px ${totalPercentage > 100 ? 'rgba(239, 68, 68, 0.4)' : totalPercentage > 80 ? 'rgba(251, 191, 36, 0.4)' : 'rgba(110, 231, 183, 0.4)'})"></circle>
+        </svg>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);text-align:center">
+          <div style="font-size:32px;font-weight:700;color:${statusColor}">${totalPercentage.toFixed(0)}%</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">used</div>
+        </div>
+      </div>
+      
+      <div style="flex:1">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Spent</div>
+            <div style="font-size:18px;font-weight:600;color:${totalPercentage > 100 ? 'var(--danger)' : 'inherit'}">${fmt(totalSpent)}</div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Budget</div>
+            <div style="font-size:18px;font-weight:600">${fmt(totalBudget)}</div>
+          </div>
+        </div>
+        
+        <div style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.1)">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Remaining</div>
+          <div style="font-size:18px;font-weight:600;color:${totalSpent > totalBudget ? 'var(--danger)' : 'var(--accent)'}">
+            ${totalSpent > totalBudget ? '-' : ''}${fmt(Math.abs(totalBudget - totalSpent))}
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+  budgetProgressList.appendChild(summaryCard)
+  
+  // Individual budget cards
+  budgets.forEach(budget => {
+    const spent = getCategorySpending(budget.category)
+    const percentage = (spent / budget.amount) * 100
+    const isOverBudget = spent > budget.amount
+    const isWarning = percentage > 80 && !isOverBudget
+    const remaining = budget.amount - spent
+    
+    const div = document.createElement('div')
+    div.style.cssText = `padding:16px;margin-bottom:12px;background:rgba(255,255,255,0.03);border-radius:10px;border-left:4px solid ${isOverBudget ? 'var(--danger)' : isWarning ? '#fbbf24' : 'var(--accent)'};transition:all 0.2s;cursor:default`
+    div.onmouseenter = () => div.style.background = 'rgba(255,255,255,0.06)'
+    div.onmouseleave = () => div.style.background = 'rgba(255,255,255,0.03)'
+    
+    let statusEmoji = '✓'
+    let statusColor = 'var(--accent)'
+    if (isOverBudget) {
+      statusEmoji = '⚠️'
+      statusColor = 'var(--danger)'
+    } else if (isWarning) {
+      statusEmoji = '⚡'
+      statusColor = '#fbbf24'
+    }
+    
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="font-weight:600;font-size:15px;margin-bottom:2px">${budget.category}</div>
+          <div style="font-size:12px;color:var(--muted)">${fmt(spent)} / ${fmt(budget.amount)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:600;color:${statusColor}">
+            ${statusEmoji} ${percentage.toFixed(0)}%
+          </div>
+          <div style="font-size:12px;color:${isOverBudget ? 'var(--danger)' : 'var(--muted)'}">
+            ${isOverBudget ? 'Over by ' + fmt(Math.abs(remaining)) : fmt(remaining) + ' left'}
+          </div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.1);border-radius:6px;height:8px;overflow:hidden">
+        <div style="background:${isOverBudget ? 'var(--danger)' : isWarning ? '#fbbf24' : 'var(--accent)'};height:100%;width:${Math.min(percentage, 100)}%;transition:width 0.3s"></div>
+      </div>
+    `
+    budgetProgressList.appendChild(div)
+  })
+}
+
+// Make budget functions global
+window.deleteBudget = deleteBudget
 
 // Initialize tab listeners
 function initTabs() {
@@ -849,6 +1089,9 @@ function render(){
 
   // Render charts
   renderCharts()
+  
+  // Update budget overview
+  renderBudgetOverview()
 
   // render entries list (show filtered entries)
   const filtered = getFilteredEntries()
@@ -975,11 +1218,14 @@ async function init(){
   initTabs()
   loadCategories()
   loadSubscriptions()
+  loadBudgets()
   await loadEntries()
   processSubscriptions() // Check and add subscription entries if needed
   render()
   renderCategories()
   renderSubscriptions()
+  renderBudgets()
+  renderBudgetOverview()
   
   // Set current month and year as default
   if (monthInput && yearInput) {
@@ -1034,6 +1280,37 @@ async function init(){
         }
         updateSubCategoryInput()
         render() // Re-render in case subscription added new entries
+      }
+    })
+  }
+  
+  // Setup budget form
+  const budgetForm = $('#budgetForm')
+  if (budgetForm) {
+    const budgetCategory = $('#budgetCategory')
+    
+    // Populate budget category dropdown with expense categories
+    const updateBudgetCategoryInput = () => {
+      if (!budgetCategory) return
+      budgetCategory.innerHTML = '<option value="">Select a category</option>'
+      categories.expense.forEach(cat => {
+        const opt = document.createElement('option')
+        opt.value = cat.name
+        opt.textContent = cat.name
+        budgetCategory.appendChild(opt)
+      })
+    }
+    
+    updateBudgetCategoryInput()
+    
+    budgetForm.addEventListener('submit', (ev) => {
+      ev.preventDefault()
+      const category = budgetCategory.value
+      const amount = $('#budgetAmount').value
+      
+      if (setBudget(category, amount)) {
+        budgetForm.reset()
+        updateBudgetCategoryInput()
       }
     })
   }
