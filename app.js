@@ -14,6 +14,7 @@ const typeInput = $('#type')
 const descriptionInput = $('#description')
 const amountInput = $('#amount')
 const categoryInput = $('#category')
+const dateInput = $('#date')
 const entriesEl = $('#entries')
 const totalIncomeEl = $('#totalIncome')
 const totalExpenseEl = $('#totalExpense')
@@ -59,12 +60,33 @@ function loadCategories() {
   const raw = localStorage.getItem(CATEGORIES_KEY)
   if (!raw) {
     categories = {
-      expense: ['Food', 'Housing', 'Transport', 'Entertainment', 'Shopping', 'Healthcare', 'Other'],
-      income: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other']
+      expense: [
+        {name: 'Food', color: '#6ee7b7'},        // Green - fresh/healthy
+        {name: 'Housing', color: '#60a5fa'},     // Blue - stable/essential
+        {name: 'Transport', color: '#fbbf24'},   // Yellow - movement/energy
+        {name: 'Entertainment', color: '#f472b6'}, // Pink - fun/leisure
+        {name: 'Shopping', color: '#a78bfa'},    // Purple - luxury/retail
+        {name: 'Healthcare', color: '#ef4444'},  // Red - medical/important
+        {name: 'Other', color: '#fb923c'}        // Orange - miscellaneous
+      ],
+      income: [
+        {name: 'Salary', color: '#6ee7b7'},      // Green - primary income
+        {name: 'Freelance', color: '#60a5fa'},   // Blue - professional
+        {name: 'Investment', color: '#fbbf24'},  // Yellow - growth
+        {name: 'Gift', color: '#f472b6'},        // Pink - pleasant surprise
+        {name: 'Other', color: '#fb923c'}        // Orange - miscellaneous
+      ]
     }
     saveCategories()
   } else {
     categories = JSON.parse(raw)
+    // Migrate old format (array of strings) to new format (array of objects)
+    if (categories.expense && categories.expense.length > 0 && typeof categories.expense[0] === 'string') {
+      categories.expense = categories.expense.map(name => ({name, color: '#6ee7b7'}))
+    }
+    if (categories.income && categories.income.length > 0 && typeof categories.income[0] === 'string') {
+      categories.income = categories.income.map(name => ({name, color: '#6ee7b7'}))
+    }
   }
 }
 
@@ -72,21 +94,21 @@ function saveCategories() {
   localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories))
 }
 
-function addCategory(name, type) {
+function addCategory(name, type, color) {
   const trimmed = name.trim()
   if (!trimmed) return false
-  if (categories[type].includes(trimmed)) {
+  if (categories[type].some(cat => cat.name === trimmed)) {
     alert('Category already exists!')
     return false
   }
-  categories[type].push(trimmed)
+  categories[type].push({name: trimmed, color: color || '#6ee7b7'})
   saveCategories()
   renderCategories()
   return true
 }
 
 function removeCategory(name, type) {
-  categories[type] = categories[type].filter(c => c !== name)
+  categories[type] = categories[type].filter(c => c.name !== name)
   saveCategories()
   renderCategories()
 }
@@ -103,8 +125,11 @@ function renderCategories() {
     categories.expense.forEach(cat => {
       const li = document.createElement('li')
       li.innerHTML = `
-        <span>${cat}</span>
-        <button class="btn-ghost" style="padding:4px 8px;font-size:12px" onclick="removeCategory('${cat}', 'expense')">Delete</button>
+        <span style="color: ${cat.color}; font-weight: 600;">
+          <span style="display: inline-block; width: 12px; height: 12px; background: ${cat.color}; border-radius: 3px; margin-right: 8px;"></span>
+          ${cat.name}
+        </span>
+        <button class="btn-ghost" style="padding:4px 8px;font-size:12px" onclick="removeCategory('${cat.name}', 'expense')">Delete</button>
       `
       expenseList.appendChild(li)
     })
@@ -118,8 +143,11 @@ function renderCategories() {
     categories.income.forEach(cat => {
       const li = document.createElement('li')
       li.innerHTML = `
-        <span>${cat}</span>
-        <button class="btn-ghost" style="padding:4px 8px;font-size:12px" onclick="removeCategory('${cat}', 'income')">Delete</button>
+        <span style="color: ${cat.color}; font-weight: 600;">
+          <span style="display: inline-block; width: 12px; height: 12px; background: ${cat.color}; border-radius: 3px; margin-right: 8px;"></span>
+          ${cat.name}
+        </span>
+        <button class="btn-ghost" style="padding:4px 8px;font-size:12px" onclick="removeCategory('${cat.name}', 'income')">Delete</button>
       `
       incomeList.appendChild(li)
     })
@@ -131,23 +159,18 @@ function renderCategories() {
 
 function updateCategoryInput() {
   const categoryInput = $('#category')
-  // Add datalist for autocomplete suggestions
-  let datalist = $('#categoryDatalist')
-  if (!datalist) {
-    datalist = document.createElement('datalist')
-    datalist.id = 'categoryDatalist'
-    categoryInput.parentNode.appendChild(datalist)
-    categoryInput.setAttribute('list', 'categoryDatalist')
-  }
-  
   const currentType = $('#type').value
   const availableCategories = categories[currentType] || []
   
-  datalist.innerHTML = ''
+  // Clear existing options
+  categoryInput.innerHTML = '<option value="">Select a category</option>'
+  
+  // Add options for each category
   availableCategories.forEach(cat => {
     const option = document.createElement('option')
-    option.value = cat
-    datalist.appendChild(option)
+    option.value = cat.name
+    option.textContent = cat.name
+    categoryInput.appendChild(option)
   })
 }
 
@@ -179,23 +202,18 @@ async function apiFetch(method, path, body){
 
 async function loadEntries(){
   try {
-    if(isLoggedIn()){
-      // fetch from server
-      const res = await apiFetch('GET', '/entries')
-      if(!res.ok) throw new Error('Failed to load entries')
-      const data = await res.json()
-      // backend dates are iso strings
-      entries = data.map(e => ({...e, date: new Date(e.date).getTime()}))
+    if(!isLoggedIn()){
+      // Require login
+      location.href = 'login.html'
       return
     }
-
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if(!raw){
-      entries = sampleEntries()
-      saveEntries()
-    } else {
-      entries = JSON.parse(raw)
-    }
+    
+    // fetch from server
+    const res = await apiFetch('GET', '/entries')
+    if(!res.ok) throw new Error('Failed to load entries')
+    const data = await res.json()
+    // backend dates are iso strings
+    entries = data.map(e => ({...e, date: new Date(e.date).getTime()}))
   } catch(e){
     console.error('Failed to load entries', e)
     entries = []
@@ -203,59 +221,36 @@ async function loadEntries(){
 }
 
 function saveEntries(){
-  // In server mode, entries are persisted via API, so only localStorage mode writes here
-  if(isLoggedIn()) return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
+  // Entries are now always persisted via API only
+  return
 }
 
-function sampleEntries(){
-  // Useful starter data so the first open shows how the UI works
-  return [
-    {id: id(), type: 'income', description: 'Paycheck', amount: 2500, category: 'Salary', date: Date.now()},
-    {id: id(), type: 'expense', description: 'Groceries', amount: 120.5, category: 'Food', date: Date.now()-1000*60*60*24},
-    {id: id(), type: 'expense', description: 'Rent', amount: 950, category: 'Housing', date: Date.now()-1000*60*60*24*5},
-  ]
-}
+
 
 function id(){
   return Date.now().toString(36) + Math.random().toString(36).slice(2,8)
 }
 
-async function addEntry({type, description, amount, category}){
-  if(isLoggedIn()){
-    const res = await apiFetch('POST', '/entries', {type, description, amount, category})
-    if(!res.ok){
-      const j = await res.json().catch(()=>({error:'Failed'}))
-      alert(j.error || 'Failed to save')
-      return
-    }
-    // refresh list from server
-    await loadEntries()
-    render()
+async function addEntry({type, description, amount, category, date}){
+  const res = await apiFetch('POST', '/entries', {type, description, amount, category, date})
+  if(!res.ok){
+    const j = await res.json().catch(()=>({error:'Failed'}))
+    alert(j.error || 'Failed to save')
     return
   }
-
-  const record = {id: id(), type, description: description || (type === 'income' ? 'Income' : 'Expense'), amount: +amount, category: (category||'Other'), date: Date.now()}
-  entries.unshift(record)
-  saveEntries()
+  // refresh list from server
+  await loadEntries()
   render()
 }
 
 async function removeEntry(idValue){
-  if(isLoggedIn()){
-    const res = await apiFetch('DELETE', '/entries/' + idValue)
-    if(!res.ok){
-      const j = await res.json().catch(()=>({error:'Failed'}))
-      alert(j.error || 'Delete failed')
-      return
-    }
-    await loadEntries()
-    render()
+  const res = await apiFetch('DELETE', '/entries/' + idValue)
+  if(!res.ok){
+    const j = await res.json().catch(()=>({error:'Failed'}))
+    alert(j.error || 'Delete failed')
     return
   }
-
-  entries = entries.filter(e => e.id !== idValue)
-  saveEntries()
+  await loadEntries()
   render()
 }
 
@@ -327,7 +322,18 @@ function render(){
     left.className = 'left'
     const chip = document.createElement('div')
     chip.className = 'chip'
+    
+    // Find category color
+    const categoryType = e.type || 'expense'
+    const categoryList = categories[categoryType] || []
+    const categoryObj = categoryList.find(c => c.name === e.category)
+    const categoryColor = categoryObj ? categoryObj.color : '#9aa5b1'
+    
+    chip.style.background = categoryColor + '20'  // 20% opacity
+    chip.style.color = categoryColor
+    chip.style.borderLeft = `3px solid ${categoryColor}`
     chip.textContent = e.category
+    
     const desc = document.createElement('div')
     desc.innerHTML = `<div>${e.description}</div><div class="muted" style="font-size:12px">${new Date(e.date).toLocaleString()}</div>`
     left.appendChild(chip)
@@ -355,12 +361,20 @@ function render(){
 entryForm.addEventListener('submit', (ev)=>{
   ev.preventDefault()
   const type = typeInput.value
-  const description = descriptionInput.value.trim()
+  const description = descriptionInput.value.trim() || (type === 'income' ? 'Income' : 'Expense')
   const amount = parseFloat(amountInput.value)
-  const category = categoryInput.value.trim() || (type === 'income' ? 'Salary' : 'Other')
-  if(!description || isNaN(amount)) return
-  addEntry({type, description, amount, category})
+  const category = categoryInput.value
+  const date = dateInput.value
+  
+  if(isNaN(amount) || !category || !date) {
+    alert('Please fill in all required fields')
+    return
+  }
+  
+  addEntry({type, description, amount, category, date})
   entryForm.reset()
+  // Set date back to today
+  dateInput.value = new Date().toISOString().split('T')[0]
 })
 
 clearAllBtn.addEventListener('click', ()=>{
@@ -376,15 +390,47 @@ async function init(){
   render()
   renderCategories()
   
+  // Set today's date as default
+  if (dateInput) {
+    dateInput.value = new Date().toISOString().split('T')[0]
+  }
+  
   // Setup category form
   const categoryForm = $('#categoryForm')
   if (categoryForm) {
+    // Color palette selection
+    const colorOptions = $all('.color-option')
+    const colorInput = $('#categoryColor')
+    
+    // Set first color as selected by default
+    if (colorOptions.length > 0) {
+      colorOptions[0].classList.add('selected')
+    }
+    
+    colorOptions.forEach(option => {
+      option.addEventListener('click', () => {
+        // Remove selected class from all options
+        colorOptions.forEach(opt => opt.classList.remove('selected'))
+        // Add selected class to clicked option
+        option.classList.add('selected')
+        // Update hidden input value
+        colorInput.value = option.dataset.color
+      })
+    })
+    
     categoryForm.addEventListener('submit', (ev) => {
       ev.preventDefault()
       const name = $('#newCategoryName').value
       const type = $('#categoryType').value
-      if (addCategory(name, type)) {
+      const color = $('#categoryColor').value
+      if (addCategory(name, type, color)) {
         categoryForm.reset()
+        // Reset color selection to first option
+        colorOptions.forEach(opt => opt.classList.remove('selected'))
+        if (colorOptions.length > 0) {
+          colorOptions[0].classList.add('selected')
+          colorInput.value = colorOptions[0].dataset.color
+        }
       }
     })
   }
@@ -415,9 +461,9 @@ async function init(){
         }
       } catch(e) {}
     } else {
-      if(loginLink) loginLink.style.display = 'inline-block'
-      if(signOutBtn) signOutBtn.style.display = 'none'
-      if(footer) footer.textContent = 'Stored locally in your browser (localStorage).'
+      // Not logged in - redirect to login
+      location.href = 'login.html'
+      return
     }
 
     if(signOutBtn){

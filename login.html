@@ -24,16 +24,11 @@
             <label>Password</label>
             <input id="password" type="password" placeholder="password" required />
           </div>
-          <div class="row actions">
+          <div class="row actions" style="justify-content: center;">
             <button id="loginBtn" type="button" class="btn-primary">Login</button>
             <button id="regBtn" type="button" class="btn-ghost">Register</button>
           </div>
         </form>
-      </section>
-
-      <section class="muted" style="text-align:center;margin-top:12px">
-        <p>Backend defaults to <code>http://127.0.0.1:5000</code>. Edit this in <code>login.js</code> if needed.</p>
-        <p><a href="index.html">Proceed without login (localStorage)</a></p>
       </section>
 
     </main>
@@ -63,7 +58,7 @@
         const username = $('#username').value.trim()
         const password = $('#password').value
         if(!username || !password) return showMsg('username and password required', true)
-        const res = await post('/api/login', {username, password})
+        const res = await post('/login', {username, password})
         const j = await res.json()
         if(!res.ok) return showMsg(j.error || 'Login failed', true)
         localStorage.setItem(TOKEN_KEY, j.token)
@@ -75,7 +70,7 @@
         const username = $('#username').value.trim()
         const password = $('#password').value
         if(!username || !password) return showMsg('username and password required', true)
-        const res = await post('/api/register', {username, password})
+        const res = await post('/register', {username, password})
         const j = await res.json()
         if(!res.ok) return showMsg(j.error || 'Register failed', true)
         localStorage.setItem(TOKEN_KEY, j.token)

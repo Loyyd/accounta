@@ -53,4 +53,10 @@ input[type="text"], input[type="number"], select{width:100%;padding:10px;border-
 .tab-view{display:none}
 .tab-view.active{display:block}
 
+/* Color Palette */
+.color-palette{display:flex;gap:10px;padding:8px 0}
+.color-option{width:36px;height:36px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all 0.2s ease;box-shadow:0 2px 4px rgba(0,0,0,0.2)}
+.color-option:hover{transform:scale(1.1);box-shadow:0 4px 8px rgba(0,0,0,0.3)}
+.color-option.selected{border-color:#e6eef6;box-shadow:0 0 0 2px var(--bg), 0 0 0 4px #e6eef6}
+
 @media (max-width:720px){.two-up{grid-template-columns:1fr} .stats{flex-direction:column} .actions{justify-content:stretch}}

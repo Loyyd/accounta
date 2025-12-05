@@ -5,7 +5,7 @@ from functools import wraps
 from flask import Flask, request, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
-from passlib.hash import bcrypt
+import bcrypt
 import jwt
 from flask_cors import CORS
 
@@ -32,10 +32,17 @@ class User(db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
 
     def set_password(self, raw):
-        self.password_hash = bcrypt.hash(raw[:72])
+        # Hash password using bcrypt
+        password_bytes = raw.encode('utf-8')
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        self.password_hash = hashed.decode('utf-8')
 
     def verify_password(self, raw):
-        return bcrypt.verify(raw, self.password_hash)
+        # Verify password using bcrypt
+        password_bytes = raw.encode('utf-8')
+        hash_bytes = self.password_hash.encode('utf-8')
+        return bcrypt.checkpw(password_bytes, hash_bytes)
 
 
 class Entry(db.Model):
@@ -51,7 +58,7 @@ class Entry(db.Model):
 
 def create_token(user_id):
     payload = {
-        'sub': user_id,
+        'sub': str(user_id),  # JWT 'sub' claim must be a string
         'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=JWT_EXP_SECONDS)
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
@@ -60,7 +67,7 @@ def create_token(user_id):
 def decode_token(token):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        return payload['sub']
+        return int(payload['sub'])  # Convert back to int for database query
     except jwt.ExpiredSignatureError:
         abort(401, 'Token expired')
     except Exception:
@@ -136,17 +143,27 @@ def list_entries():
 def add_entry():
     data = request.get_json() or {}
     t = data.get('type')
-    description = data.get('description', '').strip()
+    description = data.get('description', '').strip() or (t.capitalize() if t else 'Transaction')
     amount = data.get('amount')
     category = data.get('category', '').strip() or 'Other'
-    if t not in ('income', 'expense') or not description or amount is None:
-        return jsonify({'error': 'type, description and amount are required'}), 400
+    date_str = data.get('date')  # ISO date string from frontend
+    
+    if t not in ('income', 'expense') or amount is None:
+        return jsonify({'error': 'type and amount are required'}), 400
     try:
         amount = float(amount)
     except Exception:
         return jsonify({'error': 'amount must be numeric'}), 400
+    
+    # Parse date if provided, otherwise use current time
+    entry_date = datetime.datetime.utcnow()
+    if date_str:
+        try:
+            entry_date = datetime.datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+        except Exception:
+            pass  # Use default if date parsing fails
 
-    e = Entry(user_id=request.user_id, type=t, description=description, amount=amount, category=category)
+    e = Entry(user_id=request.user_id, type=t, description=description, amount=amount, category=category, date=entry_date)
     db.session.add(e)
     db.session.commit()
     return jsonify({'id': e.id})
