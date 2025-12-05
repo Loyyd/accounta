@@ -38,14 +38,41 @@
       </nav>
 
       <div id="overview-view" class="tab-view active">
-        <section class="card stats-card">
+        <section class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="margin:0">Financial Overview</h3>
+            <div class="timeline-selector">
+              <select id="timelineFilter">
+                <option value="all">All Time</option>
+                <option value="this-month" selected>This Month</option>
+                <option value="last-month">Last Month</option>
+                <option value="this-year">This Year</option>
+                <option value="last-year">Last Year</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+          </div>
+          
+          <div id="customDateRange" style="display:none;margin-bottom:16px;padding:12px;background:rgba(255,255,255,0.02);border-radius:8px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div>
+                <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">From</label>
+                <input id="customStartDate" type="date" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit">
+              </div>
+              <div>
+                <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">To</label>
+                <input id="customEndDate" type="date" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit">
+              </div>
+            </div>
+          </div>
+
           <div class="stats">
             <div class="stat">
-              <h3 id="totalIncome">$0.00</h3>
+              <h3 id="totalIncome" style="color:var(--accent)">$0.00</h3>
               <p>Income</p>
             </div>
             <div class="stat">
-              <h3 id="totalExpense">$0.00</h3>
+              <h3 id="totalExpense" style="color:var(--danger)">$0.00</h3>
               <p>Expense</p>
             </div>
             <div class="stat">
@@ -53,14 +80,28 @@
               <p>Net</p>
             </div>
           </div>
-          <div class="categories">
-            <h4>Category breakdown (Expenses)</h4>
-            <ul id="categoryList" class="category-list"></ul>
-          </div>
+        </section>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" class="charts-row">
+          <section class="card">
+            <h4 style="margin-top:0">Expense Breakdown</h4>
+            <canvas id="expenseChart" style="max-height:250px"></canvas>
+            <div id="expenseChartLegend" class="chart-legend"></div>
+          </section>
+          
+          <section class="card">
+            <h4 style="margin-top:0">Income vs Expense</h4>
+            <canvas id="compareChart" style="max-height:250px"></canvas>
+          </section>
+        </div>
+
+        <section class="card">
+          <h4 style="margin-top:0">Spending Trend</h4>
+          <canvas id="trendChart" style="max-height:200px"></canvas>
         </section>
 
         <section class="card ledger-card">
-          <h3>Entries</h3>
+          <h3>Recent Transactions</h3>
           <div id="entries" class="entries"></div>
         </section>
       </div>
@@ -179,6 +220,7 @@
 
       <footer class="footer">Your data is saved securely to your account.</footer>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
