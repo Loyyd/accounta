@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Expense Tracker</title>
+    <title>FinFlow - Smart Finance Tracker</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>💰</text></svg>" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -11,13 +12,21 @@
       <header class="header">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
-            <h1>Expense Tracker</h1>
-            <p class="lead">Manage your finances with ease.</p>
+            <h1>💰 FinFlow</h1>
+            <p class="lead">Track your money flow with ease.</p>
           </div>
-          <div id="authArea" style="text-align:right">
-            <a href="login.html" id="loginLink" class="btn-ghost" style="margin-right:8px">Login / Register</a>
-            <button id="signOutBtn" class="btn-ghost" style="display:none">Sign out</button>
-            <div id="userHint" class="muted" style="font-size:12px"></div>
+          <div id="authArea" style="position:relative;">
+            <a href="login.html" id="loginLink" class="btn-ghost" style="margin-right:8px;display:none;">Login / Register</a>
+            <div id="userDropdown" style="display:none;">
+              <button id="userMenuBtn" class="user-menu-btn">
+                <span id="userHint"></span>
+                <span style="margin-left:4px;">▼</span>
+              </button>
+              <div id="userDropdownMenu" class="user-dropdown-menu">
+                <a href="#" id="settingsLink" class="dropdown-item">⚙️ Settings</a>
+                <a href="#" id="signOutBtn" class="dropdown-item">🚪 Logout</a>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -82,7 +91,31 @@
 
           <div class="row">
             <label>Date</label>
-            <input id="date" type="date" required />
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+              <select id="month" required>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+              <select id="year" required>
+                <option value="2022">2022</option>
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+              </select>
+            </div>
           </div>
 
           <div class="row">

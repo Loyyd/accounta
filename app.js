@@ -14,7 +14,8 @@ const typeInput = $('#type')
 const descriptionInput = $('#description')
 const amountInput = $('#amount')
 const categoryInput = $('#category')
-const dateInput = $('#date')
+const monthInput = $('#month')
+const yearInput = $('#year')
 const entriesEl = $('#entries')
 const totalIncomeEl = $('#totalIncome')
 const totalExpenseEl = $('#totalExpense')
@@ -81,11 +82,19 @@ function loadCategories() {
   } else {
     categories = JSON.parse(raw)
     // Migrate old format (array of strings) to new format (array of objects)
+    const defaultColors = ['#6ee7b7', '#60a5fa', '#fbbf24', '#f472b6', '#a78bfa', '#fb923c', '#ef4444']
+    
     if (categories.expense && categories.expense.length > 0 && typeof categories.expense[0] === 'string') {
-      categories.expense = categories.expense.map(name => ({name, color: '#6ee7b7'}))
+      categories.expense = categories.expense.map((name, index) => ({
+        name, 
+        color: defaultColors[index % defaultColors.length]
+      }))
     }
     if (categories.income && categories.income.length > 0 && typeof categories.income[0] === 'string') {
-      categories.income = categories.income.map(name => ({name, color: '#6ee7b7'}))
+      categories.income = categories.income.map((name, index) => ({
+        name, 
+        color: defaultColors[index % defaultColors.length]
+      }))
     }
   }
 }
@@ -364,17 +373,22 @@ entryForm.addEventListener('submit', (ev)=>{
   const description = descriptionInput.value.trim() || (type === 'income' ? 'Income' : 'Expense')
   const amount = parseFloat(amountInput.value)
   const category = categoryInput.value
-  const date = dateInput.value
+  const month = monthInput.value
+  const year = yearInput.value
   
-  if(isNaN(amount) || !category || !date) {
+  if(isNaN(amount) || !category || !month || !year) {
     alert('Please fill in all required fields')
     return
   }
   
+  // Create date from month/year (first day of the month)
+  const date = `${year}-${month.padStart(2, '0')}-01`
+  
   addEntry({type, description, amount, category, date})
-  entryForm.reset()
-  // Set date back to today
-  dateInput.value = new Date().toISOString().split('T')[0]
+  
+  // Only reset amount and description, keep month/year/type/category selected
+  amountInput.value = ''
+  descriptionInput.value = ''
 })
 
 clearAllBtn.addEventListener('click', ()=>{
@@ -390,46 +404,55 @@ async function init(){
   render()
   renderCategories()
   
-  // Set today's date as default
-  if (dateInput) {
-    dateInput.value = new Date().toISOString().split('T')[0]
+  // Set current month and year as default
+  if (monthInput && yearInput) {
+    const now = new Date()
+    monthInput.value = (now.getMonth() + 1).toString() // getMonth() is 0-indexed
+    yearInput.value = now.getFullYear().toString()
   }
   
   // Setup category form
   const categoryForm = $('#categoryForm')
   if (categoryForm) {
-    // Color palette selection
-    const colorOptions = $all('.color-option')
-    const colorInput = $('#categoryColor')
-    
-    // Set first color as selected by default
-    if (colorOptions.length > 0) {
-      colorOptions[0].classList.add('selected')
-    }
-    
-    colorOptions.forEach(option => {
-      option.addEventListener('click', () => {
-        // Remove selected class from all options
-        colorOptions.forEach(opt => opt.classList.remove('selected'))
-        // Add selected class to clicked option
-        option.classList.add('selected')
-        // Update hidden input value
-        colorInput.value = option.dataset.color
+    // Initialize color palette after a short delay to ensure DOM is ready
+    setTimeout(() => {
+      const colorOptions = $all('.color-option')
+      const colorInput = $('#categoryColor')
+      
+      console.log('Color options found:', colorOptions.length)
+      
+      // Set first color as selected by default
+      if (colorOptions.length > 0) {
+        colorOptions[0].classList.add('selected')
+      }
+      
+      colorOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          // Remove selected class from all options
+          colorOptions.forEach(opt => opt.classList.remove('selected'))
+          // Add selected class to clicked option
+          option.classList.add('selected')
+          // Update hidden input value
+          colorInput.value = option.dataset.color
+          console.log('Color selected:', option.dataset.color)
+        })
       })
-    })
+    }, 100)
     
     categoryForm.addEventListener('submit', (ev) => {
       ev.preventDefault()
       const name = $('#newCategoryName').value
       const type = $('#categoryType').value
       const color = $('#categoryColor').value
+      console.log('Adding category:', {name, type, color})
       if (addCategory(name, type, color)) {
         categoryForm.reset()
         // Reset color selection to first option
+        const colorOptions = $all('.color-option')
         colorOptions.forEach(opt => opt.classList.remove('selected'))
         if (colorOptions.length > 0) {
           colorOptions[0].classList.add('selected')
-          colorInput.value = colorOptions[0].dataset.color
+          $('#categoryColor').value = colorOptions[0].dataset.color
         }
       }
     })
@@ -444,13 +467,17 @@ async function init(){
   // Setup auth UI
   try{
     const loginLink = document.getElementById('loginLink')
-    const signOutBtn = document.getElementById('signOutBtn')
+    const userDropdown = document.getElementById('userDropdown')
+    const userMenuBtn = document.getElementById('userMenuBtn')
+    const userDropdownMenu = document.getElementById('userDropdownMenu')
     const userHint = document.getElementById('userHint')
+    const signOutBtn = document.getElementById('signOutBtn')
+    const settingsLink = document.getElementById('settingsLink')
     const footer = document.querySelector('.footer')
 
     if(isLoggedIn()){
       if(loginLink) loginLink.style.display = 'none'
-      if(signOutBtn) signOutBtn.style.display = 'inline-block'
+      if(userDropdown) userDropdown.style.display = 'block'
       // load username
       try{
         const res = await apiFetch('GET', '/profile')
@@ -466,8 +493,32 @@ async function init(){
       return
     }
 
+    // Toggle dropdown menu
+    if(userMenuBtn && userDropdownMenu){
+      userMenuBtn.addEventListener('click', (e)=>{
+        e.stopPropagation()
+        userDropdownMenu.classList.toggle('show')
+      })
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', ()=>{
+        userDropdownMenu.classList.remove('show')
+      })
+    }
+
+    // Settings link (placeholder)
+    if(settingsLink){
+      settingsLink.addEventListener('click', (e)=>{
+        e.preventDefault()
+        // Placeholder for future settings functionality
+        console.log('Settings clicked - feature coming soon')
+      })
+    }
+
+    // Sign out
     if(signOutBtn){
-      signOutBtn.addEventListener('click', ()=>{
+      signOutBtn.addEventListener('click', (e)=>{
+        e.preventDefault()
         localStorage.removeItem(TOKEN_KEY)
         location.href = 'login.html'
       })
