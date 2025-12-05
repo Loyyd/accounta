@@ -63,7 +63,7 @@
         const username = $('#username').value.trim()
         const password = $('#password').value
         if(!username || !password) return showMsg('username and password required', true)
-        const res = await post('/login', {username, password})
+        const res = await post('/api/login', {username, password})
         const j = await res.json()
         if(!res.ok) return showMsg(j.error || 'Login failed', true)
         localStorage.setItem(TOKEN_KEY, j.token)
@@ -75,7 +75,7 @@
         const username = $('#username').value.trim()
         const password = $('#password').value
         if(!username || !password) return showMsg('username and password required', true)
-        const res = await post('/register', {username, password})
+        const res = await post('/api/register', {username, password})
         const j = await res.json()
         if(!res.ok) return showMsg(j.error || 'Register failed', true)
         localStorage.setItem(TOKEN_KEY, j.token)

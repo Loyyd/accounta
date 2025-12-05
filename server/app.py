@@ -32,7 +32,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
 
     def set_password(self, raw):
-        self.password_hash = bcrypt.hash(raw)
+        self.password_hash = bcrypt.hash(raw[:72])
 
     def verify_password(self, raw):
         return bcrypt.verify(raw, self.password_hash)

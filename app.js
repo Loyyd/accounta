@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'finance-tracker.entries'
 const TOKEN_KEY = 'finance-tracker.token'
+const CATEGORIES_KEY = 'finance-tracker.categories'
 const API_BASE = 'http://127.0.0.1:5000/api' // change if backend is hosted elsewhere
 
 // Helpers
@@ -21,6 +22,137 @@ const categoryListEl = $('#categoryList')
 const clearAllBtn = $('#clearAll')
 
 let entries = []
+let categories = {expense: [], income: []}
+
+// Tab switching
+function switchTab(tabName) {
+  // Update tab buttons
+  $all('.tab-btn').forEach(btn => {
+    if (btn.dataset.tab === tabName) {
+      btn.classList.add('active')
+    } else {
+      btn.classList.remove('active')
+    }
+  })
+  
+  // Update views
+  $all('.tab-view').forEach(view => {
+    if (view.id === tabName + '-view') {
+      view.classList.add('active')
+    } else {
+      view.classList.remove('active')
+    }
+  })
+}
+
+// Initialize tab listeners
+function initTabs() {
+  $all('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      switchTab(btn.dataset.tab)
+    })
+  })
+}
+
+// Categories Management
+function loadCategories() {
+  const raw = localStorage.getItem(CATEGORIES_KEY)
+  if (!raw) {
+    categories = {
+      expense: ['Food', 'Housing', 'Transport', 'Entertainment', 'Shopping', 'Healthcare', 'Other'],
+      income: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other']
+    }
+    saveCategories()
+  } else {
+    categories = JSON.parse(raw)
+  }
+}
+
+function saveCategories() {
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories))
+}
+
+function addCategory(name, type) {
+  const trimmed = name.trim()
+  if (!trimmed) return false
+  if (categories[type].includes(trimmed)) {
+    alert('Category already exists!')
+    return false
+  }
+  categories[type].push(trimmed)
+  saveCategories()
+  renderCategories()
+  return true
+}
+
+function removeCategory(name, type) {
+  categories[type] = categories[type].filter(c => c !== name)
+  saveCategories()
+  renderCategories()
+}
+
+function renderCategories() {
+  const expenseList = $('#expenseCategoriesList')
+  const incomeList = $('#incomeCategoriesList')
+  
+  // Render expense categories
+  expenseList.innerHTML = ''
+  if (categories.expense.length === 0) {
+    expenseList.innerHTML = '<li class="muted">No expense categories</li>'
+  } else {
+    categories.expense.forEach(cat => {
+      const li = document.createElement('li')
+      li.innerHTML = `
+        <span>${cat}</span>
+        <button class="btn-ghost" style="padding:4px 8px;font-size:12px" onclick="removeCategory('${cat}', 'expense')">Delete</button>
+      `
+      expenseList.appendChild(li)
+    })
+  }
+  
+  // Render income categories
+  incomeList.innerHTML = ''
+  if (categories.income.length === 0) {
+    incomeList.innerHTML = '<li class="muted">No income categories</li>'
+  } else {
+    categories.income.forEach(cat => {
+      const li = document.createElement('li')
+      li.innerHTML = `
+        <span>${cat}</span>
+        <button class="btn-ghost" style="padding:4px 8px;font-size:12px" onclick="removeCategory('${cat}', 'income')">Delete</button>
+      `
+      incomeList.appendChild(li)
+    })
+  }
+  
+  // Update category input datalist
+  updateCategoryInput()
+}
+
+function updateCategoryInput() {
+  const categoryInput = $('#category')
+  // Add datalist for autocomplete suggestions
+  let datalist = $('#categoryDatalist')
+  if (!datalist) {
+    datalist = document.createElement('datalist')
+    datalist.id = 'categoryDatalist'
+    categoryInput.parentNode.appendChild(datalist)
+    categoryInput.setAttribute('list', 'categoryDatalist')
+  }
+  
+  const currentType = $('#type').value
+  const availableCategories = categories[currentType] || []
+  
+  datalist.innerHTML = ''
+  availableCategories.forEach(cat => {
+    const option = document.createElement('option')
+    option.value = cat
+    datalist.appendChild(option)
+  })
+}
+
+// Make removeCategory globally accessible
+window.removeCategory = removeCategory
 
 function token(){
   return localStorage.getItem(TOKEN_KEY)
@@ -238,8 +370,31 @@ clearAllBtn.addEventListener('click', ()=>{
 
 // Initialization
 async function init(){
+  initTabs()
+  loadCategories()
   await loadEntries()
   render()
+  renderCategories()
+  
+  // Setup category form
+  const categoryForm = $('#categoryForm')
+  if (categoryForm) {
+    categoryForm.addEventListener('submit', (ev) => {
+      ev.preventDefault()
+      const name = $('#newCategoryName').value
+      const type = $('#categoryType').value
+      if (addCategory(name, type)) {
+        categoryForm.reset()
+      }
+    })
+  }
+  
+  // Update category input when type changes
+  const typeInput = $('#type')
+  if (typeInput) {
+    typeInput.addEventListener('change', updateCategoryInput)
+  }
+  
   // Setup auth UI
   try{
     const loginLink = document.getElementById('loginLink')

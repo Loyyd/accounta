@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon --watch . --ext py,sql --exec \"python app.py\"",
-    "start": "python app.py"
+    "dev": "nodemon --watch . --ext py,sql --exec \"python3 app.py\"",
+    "start": "python3 app.py"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
