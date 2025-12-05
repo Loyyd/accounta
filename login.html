@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Login — Expense Tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app" style="max-width:520px;margin:36px auto;padding:20px">
+      <header class="header">
+        <h1>Expense Tracker — Login</h1>
+        <p class="lead">Sign in or register to persist your data to the cloud (MySQL backend).</p>
+      </header>
+
+      <section class="card input-card">
+        <div id="messages" class="muted" style="margin-bottom:12px"></div>
+        <form id="authForm">
+          <div class="row">
+            <label>Username</label>
+            <input id="username" type="text" placeholder="username" required />
+          </div>
+          <div class="row">
+            <label>Password</label>
+            <input id="password" type="password" placeholder="password" required />
+          </div>
+          <div class="row actions">
+            <button id="loginBtn" type="button" class="btn-primary">Login</button>
+            <button id="regBtn" type="button" class="btn-ghost">Register</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="muted" style="text-align:center;margin-top:12px">
+        <p>Backend defaults to <code>http://127.0.0.1:5000</code>. Edit this in <code>login.js</code> if needed.</p>
+        <p><a href="index.html">Proceed without login (localStorage)</a></p>
+      </section>
+
+    </main>
+
+    <script>
+      const API_BASE = 'http://127.0.0.1:5000/api'
+      const TOKEN_KEY = 'finance-tracker.token'
+
+      const $ = s => document.querySelector(s)
+      const messages = $('#messages')
+
+      function showMsg(m, isError=false){
+        messages.textContent = m
+        messages.style.color = isError ? '#ff6b6b' : 'var(--muted)'
+      }
+
+      async function post(endpoint, body){
+        const res = await fetch(API_BASE + endpoint, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body)
+        })
+        return res
+      }
+
+      document.getElementById('loginBtn').addEventListener('click', async ()=>{
+        const username = $('#username').value.trim()
+        const password = $('#password').value
+        if(!username || !password) return showMsg('username and password required', true)
+        const res = await post('/login', {username, password})
+        const j = await res.json()
+        if(!res.ok) return showMsg(j.error || 'Login failed', true)
+        localStorage.setItem(TOKEN_KEY, j.token)
+        showMsg('Login successful — redirecting...')
+        setTimeout(()=>location.href='index.html', 700)
+      })
+
+      document.getElementById('regBtn').addEventListener('click', async ()=>{
+        const username = $('#username').value.trim()
+        const password = $('#password').value
+        if(!username || !password) return showMsg('username and password required', true)
+        const res = await post('/register', {username, password})
+        const j = await res.json()
+        if(!res.ok) return showMsg(j.error || 'Register failed', true)
+        localStorage.setItem(TOKEN_KEY, j.token)
+        showMsg('Account created — signing in...')
+        setTimeout(()=>location.href='index.html', 700)
+      })
+    </script>
+
+  </body>
+</html>

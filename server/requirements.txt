@@ -1,0 +1,7 @@
+Flask>=2.0
+Flask-SQLAlchemy>=3.0
+PyMySQL>=1.0
+PyJWT>=2.0
+python-dotenv>=0.21
+passlib[bcrypt]>=1.7
+flask-cors>=3.0

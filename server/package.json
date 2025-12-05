@@ -1,0 +1,12 @@
+{
+  "name": "finance-tracker-server",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon --watch . --ext py,sql --exec \"python app.py\"",
+    "start": "python app.py"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

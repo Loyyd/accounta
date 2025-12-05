@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <h1>Expense Tracker</h1>
+            <p class="lead">Quickly add income and expenses.</p>
+          </div>
+          <div id="authArea" style="text-align:right">
+            <a href="login.html" id="loginLink" class="btn-ghost" style="margin-right:8px">Login / Register</a>
+            <button id="signOutBtn" class="btn-ghost" style="display:none">Sign out</button>
+            <div id="userHint" class="muted" style="font-size:12px"></div>
+          </div>
+        </div>
+      </header>
+
+      <section class="card input-card">
+        <form id="entryForm">
+          <div class="row">
+            <label>Type</label>
+            <select id="type" required>
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <label>Description</label>
+            <input id="description" type="text" placeholder="e.g., Groceries" required />
+          </div>
+
+          <div class="row two-up">
+            <div>
+              <label>Amount</label>
+              <input id="amount" type="number" step="0.01" placeholder="0.00" required />
+            </div>
+            <div>
+              <label>Category</label>
+              <input id="category" type="text" placeholder="e.g., Food, Rent, Salary" required />
+            </div>
+          </div>
+
+          <div class="row actions">
+            <button type="submit" class="btn-primary">Add</button>
+            <button id="clearAll" type="button" class="btn-ghost">Clear All</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card stats-card">
+        <div class="stats">
+          <div class="stat">
+            <h3 id="totalIncome">$0.00</h3>
+            <p>Income</p>
+          </div>
+          <div class="stat">
+            <h3 id="totalExpense">$0.00</h3>
+            <p>Expense</p>
+          </div>
+          <div class="stat">
+            <h3 id="netTotal">$0.00</h3>
+            <p>Net</p>
+          </div>
+        </div>
+        <div class="categories">
+          <h4>Category breakdown (Expenses)</h4>
+          <ul id="categoryList" class="category-list"></ul>
+        </div>
+      </section>
+
+      <section class="card ledger-card">
+        <h3>Entries</h3>
+        <div id="entries" class="entries"></div>
+      </section>
+
+      <footer class="footer">Stored locally in your browser (localStorage).</footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
