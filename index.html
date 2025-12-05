@@ -67,11 +67,6 @@
             </select>
           </div>
 
-          <div class="row">
-            <label>Description</label>
-            <input id="description" type="text" placeholder="e.g., Groceries" required />
-          </div>
-
           <div class="row two-up">
             <div>
               <label>Amount</label>
@@ -79,8 +74,20 @@
             </div>
             <div>
               <label>Category</label>
-              <input id="category" type="text" placeholder="e.g., Food, Rent, Salary" required />
+              <select id="category" required>
+                <option value="">Select a category</option>
+              </select>
             </div>
+          </div>
+
+          <div class="row">
+            <label>Date</label>
+            <input id="date" type="date" required />
+          </div>
+
+          <div class="row">
+            <label>Description (optional)</label>
+            <input id="description" type="text" placeholder="e.g., Groceries, Monthly salary" />
           </div>
 
           <div class="row actions">
@@ -106,6 +113,19 @@
                 <option value="income">Income</option>
               </select>
             </div>
+            <div class="row">
+              <label>Color</label>
+              <div class="color-palette">
+                <div class="color-option" data-color="#6ee7b7" style="background: #6ee7b7;" title="Green"></div>
+                <div class="color-option" data-color="#60a5fa" style="background: #60a5fa;" title="Blue"></div>
+                <div class="color-option" data-color="#fbbf24" style="background: #fbbf24;" title="Yellow"></div>
+                <div class="color-option" data-color="#f472b6" style="background: #f472b6;" title="Pink"></div>
+                <div class="color-option" data-color="#a78bfa" style="background: #a78bfa;" title="Purple"></div>
+                <div class="color-option" data-color="#fb923c" style="background: #fb923c;" title="Orange"></div>
+                <div class="color-option" data-color="#ef4444" style="background: #ef4444;" title="Red"></div>
+              </div>
+              <input id="categoryColor" type="hidden" value="#6ee7b7" required />
+            </div>
             <div class="row actions">
               <button type="submit" class="btn-primary">Add Category</button>
             </div>
@@ -124,7 +144,7 @@
       </div>
       </div>
 
-      <footer class="footer">Stored locally in your browser (localStorage).</footer>
+      <footer class="footer">Your data is saved securely to your account.</footer>
     </main>
     <script src="app.js"></script>
   </body>
