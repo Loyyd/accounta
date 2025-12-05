@@ -43,4 +43,14 @@ input[type="text"], input[type="number"], select{width:100%;padding:10px;border-
 .amount.expense{color:var(--danger)}
 .muted{color:var(--muted);font-weight:500}
 .footer{text-align:center;color:var(--muted);font-size:13px;margin-top:10px}
+
+/* Tab Navigation */
+.tab-bar{display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:2px}
+.tab-btn{background:transparent;border:none;color:var(--muted);padding:12px 20px;cursor:pointer;font-size:14px;font-weight:500;border-radius:8px 8px 0 0;transition:all 0.2s ease;position:relative}
+.tab-btn:hover{background:rgba(255,255,255,0.04);color:#e6eef6}
+.tab-btn.active{color:var(--accent);background:linear-gradient(180deg,rgba(110,231,183,0.1),rgba(110,231,183,0.05))}
+.tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--accent);border-radius:2px}
+.tab-view{display:none}
+.tab-view.active{display:block}
+
 @media (max-width:720px){.two-up{grid-template-columns:1fr} .stats{flex-direction:column} .actions{justify-content:stretch}}

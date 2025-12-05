@@ -12,7 +12,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
             <h1>Expense Tracker</h1>
-            <p class="lead">Quickly add income and expenses.</p>
+            <p class="lead">Manage your finances with ease.</p>
           </div>
           <div id="authArea" style="text-align:right">
             <a href="login.html" id="loginLink" class="btn-ghost" style="margin-right:8px">Login / Register</a>
@@ -22,7 +22,42 @@
         </div>
       </header>
 
-      <section class="card input-card">
+      <nav class="tab-bar">
+        <button class="tab-btn active" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="add-transaction">Add Transaction</button>
+        <button class="tab-btn" data-tab="categories">Categories</button>
+      </nav>
+
+      <div id="overview-view" class="tab-view active">
+        <section class="card stats-card">
+          <div class="stats">
+            <div class="stat">
+              <h3 id="totalIncome">$0.00</h3>
+              <p>Income</p>
+            </div>
+            <div class="stat">
+              <h3 id="totalExpense">$0.00</h3>
+              <p>Expense</p>
+            </div>
+            <div class="stat">
+              <h3 id="netTotal">$0.00</h3>
+              <p>Net</p>
+            </div>
+          </div>
+          <div class="categories">
+            <h4>Category breakdown (Expenses)</h4>
+            <ul id="categoryList" class="category-list"></ul>
+          </div>
+        </section>
+
+        <section class="card ledger-card">
+          <h3>Entries</h3>
+          <div id="entries" class="entries"></div>
+        </section>
+      </div>
+
+      <div id="add-transaction-view" class="tab-view">
+        <section class="card input-card">
         <form id="entryForm">
           <div class="row">
             <label>Type</label>
@@ -54,32 +89,40 @@
           </div>
         </form>
       </section>
+      </div>
 
-      <section class="card stats-card">
-        <div class="stats">
-          <div class="stat">
-            <h3 id="totalIncome">$0.00</h3>
-            <p>Income</p>
-          </div>
-          <div class="stat">
-            <h3 id="totalExpense">$0.00</h3>
-            <p>Expense</p>
-          </div>
-          <div class="stat">
-            <h3 id="netTotal">$0.00</h3>
-            <p>Net</p>
-          </div>
-        </div>
-        <div class="categories">
-          <h4>Category breakdown (Expenses)</h4>
-          <ul id="categoryList" class="category-list"></ul>
-        </div>
-      </section>
+      <div id="categories-view" class="tab-view">
+        <section class="card">
+          <h3>Manage Categories</h3>
+          <form id="categoryForm" style="margin-bottom: 20px;">
+            <div class="row">
+              <label>Category Name</label>
+              <input id="newCategoryName" type="text" placeholder="e.g., Entertainment, Transport" required />
+            </div>
+            <div class="row">
+              <label>Type</label>
+              <select id="categoryType" required>
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+              </select>
+            </div>
+            <div class="row actions">
+              <button type="submit" class="btn-primary">Add Category</button>
+            </div>
+          </form>
 
-      <section class="card ledger-card">
-        <h3>Entries</h3>
-        <div id="entries" class="entries"></div>
-      </section>
+          <div>
+            <h4>Expense Categories</h4>
+            <ul id="expenseCategoriesList" class="category-list"></ul>
+          </div>
+
+          <div style="margin-top: 20px;">
+            <h4>Income Categories</h4>
+            <ul id="incomeCategoriesList" class="category-list"></ul>
+          </div>
+        </section>
+      </div>
+      </div>
 
       <footer class="footer">Stored locally in your browser (localStorage).</footer>
     </main>
