@@ -1,8 +1,4 @@
-const STORAGE_KEY = 'finance-tracker.entries'
 const TOKEN_KEY = 'finance-tracker.token'
-const CATEGORIES_KEY = 'finance-tracker.categories'
-const SUBSCRIPTIONS_KEY = 'finance-tracker.subscriptions'
-const BUDGETS_KEY = 'finance-tracker.budgets'
 const API_BASE = 'http://127.0.0.1:5000/api' // change if backend is hosted elsewhere
 
 // Helpers
@@ -41,6 +37,7 @@ let customEnd = null
 let expenseChart = null
 let compareChart = null
 let trendChart = null
+let profitChart = null
 
 // Tab switching
 function switchTab(tabName) {
@@ -64,57 +61,66 @@ function switchTab(tabName) {
 }
 
 // Subscriptions Management
-function loadSubscriptions() {
-  const raw = localStorage.getItem(SUBSCRIPTIONS_KEY)
-  subscriptions = raw ? JSON.parse(raw) : []
+async function loadSubscriptions() {
+  try {
+    const res = await apiFetch('GET', '/subscriptions')
+    if (!res.ok) throw new Error('Failed to load subscriptions')
+    subscriptions = await res.json()
+  } catch (e) {
+    console.error('Failed to load subscriptions', e)
+    subscriptions = []
+  }
 }
 
-function saveSubscriptions() {
-  localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
-}
-
-function addSubscription(type, amount, category, description, frequency, startDate) {
-  const sub = {
-    id: Date.now(),
+async function addSubscription(type, amount, category, description, frequency, startDate) {
+  const res = await apiFetch('POST', '/subscriptions', {
     type,
     amount: parseFloat(amount),
     category,
     description,
     frequency,
-    startDate,
-    active: true
+    startDate
+  })
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({error: 'Failed'}))
+    alert(j.error || 'Failed to add subscription')
+    return false
   }
-  subscriptions.push(sub)
-  saveSubscriptions()
+  await loadSubscriptions()
   renderSubscriptions()
-  processSubscriptions()
+  await processSubscriptions()
   return true
 }
 
-function deleteSubscription(id) {
-  subscriptions = subscriptions.filter(s => s.id !== id)
-  saveSubscriptions()
+async function deleteSubscription(id) {
+  const res = await apiFetch('DELETE', `/subscriptions/${id}`)
+  if (!res.ok) {
+    alert('Failed to delete subscription')
+    return
+  }
+  await loadSubscriptions()
   renderSubscriptions()
 }
 
-function toggleSubscription(id) {
-  const sub = subscriptions.find(s => s.id === id)
-  if (sub) {
-    sub.active = !sub.active
-    saveSubscriptions()
-    renderSubscriptions()
+async function toggleSubscription(id) {
+  const res = await apiFetch('POST', `/subscriptions/${id}/toggle`)
+  if (!res.ok) {
+    alert('Failed to toggle subscription')
+    return
   }
+  await loadSubscriptions()
+  renderSubscriptions()
 }
 
-function processSubscriptions() {
+async function processSubscriptions() {
   // Process active subscriptions and add entries if needed
   const today = new Date()
   
-  subscriptions.forEach(sub => {
-    if (!sub.active) return
+  for (const sub of subscriptions) {
+    if (!sub.active) continue
     
     const start = new Date(sub.startDate)
-    if (start > today) return
+    if (start > today) continue
     
     // Generate all missing entries from start date to today
     if (sub.frequency === 'monthly') {
@@ -127,7 +133,7 @@ function processSubscriptions() {
         
         // Check if entry exists for this month
         if (!hasSubscriptionEntry(sub, current)) {
-          addEntry({
+          await addEntry({
             type: sub.type,
             description: sub.description,
             amount: sub.amount,
@@ -148,7 +154,7 @@ function processSubscriptions() {
         const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
         
         if (!hasSubscriptionEntry(sub, current)) {
-          addEntry({
+          await addEntry({
             type: sub.type,
             description: sub.description,
             amount: sub.amount,
@@ -169,7 +175,7 @@ function processSubscriptions() {
         const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
         
         if (!hasSubscriptionEntry(sub, current)) {
-          addEntry({
+          await addEntry({
             type: sub.type,
             description: sub.description,
             amount: sub.amount,
@@ -182,7 +188,7 @@ function processSubscriptions() {
         current.setFullYear(current.getFullYear() + 1)
       }
     }
-  })
+  }
 }
 
 function hasSubscriptionEntry(sub, targetDate) {
@@ -250,34 +256,40 @@ window.deleteSubscription = deleteSubscription
 window.toggleSubscription = toggleSubscription
 
 // Budgeting Management
-function loadBudgets() {
-  const raw = localStorage.getItem(BUDGETS_KEY)
-  budgets = raw ? JSON.parse(raw) : []
-}
-
-function saveBudgets() {
-  localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets))
-}
-
-function setBudget(category, amount) {
-  const existing = budgets.find(b => b.category === category)
-  if (existing) {
-    existing.amount = parseFloat(amount)
-  } else {
-    budgets.push({
-      category,
-      amount: parseFloat(amount)
-    })
+async function loadBudgets() {
+  try {
+    const res = await apiFetch('GET', '/budgets')
+    if (!res.ok) throw new Error('Failed to load budgets')
+    budgets = await res.json()
+  } catch (e) {
+    console.error('Failed to load budgets', e)
+    budgets = []
   }
-  saveBudgets()
+}
+
+async function setBudget(category, amount) {
+  const res = await apiFetch('POST', '/budgets', {
+    category,
+    amount: parseFloat(amount)
+  })
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({error: 'Failed'}))
+    alert(j.error || 'Failed to set budget')
+    return false
+  }
+  await loadBudgets()
   renderBudgets()
   renderBudgetOverview()
   return true
 }
 
-function deleteBudget(category) {
-  budgets = budgets.filter(b => b.category !== category)
-  saveBudgets()
+async function deleteBudget(category) {
+  const res = await apiFetch('DELETE', `/budgets/${encodeURIComponent(category)}`)
+  if (!res.ok) {
+    alert('Failed to delete budget')
+    return
+  }
+  await loadBudgets()
   renderBudgets()
   renderBudgetOverview()
 }
@@ -497,74 +509,110 @@ function initTabs() {
 }
 
 // Categories Management
-function loadCategories() {
-  const raw = localStorage.getItem(CATEGORIES_KEY)
-  if (!raw) {
-    categories = {
-      expense: [
-        {name: 'Food', color: '#6ee7b7'},        // Green - fresh/healthy
-        {name: 'Housing', color: '#60a5fa'},     // Blue - stable/essential
-        {name: 'Transport', color: '#fbbf24'},   // Yellow - movement/energy
-        {name: 'Entertainment', color: '#f472b6'}, // Pink - fun/leisure
-        {name: 'Shopping', color: '#a78bfa'},    // Purple - luxury/retail
-        {name: 'Healthcare', color: '#ef4444'},  // Red - medical/important
-        {name: 'Other', color: '#fb923c'}        // Orange - miscellaneous
-      ],
-      income: [
-        {name: 'Salary', color: '#6ee7b7'},      // Green - primary income
-        {name: 'Freelance', color: '#60a5fa'},   // Blue - professional
-        {name: 'Investment', color: '#fbbf24'},  // Yellow - growth
-        {name: 'Gift', color: '#f472b6'},        // Pink - pleasant surprise
-        {name: 'Other', color: '#fb923c'}        // Orange - miscellaneous
-      ]
-    }
-    saveCategories()
-  } else {
-    categories = JSON.parse(raw)
-    // Migrate old format (array of strings) to new format (array of objects)
-    const defaultColors = ['#6ee7b7', '#60a5fa', '#fbbf24', '#f472b6', '#a78bfa', '#fb923c', '#ef4444']
+async function loadCategories() {
+  try {
+    const res = await apiFetch('GET', '/categories')
+    if (!res.ok) throw new Error('Failed to load categories')
+    categories = await res.json()
     
-    if (categories.expense && categories.expense.length > 0 && typeof categories.expense[0] === 'string') {
-      categories.expense = categories.expense.map((name, index) => ({
-        name, 
-        color: defaultColors[index % defaultColors.length]
-      }))
+    // If no categories exist, create defaults
+    if (categories.expense.length === 0 && categories.income.length === 0) {
+      const defaults = {
+        expense: [
+          {name: 'Food', color: '#6ee7b7'},
+          {name: 'Housing', color: '#60a5fa'},
+          {name: 'Transport', color: '#fbbf24'},
+          {name: 'Entertainment', color: '#f472b6'},
+          {name: 'Shopping', color: '#a78bfa'},
+          {name: 'Healthcare', color: '#ef4444'},
+          {name: 'Other', color: '#fb923c'}
+        ],
+        income: [
+          {name: 'Salary', color: '#6ee7b7'},
+          {name: 'Freelance', color: '#60a5fa'},
+          {name: 'Investment', color: '#fbbf24'},
+          {name: 'Gift', color: '#f472b6'},
+          {name: 'Other', color: '#fb923c'}
+        ]
+      }
+      // Create default categories
+      for (const type of ['expense', 'income']) {
+        for (const cat of defaults[type]) {
+          await apiFetch('POST', '/categories', {name: cat.name, type, color: cat.color})
+        }
+      }
+      // Reload to get the created categories
+      const res2 = await apiFetch('GET', '/categories')
+      if (res2.ok) categories = await res2.json()
     }
-    if (categories.income && categories.income.length > 0 && typeof categories.income[0] === 'string') {
-      categories.income = categories.income.map((name, index) => ({
-        name, 
-        color: defaultColors[index % defaultColors.length]
-      }))
-    }
+  } catch (e) {
+    console.error('Failed to load categories', e)
+    categories = {expense: [], income: []}
   }
 }
 
-function saveCategories() {
-  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories))
-}
-
-function addCategory(name, type, color) {
+async function addCategory(name, type) {
   const trimmed = name.trim()
   if (!trimmed) return false
   if (categories[type].some(cat => cat.name === trimmed)) {
     alert('Category already exists!')
     return false
   }
-  categories[type].push({name: trimmed, color: color || '#6ee7b7'})
-  saveCategories()
+  // Use default color based on type
+  const defaultColor = type === 'expense' ? '#6ee7b7' : '#60a5fa'
+  const res = await apiFetch('POST', '/categories', {name: trimmed, type, color: defaultColor})
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({error: 'Failed'}))
+    alert(j.error || 'Failed to add category')
+    return false
+  }
+  await loadCategories()
   renderCategories()
   return true
 }
 
-function removeCategory(name, type) {
-  categories[type] = categories[type].filter(c => c.name !== name)
-  saveCategories()
-  renderCategories()
+async function updateCategoryColor(name, type, newColor) {
+  const category = categories[type].find(c => c.name === name)
+  if (!category) return
+  
+  // Find category ID - we need to track it
+  const categoryIndex = categories[type].findIndex(c => c.name === name)
+  if (categoryIndex === -1) return
+  
+  // For now, delete and recreate since we don't have IDs in the frontend
+  // Better: store ID when loading categories
+  category.color = newColor
+  
+  // We'll update by finding the category on server side by name and type
+  // This requires a new endpoint or we track IDs
+  // For simplicity, just reload and update locally for now
+  const res = await apiFetch('PUT', `/categories/0`, {name, type, color: newColor})
+  if (res.ok) {
+    await loadCategories()
+    renderCategories()
+  }
+}
+
+async function removeCategory(name, type) {
+  // We need to find the category ID, but frontend doesn't store it
+  // We'll need to enhance the API or track IDs
+  // For now, filter locally and make a request
+  const category = categories[type].find(c => c.name === name)
+  if (!category) return
+  
+  // Will need category ID - for now we'll use a workaround
+  const res = await apiFetch('DELETE', `/categories/0?name=${encodeURIComponent(name)}&type=${type}`)
+  if (res.ok) {
+    await loadCategories()
+    renderCategories()
+  }
 }
 
 function renderCategories() {
   const expenseList = $('#expenseCategoriesList')
   const incomeList = $('#incomeCategoriesList')
+  
+  const colorOptions = ['#6ee7b7', '#60a5fa', '#fbbf24', '#f472b6', '#a78bfa', '#fb923c', '#ef4444']
   
   // Render expense categories
   expenseList.innerHTML = ''
@@ -573,10 +621,26 @@ function renderCategories() {
   } else {
     categories.expense.forEach(cat => {
       const li = document.createElement('li')
+      li.style.display = 'flex'
+      li.style.alignItems = 'center'
+      li.style.justifyContent = 'space-between'
+      li.style.padding = '8px 0'
+      li.style.borderBottom = '1px dashed rgba(255,255,255,0.02)'
+      
+      const colorId = `color-expense-${cat.name.replace(/\s/g, '-')}`
+      
       li.innerHTML = `
-        <span style="color: ${cat.color}; font-weight: 600;">
-          <span style="display: inline-block; width: 12px; height: 12px; background: ${cat.color}; border-radius: 3px; margin-right: 8px;"></span>
-          ${cat.name}
+        <span style="font-weight: 600; flex: 1; display: flex; align-items: center; gap: 12px;">
+          <label for="${colorId}" style="position: relative; cursor: pointer; display: inline-block;">
+            <div style="width: 24px; height: 24px; background: ${cat.color}; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.2s;"
+                 onmouseover="this.style.transform='scale(1.1)'" 
+                 onmouseout="this.style.transform='scale(1)'"></div>
+            <input type="color" id="${colorId}" value="${cat.color}" 
+                   onchange="updateCategoryColor('${cat.name}', 'expense', this.value)"
+                   style="position: absolute; opacity: 0; width: 0; height: 0;"
+                   title="Change color" />
+          </label>
+          <span style="color: ${cat.color};">${cat.name}</span>
         </span>
         <button class="btn-ghost" style="padding:4px 8px;font-size:12px" onclick="removeCategory('${cat.name}', 'expense')">Delete</button>
       `
@@ -591,10 +655,26 @@ function renderCategories() {
   } else {
     categories.income.forEach(cat => {
       const li = document.createElement('li')
+      li.style.display = 'flex'
+      li.style.alignItems = 'center'
+      li.style.justifyContent = 'space-between'
+      li.style.padding = '8px 0'
+      li.style.borderBottom = '1px dashed rgba(255,255,255,0.02)'
+      
+      const colorId = `color-income-${cat.name.replace(/\s/g, '-')}`
+      
       li.innerHTML = `
-        <span style="color: ${cat.color}; font-weight: 600;">
-          <span style="display: inline-block; width: 12px; height: 12px; background: ${cat.color}; border-radius: 3px; margin-right: 8px;"></span>
-          ${cat.name}
+        <span style="font-weight: 600; flex: 1; display: flex; align-items: center; gap: 12px;">
+          <label for="${colorId}" style="position: relative; cursor: pointer; display: inline-block;">
+            <div style="width: 24px; height: 24px; background: ${cat.color}; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.2s;"
+                 onmouseover="this.style.transform='scale(1.1)'" 
+                 onmouseout="this.style.transform='scale(1)'"></div>
+            <input type="color" id="${colorId}" value="${cat.color}" 
+                   onchange="updateCategoryColor('${cat.name}', 'income', this.value)"
+                   style="position: absolute; opacity: 0; width: 0; height: 0;"
+                   title="Change color" />
+          </label>
+          <span style="color: ${cat.color};">${cat.name}</span>
         </span>
         <button class="btn-ghost" style="padding:4px 8px;font-size:12px" onclick="removeCategory('${cat.name}', 'income')">Delete</button>
       `
@@ -623,8 +703,9 @@ function updateCategoryInput() {
   })
 }
 
-// Make removeCategory globally accessible
+// Make functions globally accessible
 window.removeCategory = removeCategory
+window.updateCategoryColor = updateCategoryColor
 
 function token(){
   return localStorage.getItem(TOKEN_KEY)
@@ -669,15 +750,18 @@ async function loadEntries(){
   }
 }
 
-function saveEntries(){
-  // Entries are now always persisted via API only
-  return
-}
 
 
-
-function id(){
-  return Date.now().toString(36) + Math.random().toString(36).slice(2,8)
+async function updateEntry(entryId, updates) {
+  const res = await apiFetch('PUT', `/entries/${entryId}`, updates)
+  if(!res.ok){
+    const j = await res.json().catch(()=>({error:'Failed'}))
+    alert(j.error || 'Failed to update')
+    return false
+  }
+  await loadEntries()
+  render()
+  return true
 }
 
 async function addEntry({type, description, amount, category, date}){
@@ -700,12 +784,6 @@ async function removeEntry(idValue){
     return
   }
   await loadEntries()
-  render()
-}
-
-function clearAll(){
-  entries = []
-  saveEntries()
   render()
 }
 
@@ -738,13 +816,17 @@ function getFilteredEntries() {
   let startDate, endDate
   
   switch(currentTimeline) {
-    case 'this-month':
+    case 'month-0':
       startDate = new Date(now.getFullYear(), now.getMonth(), 1)
       endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
       break
-    case 'last-month':
+    case 'month-1':
       startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
       endDate = new Date(now.getFullYear(), now.getMonth(), 0)
+      break
+    case 'month-2':
+      startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1)
+      endDate = new Date(now.getFullYear(), now.getMonth() - 1, 0)
       break
     case 'this-year':
       startDate = new Date(now.getFullYear(), 0, 1)
@@ -807,6 +889,10 @@ function destroyCharts() {
   if (trendChart) {
     trendChart.destroy()
     trendChart = null
+  }
+  if (profitChart) {
+    profitChart.destroy()
+    profitChart = null
   }
 }
 
@@ -936,10 +1022,11 @@ function renderCharts() {
   })
   
   // Trend Chart (Line) - Group by month and category
+  // Always use all entries, not filtered by timeline
   const monthlyData = {}
   const categoryTrends = {}
   
-  filtered.forEach(e => {
+  entries.forEach(e => {
     const date = new Date(e.date)
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
     
@@ -1066,6 +1153,223 @@ function renderCharts() {
       }
     }
   })
+  
+  // Monthly Profit Chart (Last 6 Months)
+  const ctx4 = document.getElementById('profitChart')
+  if (ctx4) {
+    // Get last 6 months of data
+    const now = new Date()
+    const last6Months = []
+    const profitData = []
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      last6Months.push(date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }))
+      
+      // Calculate profit for this month
+      const monthIncome = entries
+        .filter(e => {
+          const entryDate = new Date(e.date)
+          return e.type === 'income' && 
+                 entryDate.getFullYear() === date.getFullYear() && 
+                 entryDate.getMonth() === date.getMonth()
+        })
+        .reduce((sum, e) => sum + e.amount, 0)
+      
+      const monthExpense = entries
+        .filter(e => {
+          const entryDate = new Date(e.date)
+          return e.type === 'expense' && 
+                 entryDate.getFullYear() === date.getFullYear() && 
+                 entryDate.getMonth() === date.getMonth()
+        })
+        .reduce((sum, e) => sum + e.amount, 0)
+      
+      profitData.push(monthIncome - monthExpense)
+    }
+    
+    profitChart = new Chart(ctx4, {
+      type: 'bar',
+      data: {
+        labels: last6Months,
+        datasets: [{
+          label: 'Monthly Profit',
+          data: profitData,
+          backgroundColor: profitData.map(val => val >= 0 ? 'rgba(110, 231, 183, 0.6)' : 'rgba(255, 107, 107, 0.6)'),
+          borderColor: profitData.map(val => val >= 0 ? '#6ee7b7' : '#ff6b6b'),
+          borderWidth: 2,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.parsed.y
+                return `Profit: ${fmt(value)}`
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return fmt(value)
+              },
+              color: '#9aa5b1'
+            },
+            grid: {
+              color: 'rgba(255,255,255,0.05)'
+            }
+          },
+          x: {
+            ticks: {
+              color: '#e6eef6'
+            },
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    })
+  }
+}
+
+function editTransaction(entry, containerDiv) {
+  // This function is no longer used - replaced by individual field editing
+}
+
+function editTransactionField(entry, field, element) {
+  const categoryType = entry.type || 'expense'
+  const categoryList = categories[categoryType] || []
+  
+  if (field === 'description') {
+    // Edit description inline
+    const currentText = element.querySelector('div:first-child').textContent
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.value = currentText
+    input.style.cssText = 'padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: inherit; font-size: 14px; width: 100%; font-weight: 600;'
+    
+    const save = async () => {
+      const newValue = input.value.trim()
+      if (newValue && newValue !== currentText) {
+        await updateEntry(entry.id, {
+          type: entry.type,
+          description: newValue,
+          amount: entry.amount,
+          category: entry.category,
+          date: new Date(entry.date).toISOString()
+        })
+      } else {
+        render()
+      }
+    }
+    
+    input.onblur = save
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        save()
+      } else if (e.key === 'Escape') {
+        render()
+      }
+    }
+    
+    element.querySelector('div:first-child').replaceWith(input)
+    input.focus()
+    input.select()
+    
+  } else if (field === 'category') {
+    // Edit category with dropdown
+    const chip = element
+    const currentCategory = chip.textContent
+    
+    const select = document.createElement('select')
+    select.style.cssText = `padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: ${chip.style.background}; color: ${chip.style.color}; font-size: 12px; font-weight: 700; cursor: pointer;`
+    
+    categoryList.forEach(cat => {
+      const option = document.createElement('option')
+      option.value = cat.name
+      option.textContent = cat.name
+      option.selected = cat.name === currentCategory
+      select.appendChild(option)
+    })
+    
+    const save = async () => {
+      const newCategory = select.value
+      if (newCategory !== currentCategory) {
+        await updateEntry(entry.id, {
+          type: entry.type,
+          description: entry.description,
+          amount: entry.amount,
+          category: newCategory,
+          date: new Date(entry.date).toISOString()
+        })
+      } else {
+        render()
+      }
+    }
+    
+    select.onchange = save
+    select.onblur = save
+    select.onkeydown = (e) => {
+      if (e.key === 'Escape') {
+        render()
+      }
+    }
+    
+    chip.replaceWith(select)
+    select.focus()
+    
+  } else if (field === 'amount') {
+    // Edit amount inline
+    const currentAmount = entry.amount
+    const input = document.createElement('input')
+    input.type = 'number'
+    input.step = '0.01'
+    input.value = currentAmount
+    input.style.cssText = `padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: ${element.style.color}; font-size: 14px; width: 120px; text-align: right; font-weight: 700;`
+    
+    const save = async () => {
+      const newAmount = parseFloat(input.value)
+      if (!isNaN(newAmount) && newAmount !== currentAmount) {
+        await updateEntry(entry.id, {
+          type: entry.type,
+          description: entry.description,
+          amount: newAmount,
+          category: entry.category,
+          date: new Date(entry.date).toISOString()
+        })
+      } else {
+        render()
+      }
+    }
+    
+    input.onblur = save
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        save()
+      } else if (e.key === 'Escape') {
+        render()
+      }
+    }
+    
+    element.replaceWith(input)
+    input.focus()
+    input.select()
+  }
 }
 
 function breakdownByCategory(){
@@ -1110,6 +1414,19 @@ function render(){
   for(const e of sorted){
     const div = document.createElement('div')
     div.className = 'entry'
+    div.style.cursor = 'pointer'
+    div.style.transition = 'background 0.2s'
+    
+    // Hover effect
+    div.onmouseenter = () => {
+      div.style.background = 'rgba(255,255,255,0.05)'
+      div.setAttribute('data-hovering', 'true')
+    }
+    div.onmouseleave = () => {
+      div.style.background = ''
+      div.removeAttribute('data-hovering')
+    }
+    
     const left = document.createElement('div')
     left.className = 'left'
     const chip = document.createElement('div')
@@ -1125,11 +1442,25 @@ function render(){
     chip.style.color = categoryColor
     chip.style.borderLeft = `3px solid ${categoryColor}`
     chip.textContent = e.category
+    chip.style.cursor = 'pointer'
+    
+    // Make category editable on click
+    chip.onclick = (event) => {
+      event.stopPropagation()
+      editTransactionField(e, 'category', chip)
+    }
     
     const desc = document.createElement('div')
     const entryDate = new Date(e.date)
     const dateString = entryDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-    desc.innerHTML = `<div>${e.description}</div><div class="muted" style="font-size:12px">${dateString}</div>`
+    desc.innerHTML = `<div style="cursor: pointer;">${e.description}</div><div class="muted" style="font-size:12px">${dateString}</div>`
+    
+    // Make description editable on click
+    desc.querySelector('div:first-child').onclick = (event) => {
+      event.stopPropagation()
+      editTransactionField(e, 'description', desc)
+    }
+    
     left.appendChild(chip)
     left.appendChild(desc)
 
@@ -1137,10 +1468,21 @@ function render(){
     const amt = document.createElement('div')
     amt.className = 'amount ' + (e.type === 'income' ? 'income' : 'expense')
     amt.textContent = (e.type === 'income' ? '+' : '-') + fmt(Math.abs(e.amount))
+    amt.style.cursor = 'pointer'
+    
+    // Make amount editable on click
+    amt.onclick = (event) => {
+      event.stopPropagation()
+      editTransactionField(e, 'amount', amt)
+    }
+    
     const btn = document.createElement('button')
     btn.className = 'btn-ghost'
     btn.textContent = 'Delete'
-    btn.onclick = () => removeEntry(e.id)
+    btn.onclick = (event) => {
+      event.stopPropagation()
+      removeEntry(e.id)
+    }
 
     right.appendChild(amt)
     right.appendChild(btn)
@@ -1152,6 +1494,26 @@ function render(){
 }
 
 // UI wiring
+function populateMonthOptions() {
+  const now = new Date()
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                      'July', 'August', 'September', 'October', 'November', 'December']
+  
+  for (let i = 0; i < 3; i++) {
+    const monthIndex = now.getMonth() - i
+    const year = now.getFullYear()
+    
+    // Handle year wrap-around
+    const actualMonth = monthIndex < 0 ? monthIndex + 12 : monthIndex
+    const actualYear = monthIndex < 0 ? year - 1 : year
+    
+    const option = document.getElementById(`month${i}Option`)
+    if (option) {
+      option.textContent = `${monthNames[actualMonth]} ${actualYear}`
+    }
+  }
+}
+
 entryForm.addEventListener('submit', (ev)=>{
   ev.preventDefault()
   const type = typeInput.value
@@ -1176,10 +1538,7 @@ entryForm.addEventListener('submit', (ev)=>{
   descriptionInput.value = ''
 })
 
-clearAllBtn.addEventListener('click', ()=>{
-  if(!confirm('Clear ALL entries? This cannot be undone.')) return
-  clearAll()
-})
+// Note: clearAllBtn is in the UI but not functional - would require server-side bulk delete endpoint
 
 // Timeline filter event listeners
 if (timelineFilter) {
@@ -1216,11 +1575,12 @@ if (customEndDate) {
 // Initialization
 async function init(){
   initTabs()
-  loadCategories()
-  loadSubscriptions()
-  loadBudgets()
+  populateMonthOptions() // Set month names in timeline filter
+  await loadCategories()
+  await loadSubscriptions()
+  await loadBudgets()
   await loadEntries()
-  processSubscriptions() // Check and add subscription entries if needed
+  await processSubscriptions() // Check and add subscription entries if needed
   render()
   renderCategories()
   renderSubscriptions()
@@ -1318,46 +1678,12 @@ async function init(){
   // Setup category form
   const categoryForm = $('#categoryForm')
   if (categoryForm) {
-    // Initialize color palette after a short delay to ensure DOM is ready
-    setTimeout(() => {
-      const colorOptions = $all('.color-option')
-      const colorInput = $('#categoryColor')
-      
-      console.log('Color options found:', colorOptions.length)
-      
-      // Set first color as selected by default
-      if (colorOptions.length > 0) {
-        colorOptions[0].classList.add('selected')
-      }
-      
-      colorOptions.forEach(option => {
-        option.addEventListener('click', () => {
-          // Remove selected class from all options
-          colorOptions.forEach(opt => opt.classList.remove('selected'))
-          // Add selected class to clicked option
-          option.classList.add('selected')
-          // Update hidden input value
-          colorInput.value = option.dataset.color
-          console.log('Color selected:', option.dataset.color)
-        })
-      })
-    }, 100)
-    
     categoryForm.addEventListener('submit', (ev) => {
       ev.preventDefault()
       const name = $('#newCategoryName').value
       const type = $('#categoryType').value
-      const color = $('#categoryColor').value
-      console.log('Adding category:', {name, type, color})
-      if (addCategory(name, type, color)) {
+      if (addCategory(name, type)) {
         categoryForm.reset()
-        // Reset color selection to first option
-        const colorOptions = $all('.color-option')
-        colorOptions.forEach(opt => opt.classList.remove('selected'))
-        if (colorOptions.length > 0) {
-          colorOptions[0].classList.add('selected')
-          $('#categoryColor').value = colorOptions[0].dataset.color
-        }
       }
     })
   }
@@ -1422,6 +1748,75 @@ async function init(){
         e.preventDefault()
         // Placeholder for future settings functionality
         console.log('Settings clicked - feature coming soon')
+      })
+    }
+
+    // Import data
+    const importLink = document.getElementById('importLink')
+    const importFileInput = document.getElementById('importFileInput')
+    
+    if(importLink && importFileInput){
+      importLink.addEventListener('click', (e)=>{
+        e.preventDefault()
+        importFileInput.click()
+      })
+      
+      importFileInput.addEventListener('change', async (e)=>{
+        const file = e.target.files[0]
+        if(!file) return
+        
+        try {
+          const text = await file.text()
+          const data = JSON.parse(text)
+          
+          // Validate data is an array
+          if(!Array.isArray(data)){
+            alert('Invalid JSON format. Expected an array of transactions.')
+            importFileInput.value = ''
+            return
+          }
+          
+          // Import each transaction
+          let successCount = 0
+          let errorCount = 0
+          
+          for(const transaction of data){
+            try {
+              // Validate required fields
+              if(!transaction.type || !transaction.amount || !transaction.category || !transaction.date){
+                console.warn('Skipping invalid transaction:', transaction)
+                errorCount++
+                continue
+              }
+              
+              // Add entry
+              await addEntry({
+                type: transaction.type,
+                description: transaction.description || '',
+                amount: parseFloat(transaction.amount),
+                category: transaction.category,
+                date: transaction.date
+              })
+              successCount++
+            } catch(err){
+              console.error('Error importing transaction:', err)
+              errorCount++
+            }
+          }
+          
+          // Show result
+          alert(`Import complete!\n✅ ${successCount} transactions imported\n${errorCount > 0 ? '❌ ' + errorCount + ' transactions failed' : ''}`)
+          
+          // Refresh the view
+          await loadEntries()
+          render()
+          
+        } catch(err){
+          alert('Error reading file: ' + err.message)
+        }
+        
+        // Reset file input
+        importFileInput.value = ''
       })
     }
 

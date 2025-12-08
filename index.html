@@ -49,8 +49,9 @@
             <div class="timeline-selector">
               <select id="timelineFilter">
                 <option value="all" selected>All Time</option>
-                <option value="this-month">This Month</option>
-                <option value="last-month">Last Month</option>
+                <option value="month-0" id="month0Option"></option>
+                <option value="month-1" id="month1Option"></option>
+                <option value="month-2" id="month2Option"></option>
                 <option value="this-year">This Year</option>
                 <option value="last-year">Last Year</option>
                 <option value="custom">Custom Range</option>
@@ -103,6 +104,11 @@
         <section class="card">
           <h4 style="margin-top:0">Spending Trend</h4>
           <canvas id="trendChart" style="max-height:200px"></canvas>
+        </section>
+
+        <section class="card">
+          <h4 style="margin-top:0">Monthly Profit (Last 6 Months)</h4>
+          <canvas id="profitChart" style="max-height:200px"></canvas>
         </section>
 
         <section class="card ledger-card">
@@ -286,19 +292,6 @@
                 <option value="income">Income</option>
               </select>
             </div>
-            <div class="row">
-              <label>Color</label>
-              <div class="color-palette">
-                <div class="color-option" data-color="#6ee7b7" style="background: #6ee7b7;" title="Green"></div>
-                <div class="color-option" data-color="#60a5fa" style="background: #60a5fa;" title="Blue"></div>
-                <div class="color-option" data-color="#fbbf24" style="background: #fbbf24;" title="Yellow"></div>
-                <div class="color-option" data-color="#f472b6" style="background: #f472b6;" title="Pink"></div>
-                <div class="color-option" data-color="#a78bfa" style="background: #a78bfa;" title="Purple"></div>
-                <div class="color-option" data-color="#fb923c" style="background: #fb923c;" title="Orange"></div>
-                <div class="color-option" data-color="#ef4444" style="background: #ef4444;" title="Red"></div>
-              </div>
-              <input id="categoryColor" type="hidden" value="#6ee7b7" required />
-            </div>
             <div class="row actions">
               <button type="submit" class="btn-primary">Add Category</button>
             </div>
@@ -306,11 +299,13 @@
 
           <div>
             <h4>Expense Categories</h4>
+            <p class="muted" style="font-size: 13px; margin-bottom: 12px;">Click on the color box to change a category's color</p>
             <ul id="expenseCategoriesList" class="category-list"></ul>
           </div>
 
           <div style="margin-top: 20px;">
             <h4>Income Categories</h4>
+            <p class="muted" style="font-size: 13px; margin-bottom: 12px;">Click on the color box to change a category's color</p>
             <ul id="incomeCategoriesList" class="category-list"></ul>
           </div>
         </section>
