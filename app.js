@@ -32,6 +32,11 @@ let budgets = []
 let currentTimeline = 'all'
 let customStart = null
 let customEnd = null
+let trendTimeframeMonths = 6 // Default to 6 months for spending trend chart
+let showIncomeTrend = true
+let showExpenseTrend = true
+let budgetViewMonth = null // Format: 'YYYY-MM', null means current month
+let breakdownType = 'expense' // 'expense' or 'income' for breakdown chart
 
 // Chart instances
 let expenseChart = null
@@ -295,16 +300,17 @@ async function deleteBudget(category) {
 }
 
 function getCategorySpending(category) {
-  const now = new Date()
-  const thisMonth = now.getMonth()
-  const thisYear = now.getFullYear()
+  // Use budgetViewMonth if set, otherwise current month
+  const viewDate = budgetViewMonth ? new Date(budgetViewMonth + '-01') : new Date()
+  const viewMonth = viewDate.getMonth()
+  const viewYear = viewDate.getFullYear()
   
   return entries
     .filter(e => {
       if (e.type !== 'expense') return false
       if (e.category !== category) return false
       const entryDate = new Date(e.date)
-      return entryDate.getMonth() === thisMonth && entryDate.getFullYear() === thisYear
+      return entryDate.getMonth() === viewMonth && entryDate.getFullYear() === viewYear
     })
     .reduce((sum, e) => sum + parseFloat(e.amount), 0)
 }
@@ -346,15 +352,37 @@ function renderBudgets() {
 function renderBudgetOverview() {
   const budgetOverviewCard = $('#budgetOverviewCard')
   const budgetProgressList = $('#budgetProgressList')
-  const budgetMonth = $('#budgetMonth')
+  const budgetMonthSelector = $('#budgetMonthSelector')
   
   if (!budgetOverviewCard || !budgetProgressList) return
   
-  // Set current month
-  if (budgetMonth) {
+  // Populate month selector
+  if (budgetMonthSelector) {
     const now = new Date()
-    const monthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    budgetMonth.textContent = monthName
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    
+    // Set default if not set
+    if (!budgetViewMonth) {
+      budgetViewMonth = currentMonth
+    }
+    
+    // Clear and repopulate selector
+    budgetMonthSelector.innerHTML = ''
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December']
+    
+    // Add last 12 months
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      const option = document.createElement('option')
+      option.value = monthKey
+      option.textContent = `${months[date.getMonth()]} ${date.getFullYear()}`
+      if (monthKey === budgetViewMonth) {
+        option.selected = true
+      }
+      budgetMonthSelector.appendChild(option)
+    }
   }
   
   if (budgets.length === 0) {
@@ -593,6 +621,31 @@ async function updateCategoryColor(name, type, newColor) {
   }
 }
 
+async function updateCategoryName(oldName, type, newName) {
+  const trimmed = newName.trim()
+  if (!trimmed || trimmed === oldName) return
+  
+  // Check if new name already exists
+  if (categories[type].some(c => c.name === trimmed && c.name !== oldName)) {
+    alert('A category with that name already exists')
+    return
+  }
+  
+  const category = categories[type].find(c => c.name === oldName)
+  if (!category) return
+  
+  const res = await apiFetch('PUT', `/categories/0`, {name: trimmed, type, color: category.color, oldName})
+  if (res.ok) {
+    await loadCategories()
+    await loadEntries() // Reload entries to show updated category names
+    renderCategories()
+    render()
+  } else {
+    const j = await res.json().catch(() => ({error: 'Failed'}))
+    alert(j.error || 'Failed to update category name')
+  }
+}
+
 async function removeCategory(name, type) {
   // We need to find the category ID, but frontend doesn't store it
   // We'll need to enhance the API or track IDs
@@ -640,7 +693,7 @@ function renderCategories() {
                    style="position: absolute; opacity: 0; width: 0; height: 0;"
                    title="Change color" />
           </label>
-          <span style="color: ${cat.color};">${cat.name}</span>
+          <span style="color: ${cat.color}; cursor: pointer;" onclick="editCategoryName(this, '${cat.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'expense')" title="Click to edit name">${cat.name}</span>
         </span>
         <button class="btn-ghost" style="padding:4px 8px;font-size:12px" onclick="removeCategory('${cat.name}', 'expense')">Delete</button>
       `
@@ -674,7 +727,7 @@ function renderCategories() {
                    style="position: absolute; opacity: 0; width: 0; height: 0;"
                    title="Change color" />
           </label>
-          <span style="color: ${cat.color};">${cat.name}</span>
+          <span style="color: ${cat.color}; cursor: pointer;" onclick="editCategoryName(this, '${cat.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'income')" title="Click to edit name">${cat.name}</span>
         </span>
         <button class="btn-ghost" style="padding:4px 8px;font-size:12px" onclick="removeCategory('${cat.name}', 'income')">Delete</button>
       `
@@ -818,28 +871,33 @@ function getFilteredEntries() {
   switch(currentTimeline) {
     case 'month-0':
       startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
       break
     case 'month-1':
       startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      endDate = new Date(now.getFullYear(), now.getMonth(), 0)
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
       break
     case 'month-2':
       startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1)
-      endDate = new Date(now.getFullYear(), now.getMonth() - 1, 0)
+      endDate = new Date(now.getFullYear(), now.getMonth() - 1, 0, 23, 59, 59, 999)
+      break
+    case 'month-3':
+      startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+      endDate = new Date(now.getFullYear(), now.getMonth() - 2, 0, 23, 59, 59, 999)
       break
     case 'this-year':
       startDate = new Date(now.getFullYear(), 0, 1)
-      endDate = new Date(now.getFullYear(), 11, 31)
+      endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
       break
     case 'last-year':
       startDate = new Date(now.getFullYear() - 1, 0, 1)
-      endDate = new Date(now.getFullYear() - 1, 11, 31)
+      endDate = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999)
       break
     case 'custom':
       if (!customStart || !customEnd) return entries
       startDate = new Date(customStart)
       endDate = new Date(customEnd)
+      endDate.setHours(23, 59, 59, 999) // Include entire end date
       break
     case 'all':
     default:
@@ -863,17 +921,17 @@ function totalsFiltered() {
   return out
 }
 
-function breakdownByCategoryFiltered() {
+function breakdownByCategoryFiltered(type = 'expense') {
   const filtered = getFilteredEntries()
   const totals = {}
-  let expenseTotal = 0
+  let categoryTotal = 0
   for(const e of filtered){
-    if(e.type === 'expense'){
+    if(e.type === type){
       totals[e.category] = (totals[e.category] || 0) + e.amount
-      expenseTotal += e.amount
+      categoryTotal += e.amount
     }
   }
-  return {expenseTotal, totals}
+  return {categoryTotal, totals}
 }
 
 // Chart rendering
@@ -905,17 +963,18 @@ function renderCharts() {
     return
   }
   
-  // Expense Breakdown Chart (Doughnut)
-  const {expenseTotal, totals: catTotals} = breakdownByCategoryFiltered()
-  if (expenseTotal > 0) {
+  // Breakdown Chart (Doughnut) - can show either expenses or income
+  const {categoryTotal, totals: catTotals} = breakdownByCategoryFiltered(breakdownType)
+  if (categoryTotal > 0) {
     const ctx1 = document.getElementById('expenseChart')
     const sortedCategories = Object.entries(catTotals).sort((a,b) => b[1] - a[1])
     const labels = sortedCategories.map(([cat]) => cat)
     const data = sortedCategories.map(([,val]) => val)
     
     // Get colors from category definitions
+    const categoryList = breakdownType === 'expense' ? categories.expense : categories.income
     const colors = labels.map(catName => {
-      const catObj = categories.expense.find(c => c.name === catName)
+      const catObj = categoryList.find(c => c.name === catName)
       return catObj ? catObj.color : '#9aa5b1'
     })
     
@@ -955,7 +1014,7 @@ function renderCharts() {
     const legendEl = document.getElementById('expenseChartLegend')
     legendEl.innerHTML = ''
     sortedCategories.forEach(([cat, val], idx) => {
-      const percent = ((val / expenseTotal) * 100).toFixed(1)
+      const percent = ((val / categoryTotal) * 100).toFixed(1)
       const item = document.createElement('div')
       item.className = 'chart-legend-item'
       item.innerHTML = `
@@ -1022,12 +1081,20 @@ function renderCharts() {
   })
   
   // Trend Chart (Line) - Group by month and category
-  // Always use all entries, not filtered by timeline
+  // Filter by trend chart timeframe (last N months)
   const monthlyData = {}
   const categoryTrends = {}
   
+  // Calculate the cutoff date for the trend timeframe
+  const now = new Date()
+  const trendCutoffDate = new Date(now.getFullYear(), now.getMonth() - trendTimeframeMonths, 1)
+  
   entries.forEach(e => {
     const date = new Date(e.date)
+    
+    // Only include entries within the trend timeframe
+    if (date < trendCutoffDate) return
+    
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
     
     if (!monthlyData[monthKey]) {
@@ -1036,12 +1103,21 @@ function renderCharts() {
     
     if (e.type === 'income') {
       monthlyData[monthKey].income += e.amount
+      
+      // Track category trends for income
+      if (!categoryTrends[e.category]) {
+        categoryTrends[e.category] = {type: 'income'}
+      }
+      if (!categoryTrends[e.category][monthKey]) {
+        categoryTrends[e.category][monthKey] = 0
+      }
+      categoryTrends[e.category][monthKey] += e.amount
     } else {
       monthlyData[monthKey].expense += e.amount
       
       // Track category trends for expenses
       if (!categoryTrends[e.category]) {
-        categoryTrends[e.category] = {}
+        categoryTrends[e.category] = {type: 'expense'}
       }
       if (!categoryTrends[e.category][monthKey]) {
         categoryTrends[e.category][monthKey] = 0
@@ -1061,7 +1137,8 @@ function renderCharts() {
   
   // Create datasets for categories
   const categoryDatasets = Object.entries(categoryTrends).map(([categoryName, monthData]) => {
-    const categoryObj = categories.expense.find(c => c.name === categoryName)
+    const catType = monthData.type || 'expense'
+    const categoryObj = categories[catType].find(c => c.name === categoryName)
     const color = categoryObj ? categoryObj.color : '#9aa5b1'
     
     return {
@@ -1073,41 +1150,70 @@ function renderCharts() {
       fill: false,
       borderWidth: 2,
       pointRadius: 3,
-      pointHoverRadius: 5
+      pointHoverRadius: 7,
+      hitRadius: 15
     }
   })
   
   const ctx3 = document.getElementById('trendChart')
   
+  // Build datasets array based on visibility settings
+  const trendDatasets = []
+  
+  // Add Income dataset if visible
+  if (showIncomeTrend) {
+    trendDatasets.push({
+      label: 'Income',
+      data: incomeData,
+      borderColor: '#6ee7b7',
+      backgroundColor: 'rgba(110, 231, 183, 0.1)',
+      tension: 0.3,
+      fill: true,
+      borderWidth: 3,
+      pointRadius: 4,
+      pointHoverRadius: 8,
+      hitRadius: 15
+    })
+  }
+  
+  // Add Total Expense dataset if visible
+  if (showExpenseTrend) {
+    trendDatasets.push({
+      label: 'Total Expense',
+      data: expenseData,
+      borderColor: '#ff6b6b',
+      backgroundColor: 'rgba(255, 107, 107, 0.1)',
+      tension: 0.3,
+      fill: true,
+      borderWidth: 3,
+      pointRadius: 4,
+      pointHoverRadius: 8,
+      hitRadius: 15
+    })
+  }
+  
+  // Add category datasets filtered by type visibility
+  const filteredCategoryDatasets = categoryDatasets.filter(dataset => {
+    const categoryName = dataset.label
+    // Find the category to get its type
+    const categoryData = categoryTrends[categoryName]
+    if (!categoryData) return false
+    
+    const catType = categoryData.type || 'expense'
+    if (catType === 'income') {
+      return showIncomeTrend
+    } else {
+      return showExpenseTrend
+    }
+  })
+  
+  trendDatasets.push(...filteredCategoryDatasets)
+  
   trendChart = new Chart(ctx3, {
     type: 'line',
     data: {
       labels: monthLabels,
-      datasets: [
-        {
-          label: 'Income',
-          data: incomeData,
-          borderColor: '#6ee7b7',
-          backgroundColor: 'rgba(110, 231, 183, 0.1)',
-          tension: 0.3,
-          fill: true,
-          borderWidth: 3,
-          pointRadius: 4,
-          pointHoverRadius: 6
-        },
-        {
-          label: 'Total Expense',
-          data: expenseData,
-          borderColor: '#ff6b6b',
-          backgroundColor: 'rgba(255, 107, 107, 0.1)',
-          tension: 0.3,
-          fill: true,
-          borderWidth: 3,
-          pointRadius: 4,
-          pointHoverRadius: 6
-        },
-        ...categoryDatasets
-      ]
+      datasets: trendDatasets
     },
     options: {
       responsive: true,
@@ -1119,13 +1225,75 @@ function renderCharts() {
             color: '#e6eef6',
             usePointStyle: true,
             padding: 10
+          },
+          onClick: function(e, legendItem, legend) {
+            const index = legendItem.datasetIndex
+            const chart = legend.chart
+            
+            // Check if Ctrl (or Cmd on Mac) key is pressed
+            if (e.native.ctrlKey || e.native.metaKey) {
+              // Check if we're in isolated mode (only one dataset visible)
+              const visibleDatasets = chart.data.datasets.filter((ds, i) => chart.isDatasetVisible(i))
+              
+              if (visibleDatasets.length === 1 && chart.isDatasetVisible(index)) {
+                // Currently isolated on this dataset, show all
+                chart.data.datasets.forEach((dataset, i) => {
+                  chart.show(i)
+                })
+              } else {
+                // Isolate this dataset (hide all others)
+                chart.data.datasets.forEach((dataset, i) => {
+                  if (i === index) {
+                    chart.show(i)
+                  } else {
+                    chart.hide(i)
+                  }
+                })
+              }
+            } else {
+              // Normal click behavior - toggle this dataset
+              const isVisible = chart.isDatasetVisible(index)
+              if (isVisible) {
+                chart.hide(index)
+              } else {
+                chart.show(index)
+              }
+            }
+            chart.update()
           }
         },
         tooltip: {
+          enabled: true,
+          filter: function(tooltipItem, data) {
+            // Only show tooltip when hovering over chart area, not legend
+            return true
+          },
           callbacks: {
             label: function(context) {
               return `${context.dataset.label}: ${fmt(context.parsed.y)}`
             }
+          },
+          mode: 'nearest',
+          intersect: false
+        }
+      },
+      interaction: {
+        mode: 'nearest',
+        intersect: false,
+        axis: 'x',
+        includeInvisible: false
+      },
+      onHover: function(event, activeElements, chart) {
+        // Hide tooltip when hovering over legend
+        const legendArea = chart.legend
+        if (legendArea && event.native) {
+          const y = event.native.offsetY
+          const legendBottom = legendArea.bottom
+          const legendTop = legendArea.top
+          
+          if (y >= legendTop && y <= legendBottom) {
+            chart.tooltip.setActiveElements([])
+            chart.update()
           }
         }
       },
@@ -1154,20 +1322,20 @@ function renderCharts() {
     }
   })
   
-  // Monthly Profit Chart (Last 6 Months)
+  // Monthly Net Chart (Last 6 Months)
   const ctx4 = document.getElementById('profitChart')
   if (ctx4) {
     // Get last 6 months of data
     const now = new Date()
     const last6Months = []
-    const profitData = []
+    const netData = []
     
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
       last6Months.push(date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }))
       
-      // Calculate profit for this month
+      // Calculate net for this month (income - expense)
       const monthIncome = entries
         .filter(e => {
           const entryDate = new Date(e.date)
@@ -1186,7 +1354,7 @@ function renderCharts() {
         })
         .reduce((sum, e) => sum + e.amount, 0)
       
-      profitData.push(monthIncome - monthExpense)
+      netData.push(monthIncome - monthExpense)
     }
     
     profitChart = new Chart(ctx4, {
@@ -1194,10 +1362,10 @@ function renderCharts() {
       data: {
         labels: last6Months,
         datasets: [{
-          label: 'Monthly Profit',
-          data: profitData,
-          backgroundColor: profitData.map(val => val >= 0 ? 'rgba(110, 231, 183, 0.6)' : 'rgba(255, 107, 107, 0.6)'),
-          borderColor: profitData.map(val => val >= 0 ? '#6ee7b7' : '#ff6b6b'),
+          label: 'Monthly Net',
+          data: netData,
+          backgroundColor: netData.map(val => val >= 0 ? 'rgba(110, 231, 183, 0.6)' : 'rgba(255, 107, 107, 0.6)'),
+          borderColor: netData.map(val => val >= 0 ? '#6ee7b7' : '#ff6b6b'),
           borderWidth: 2,
           borderRadius: 6
         }]
@@ -1213,7 +1381,7 @@ function renderCharts() {
             callbacks: {
               label: function(context) {
                 const value = context.parsed.y
-                return `Profit: ${fmt(value)}`
+                return `Net: ${fmt(value)}`
               }
             }
           }
@@ -1247,6 +1415,39 @@ function renderCharts() {
 
 function editTransaction(entry, containerDiv) {
   // This function is no longer used - replaced by individual field editing
+}
+
+function editCategoryName(element, oldName, type) {
+  const currentText = element.textContent
+  const currentColor = element.style.color
+  
+  const input = document.createElement('input')
+  input.type = 'text'
+  input.value = currentText
+  input.style.cssText = `padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: ${currentColor}; font-size: inherit; font-weight: 600; width: 200px;`
+  
+  const save = async () => {
+    const newValue = input.value.trim()
+    if (newValue && newValue !== oldName) {
+      await updateCategoryName(oldName, type, newValue)
+    } else {
+      renderCategories()
+    }
+  }
+  
+  input.onblur = save
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      save()
+    } else if (e.key === 'Escape') {
+      renderCategories()
+    }
+  }
+  
+  element.replaceWith(input)
+  input.focus()
+  input.select()
 }
 
 function editTransactionField(entry, field, element) {
@@ -1369,6 +1570,67 @@ function editTransactionField(entry, field, element) {
     element.replaceWith(input)
     input.focus()
     input.select()
+    
+  } else if (field === 'date') {
+    // Edit month inline with a select dropdown
+    // entry.date is a timestamp (number), convert to Date object
+    const currentDate = new Date(entry.date)
+    const currentMonth = currentDate.getMonth() + 1 // 1-12
+    const currentYear = currentDate.getFullYear()
+    
+    const select = document.createElement('select')
+    select.style.cssText = 'padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: var(--muted); font-size: 12px; cursor: pointer;'
+    
+    // Generate month options for current year and last year
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const now = new Date()
+    const currentYearNow = now.getFullYear()
+    
+    // Add months from last 2 years
+    for (let year = currentYearNow; year >= currentYearNow - 1; year--) {
+      for (let month = 12; month >= 1; month--) {
+        const option = document.createElement('option')
+        option.value = `${year}-${String(month).padStart(2, '0')}`
+        option.textContent = `${months[month - 1]} ${year}`
+        if (month === currentMonth && year === currentYear) {
+          option.selected = true
+        }
+        select.appendChild(option)
+      }
+    }
+    
+    let saved = false
+    const save = async () => {
+      if (saved) return // Prevent double-save
+      saved = true
+      
+      const [newYear, newMonth] = select.value.split('-').map(Number)
+      
+      // Compare month and year only
+      if (newMonth !== currentMonth || newYear !== currentYear) {
+        const newDateStr = `${newYear}-${String(newMonth).padStart(2, '0')}-01T00:00:00Z`
+        await updateEntry(entry.id, {
+          type: entry.type,
+          description: entry.description,
+          amount: entry.amount,
+          category: entry.category,
+          date: newDateStr
+        })
+      } else {
+        render()
+      }
+    }
+    
+    select.onchange = save
+    select.onblur = save
+    select.onkeydown = (e) => {
+      if (e.key === 'Escape') {
+        render()
+      }
+    }
+    
+    element.replaceWith(select)
+    select.focus()
   }
 }
 
@@ -1453,12 +1715,18 @@ function render(){
     const desc = document.createElement('div')
     const entryDate = new Date(e.date)
     const dateString = entryDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-    desc.innerHTML = `<div style="cursor: pointer;">${e.description}</div><div class="muted" style="font-size:12px">${dateString}</div>`
+    desc.innerHTML = `<div style="cursor: pointer;">${e.description}</div><div class="muted" style="font-size:12px; cursor: pointer;" title="Click to edit month">${dateString}</div>`
     
     // Make description editable on click
     desc.querySelector('div:first-child').onclick = (event) => {
       event.stopPropagation()
       editTransactionField(e, 'description', desc)
+    }
+    
+    // Make date editable on click
+    desc.querySelector('div.muted').onclick = (event) => {
+      event.stopPropagation()
+      editTransactionField(e, 'date', desc.querySelector('div.muted'))
     }
     
     left.appendChild(chip)
@@ -1499,7 +1767,7 @@ function populateMonthOptions() {
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                       'July', 'August', 'September', 'October', 'November', 'December']
   
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     const monthIndex = now.getMonth() - i
     const year = now.getFullYear()
     
@@ -1569,6 +1837,50 @@ if (customEndDate) {
     if (customStart && customEnd) {
       render()
     }
+  })
+}
+
+// Breakdown type selector
+const breakdownTypeSelector = $('#breakdownType')
+if (breakdownTypeSelector) {
+  breakdownTypeSelector.addEventListener('change', (e) => {
+    breakdownType = e.target.value
+    render()
+  })
+}
+
+// Trend chart timeframe selector
+const trendTimeframeSelector = $('#trendTimeframe')
+if (trendTimeframeSelector) {
+  trendTimeframeSelector.addEventListener('change', (e) => {
+    trendTimeframeMonths = parseInt(e.target.value)
+    render()
+  })
+}
+
+// Trend chart category type visibility checkboxes
+const showIncomeTrendCheckbox = $('#showIncomeTrend')
+if (showIncomeTrendCheckbox) {
+  showIncomeTrendCheckbox.addEventListener('change', (e) => {
+    showIncomeTrend = e.target.checked
+    render()
+  })
+}
+
+const showExpenseTrendCheckbox = $('#showExpenseTrend')
+if (showExpenseTrendCheckbox) {
+  showExpenseTrendCheckbox.addEventListener('change', (e) => {
+    showExpenseTrend = e.target.checked
+    render()
+  })
+}
+
+// Budget month selector
+const budgetMonthSelector = $('#budgetMonthSelector')
+if (budgetMonthSelector) {
+  budgetMonthSelector.addEventListener('change', (e) => {
+    budgetViewMonth = e.target.value
+    renderBudgetOverview()
   })
 }
 
@@ -1742,81 +2054,11 @@ async function init(){
       })
     }
 
-    // Settings link (placeholder)
+    // Settings link - navigate to settings page
     if(settingsLink){
       settingsLink.addEventListener('click', (e)=>{
         e.preventDefault()
-        // Placeholder for future settings functionality
-        console.log('Settings clicked - feature coming soon')
-      })
-    }
-
-    // Import data
-    const importLink = document.getElementById('importLink')
-    const importFileInput = document.getElementById('importFileInput')
-    
-    if(importLink && importFileInput){
-      importLink.addEventListener('click', (e)=>{
-        e.preventDefault()
-        importFileInput.click()
-      })
-      
-      importFileInput.addEventListener('change', async (e)=>{
-        const file = e.target.files[0]
-        if(!file) return
-        
-        try {
-          const text = await file.text()
-          const data = JSON.parse(text)
-          
-          // Validate data is an array
-          if(!Array.isArray(data)){
-            alert('Invalid JSON format. Expected an array of transactions.')
-            importFileInput.value = ''
-            return
-          }
-          
-          // Import each transaction
-          let successCount = 0
-          let errorCount = 0
-          
-          for(const transaction of data){
-            try {
-              // Validate required fields
-              if(!transaction.type || !transaction.amount || !transaction.category || !transaction.date){
-                console.warn('Skipping invalid transaction:', transaction)
-                errorCount++
-                continue
-              }
-              
-              // Add entry
-              await addEntry({
-                type: transaction.type,
-                description: transaction.description || '',
-                amount: parseFloat(transaction.amount),
-                category: transaction.category,
-                date: transaction.date
-              })
-              successCount++
-            } catch(err){
-              console.error('Error importing transaction:', err)
-              errorCount++
-            }
-          }
-          
-          // Show result
-          alert(`Import complete!\n✅ ${successCount} transactions imported\n${errorCount > 0 ? '❌ ' + errorCount + ' transactions failed' : ''}`)
-          
-          // Refresh the view
-          await loadEntries()
-          render()
-          
-        } catch(err){
-          alert('Error reading file: ' + err.message)
-        }
-        
-        // Reset file input
-        importFileInput.value = ''
+        location.href = 'settings.html'
       })
     }
 

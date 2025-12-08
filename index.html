@@ -24,11 +24,9 @@
               </button>
               <div id="userDropdownMenu" class="user-dropdown-menu">
                 <a href="#" id="settingsLink" class="dropdown-item">⚙️ Settings</a>
-                <a href="#" id="importLink" class="dropdown-item">📥 Import Data</a>
                 <a href="admin.html" id="adminLink" class="dropdown-item" style="display:none;">🛡️ Admin Dashboard</a>
                 <a href="#" id="signOutBtn" class="dropdown-item">🚪 Logout</a>
               </div>
-              <input type="file" id="importFileInput" accept=".json" style="display:none" />
             </div>
           </div>
         </div>
@@ -52,6 +50,7 @@
                 <option value="month-0" id="month0Option"></option>
                 <option value="month-1" id="month1Option"></option>
                 <option value="month-2" id="month2Option"></option>
+                <option value="month-3" id="month3Option"></option>
                 <option value="this-year">This Year</option>
                 <option value="last-year">Last Year</option>
                 <option value="custom">Custom Range</option>
@@ -90,7 +89,13 @@
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" class="charts-row">
           <section class="card">
-            <h4 style="margin-top:0">Expense Breakdown</h4>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <h4 style="margin:0">Breakdown</h4>
+              <select id="breakdownType" style="padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;font-size:12px;cursor:pointer">
+                <option value="expense" selected>Expenses</option>
+                <option value="income">Income</option>
+              </select>
+            </div>
             <canvas id="expenseChart" style="max-height:250px"></canvas>
             <div id="expenseChartLegend" class="chart-legend"></div>
           </section>
@@ -102,12 +107,29 @@
         </div>
 
         <section class="card">
-          <h4 style="margin-top:0">Spending Trend</h4>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h4 style="margin:0">Spending Trend</h4>
+            <div style="display:flex;align-items:center;gap:16px">
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                <input type="checkbox" id="showIncomeTrend" checked style="cursor:pointer">
+                <span>Income</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                <input type="checkbox" id="showExpenseTrend" checked style="cursor:pointer">
+                <span>Expenses</span>
+              </label>
+              <select id="trendTimeframe" style="padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;font-size:13px;cursor:pointer">
+                <option value="3">Last 3 Months</option>
+                <option value="6" selected>Last 6 Months</option>
+                <option value="12">Last Year</option>
+              </select>
+            </div>
+          </div>
           <canvas id="trendChart" style="max-height:200px"></canvas>
         </section>
 
         <section class="card">
-          <h4 style="margin-top:0">Monthly Profit (Last 6 Months)</h4>
+          <h4 style="margin-top:0">Monthly Net (Last 6 Months)</h4>
           <canvas id="profitChart" style="max-height:200px"></canvas>
         </section>
 
@@ -243,7 +265,8 @@
         <section class="card" id="budgetOverviewCard" style="background:linear-gradient(135deg, rgba(110, 231, 183, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);border:1px solid rgba(110, 231, 183, 0.2)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
             <h3 style="margin:0">Budget Overview</h3>
-            <div style="font-size:13px;color:var(--muted)" id="budgetMonth"></div>
+            <select id="budgetMonthSelector" style="padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;font-size:13px;cursor:pointer">
+            </select>
           </div>
           <div id="budgetProgressList"></div>
         </section>
