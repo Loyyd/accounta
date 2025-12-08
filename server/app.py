@@ -244,9 +244,17 @@ def update_entry(entry_id):
     
     if 'date' in data:
         try:
-            e.date = datetime.datetime.fromisoformat(data['date'].replace('Z', '+00:00'))
-        except Exception:
-            pass  # Keep existing date if parsing fails
+            # Handle both ISO format and simple date strings
+            date_str = data['date']
+            if isinstance(date_str, str):
+                # Remove timezone info and parse
+                date_str = date_str.replace('Z', '+00:00')
+                e.date = datetime.datetime.fromisoformat(date_str)
+            else:
+                return jsonify({'error': 'date must be a string'}), 400
+        except Exception as ex:
+            print(f"Date parsing error: {ex}, input: {data.get('date')}")
+            return jsonify({'error': f'invalid date format: {str(ex)}'}), 400
     
     db.session.commit()
     return jsonify({'ok': True})
@@ -264,6 +272,52 @@ def profile():
     if not user:
         return jsonify({'error': 'not found'}), 404
     return jsonify({'username': user.username, 'id': user.id, 'is_admin': user.is_admin})
+
+
+@app.route('/api/profile/password', methods=['PUT'])
+@login_required
+def change_password():
+    user = User.query.get(request.user_id)
+    if not user:
+        return jsonify({'error': 'not found'}), 404
+    
+    data = request.get_json() or {}
+    current_password = data.get('currentPassword', '')
+    new_password = data.get('newPassword', '')
+    
+    if not current_password or not new_password:
+        return jsonify({'error': 'Current password and new password are required'}), 400
+    
+    if not user.verify_password(current_password):
+        return jsonify({'error': 'Current password is incorrect'}), 401
+    
+    if len(new_password) < 6:
+        return jsonify({'error': 'New password must be at least 6 characters'}), 400
+    
+    user.set_password(new_password)
+    db.session.commit()
+    
+    return jsonify({'ok': True, 'message': 'Password updated successfully'})
+
+
+@app.route('/api/profile', methods=['DELETE'])
+@login_required
+def delete_account():
+    user = User.query.get(request.user_id)
+    if not user:
+        return jsonify({'error': 'not found'}), 404
+    
+    # Delete all user's data
+    Entry.query.filter_by(user_id=user.id).delete()
+    Category.query.filter_by(user_id=user.id).delete()
+    Subscription.query.filter_by(user_id=user.id).delete()
+    Budget.query.filter_by(user_id=user.id).delete()
+    
+    # Delete the user
+    db.session.delete(user)
+    db.session.commit()
+    
+    return jsonify({'ok': True, 'message': 'Account deleted successfully'})
 
 
 # Admin endpoints
@@ -424,9 +478,14 @@ def update_category(category_id):
     data = request.get_json() or {}
     name = data.get('name')
     cat_type = data.get('type')
+    old_name = data.get('oldName')
     
-    # Support name-based update
-    if name and cat_type:
+    # Support name-based update (for finding the category to update)
+    if old_name and cat_type:
+        # Updating an existing category by its old name
+        cat = Category.query.filter_by(user_id=request.user_id, name=old_name, type=cat_type).first()
+    elif name and cat_type:
+        # Updating by current name (for color changes)
         cat = Category.query.filter_by(user_id=request.user_id, name=name, type=cat_type).first()
     else:
         cat = Category.query.get(category_id)
@@ -436,6 +495,20 @@ def update_category(category_id):
     if not cat:
         return jsonify({'error': 'not found'}), 404
     
+    # Update name if provided and different from old name
+    if 'name' in data and name != old_name:
+        # Check if new name already exists
+        existing = Category.query.filter_by(user_id=request.user_id, name=name, type=cat_type).first()
+        if existing and existing.id != cat.id:
+            return jsonify({'error': 'Category name already exists'}), 400
+        
+        # Update all entries that use the old category name
+        Entry.query.filter_by(user_id=request.user_id, category=old_name, type=cat_type).update({'category': name})
+        
+        # Update the category name
+        cat.name = name
+    
+    # Update color if provided
     if 'color' in data:
         cat.color = data['color']
     
