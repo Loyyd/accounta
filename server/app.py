@@ -57,6 +57,36 @@ class Entry(db.Model):
     date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
 
+class Category(db.Model):
+    __tablename__ = 'categories'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    type = db.Column(db.String(10), nullable=False)  # 'income' or 'expense'
+    name = db.Column(db.String(80), nullable=False)
+    color = db.Column(db.String(7), nullable=False)
+
+
+class Subscription(db.Model):
+    __tablename__ = 'subscriptions'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    type = db.Column(db.String(10), nullable=False)  # 'income' or 'expense'
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    category = db.Column(db.String(80), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    frequency = db.Column(db.String(10), nullable=False)  # 'weekly', 'monthly', 'yearly'
+    start_date = db.Column(db.Date, nullable=False)
+    active = db.Column(db.Boolean, default=True)
+
+
+class Budget(db.Model):
+    __tablename__ = 'budgets'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    category = db.Column(db.String(80), nullable=False)
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+
+
 def create_token(user_id):
     payload = {
         'sub': str(user_id),  # JWT 'sub' claim must be a string
@@ -184,6 +214,44 @@ def delete_entry(entry_id):
     return jsonify({'ok': True})
 
 
+@app.route('/api/entries/<int:entry_id>', methods=['PUT'])
+@login_required
+def update_entry(entry_id):
+    e = Entry.query.get(entry_id)
+    if not e or e.user_id != request.user_id:
+        return jsonify({'error': 'not found'}), 404
+    
+    data = request.get_json() or {}
+    
+    # Update fields if provided
+    if 'type' in data:
+        t = data['type']
+        if t not in ('income', 'expense'):
+            return jsonify({'error': 'invalid type'}), 400
+        e.type = t
+    
+    if 'description' in data:
+        e.description = data['description'].strip() or e.description
+    
+    if 'amount' in data:
+        try:
+            e.amount = float(data['amount'])
+        except Exception:
+            return jsonify({'error': 'amount must be numeric'}), 400
+    
+    if 'category' in data:
+        e.category = data['category'].strip() or e.category
+    
+    if 'date' in data:
+        try:
+            e.date = datetime.datetime.fromisoformat(data['date'].replace('Z', '+00:00'))
+        except Exception:
+            pass  # Keep existing date if parsing fails
+    
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
 @app.route('/api/ping')
 def ping():
     return jsonify({'ok': True})
@@ -264,6 +332,236 @@ def admin_toggle_admin(user_id):
     target_user.is_admin = not target_user.is_admin
     db.session.commit()
     return jsonify({'ok': True, 'is_admin': target_user.is_admin})
+
+
+@app.route('/api/admin/users/<int:user_id>', methods=['PUT'])
+@login_required
+def admin_update_user(user_id):
+    user = User.query.get(request.user_id)
+    if not user or not user.is_admin:
+        return jsonify({'error': 'admin access required'}), 403
+    
+    target_user = User.query.get(user_id)
+    if not target_user:
+        return jsonify({'error': 'user not found'}), 404
+    
+    data = request.get_json() or {}
+    
+    if 'username' in data:
+        new_username = data['username'].strip()
+        if not new_username:
+            return jsonify({'error': 'username cannot be empty'}), 400
+        
+        # Check if username already exists
+        existing = User.query.filter_by(username=new_username).first()
+        if existing and existing.id != user_id:
+            return jsonify({'error': 'username already exists'}), 400
+        
+        target_user.username = new_username
+    
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+# Categories endpoints
+@app.route('/api/categories', methods=['GET'])
+@login_required
+def get_categories():
+    categories = Category.query.filter_by(user_id=request.user_id).all()
+    result = {'expense': [], 'income': []}
+    for cat in categories:
+        result[cat.type].append({'name': cat.name, 'color': cat.color})
+    return jsonify(result)
+
+
+@app.route('/api/categories', methods=['POST'])
+@login_required
+def add_category():
+    data = request.get_json() or {}
+    name = data.get('name', '').strip()
+    cat_type = data.get('type')
+    color = data.get('color', '#6ee7b7')
+    
+    if not name or cat_type not in ('income', 'expense'):
+        return jsonify({'error': 'name and type are required'}), 400
+    
+    # Check if category already exists
+    existing = Category.query.filter_by(user_id=request.user_id, type=cat_type, name=name).first()
+    if existing:
+        return jsonify({'error': 'category already exists'}), 400
+    
+    cat = Category(user_id=request.user_id, type=cat_type, name=name, color=color)
+    db.session.add(cat)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': cat.id})
+
+
+@app.route('/api/categories/<int:category_id>', methods=['DELETE'])
+@login_required
+def delete_category(category_id):
+    # Support query params for name-based deletion
+    name = request.args.get('name')
+    cat_type = request.args.get('type')
+    
+    if name and cat_type:
+        cat = Category.query.filter_by(user_id=request.user_id, name=name, type=cat_type).first()
+    else:
+        cat = Category.query.get(category_id)
+        if cat and cat.user_id != request.user_id:
+            return jsonify({'error': 'not found'}), 404
+    
+    if not cat:
+        return jsonify({'error': 'not found'}), 404
+    
+    db.session.delete(cat)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/categories/<int:category_id>', methods=['PUT'])
+@login_required
+def update_category(category_id):
+    data = request.get_json() or {}
+    name = data.get('name')
+    cat_type = data.get('type')
+    
+    # Support name-based update
+    if name and cat_type:
+        cat = Category.query.filter_by(user_id=request.user_id, name=name, type=cat_type).first()
+    else:
+        cat = Category.query.get(category_id)
+        if cat and cat.user_id != request.user_id:
+            return jsonify({'error': 'not found'}), 404
+    
+    if not cat:
+        return jsonify({'error': 'not found'}), 404
+    
+    if 'color' in data:
+        cat.color = data['color']
+    
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+# Subscriptions endpoints
+@app.route('/api/subscriptions', methods=['GET'])
+@login_required
+def get_subscriptions():
+    subs = Subscription.query.filter_by(user_id=request.user_id).all()
+    result = []
+    for sub in subs:
+        result.append({
+            'id': sub.id,
+            'type': sub.type,
+            'amount': float(sub.amount),
+            'category': sub.category,
+            'description': sub.description,
+            'frequency': sub.frequency,
+            'startDate': sub.start_date.isoformat(),
+            'active': sub.active
+        })
+    return jsonify(result)
+
+
+@app.route('/api/subscriptions', methods=['POST'])
+@login_required
+def add_subscription():
+    data = request.get_json() or {}
+    sub_type = data.get('type')
+    amount = data.get('amount')
+    category = data.get('category', '').strip()
+    description = data.get('description', '').strip()
+    frequency = data.get('frequency')
+    start_date_str = data.get('startDate')
+    
+    if sub_type not in ('income', 'expense') or not amount or not category or not description or frequency not in ('weekly', 'monthly', 'yearly'):
+        return jsonify({'error': 'invalid data'}), 400
+    
+    try:
+        amount = float(amount)
+        start_date = datetime.datetime.fromisoformat(start_date_str).date()
+    except Exception:
+        return jsonify({'error': 'invalid amount or date'}), 400
+    
+    sub = Subscription(user_id=request.user_id, type=sub_type, amount=amount, category=category,
+                      description=description, frequency=frequency, start_date=start_date, active=True)
+    db.session.add(sub)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': sub.id})
+
+
+@app.route('/api/subscriptions/<int:sub_id>', methods=['DELETE'])
+@login_required
+def delete_subscription(sub_id):
+    sub = Subscription.query.get(sub_id)
+    if not sub or sub.user_id != request.user_id:
+        return jsonify({'error': 'not found'}), 404
+    db.session.delete(sub)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/subscriptions/<int:sub_id>/toggle', methods=['POST'])
+@login_required
+def toggle_subscription(sub_id):
+    sub = Subscription.query.get(sub_id)
+    if not sub or sub.user_id != request.user_id:
+        return jsonify({'error': 'not found'}), 404
+    sub.active = not sub.active
+    db.session.commit()
+    return jsonify({'ok': True, 'active': sub.active})
+
+
+# Budgets endpoints
+@app.route('/api/budgets', methods=['GET'])
+@login_required
+def get_budgets():
+    budgets = Budget.query.filter_by(user_id=request.user_id).all()
+    result = []
+    for b in budgets:
+        result.append({
+            'category': b.category,
+            'amount': float(b.amount)
+        })
+    return jsonify(result)
+
+
+@app.route('/api/budgets', methods=['POST'])
+@login_required
+def set_budget():
+    data = request.get_json() or {}
+    category = data.get('category', '').strip()
+    amount = data.get('amount')
+    
+    if not category or not amount:
+        return jsonify({'error': 'category and amount are required'}), 400
+    
+    try:
+        amount = float(amount)
+    except Exception:
+        return jsonify({'error': 'invalid amount'}), 400
+    
+    # Update or create budget
+    budget = Budget.query.filter_by(user_id=request.user_id, category=category).first()
+    if budget:
+        budget.amount = amount
+    else:
+        budget = Budget(user_id=request.user_id, category=category, amount=amount)
+        db.session.add(budget)
+    
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/budgets/<string:category>', methods=['DELETE'])
+@login_required
+def delete_budget(category):
+    budget = Budget.query.filter_by(user_id=request.user_id, category=category).first()
+    if not budget:
+        return jsonify({'error': 'not found'}), 404
+    db.session.delete(budget)
+    db.session.commit()
+    return jsonify({'ok': True})
 
 
 

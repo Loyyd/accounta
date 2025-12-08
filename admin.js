@@ -56,7 +56,7 @@ async function loadUsers() {
     const roleText = user.is_admin ? '🛡️ Admin' : '👤 User'
     
     userRow.innerHTML = `
-      <div style="font-weight:600">${user.username}</div>
+      <div id="username-${user.id}" style="font-weight:600;cursor:pointer;" onclick="editUsername(${user.id}, '${user.username}')" title="Click to edit username">${user.username}</div>
       <div style="color:${roleColor};font-size:13px">${roleText}</div>
       <div style="color:var(--muted);font-size:14px">${user.entry_count}</div>
       <div style="display:flex;gap:6px">
@@ -97,6 +97,50 @@ window.toggleAdmin = async function(userId) {
   }
   
   await loadUsers()
+}
+
+window.editUsername = async function(userId, currentUsername) {
+  const element = document.getElementById(`username-${userId}`)
+  if (!element) return
+  
+  // Create input field
+  const input = document.createElement('input')
+  input.type = 'text'
+  input.value = currentUsername
+  input.style.cssText = 'padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: inherit; font-size: 14px; font-weight: 600; width: 100%;'
+  
+  const save = async () => {
+    const newUsername = input.value.trim()
+    if (!newUsername) {
+      alert('Username cannot be empty')
+      await loadUsers()
+      return
+    }
+    
+    if (newUsername !== currentUsername) {
+      const res = await apiFetch('PUT', `/admin/users/${userId}`, { username: newUsername })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({error: 'Failed to update username'}))
+        alert(j.error || 'Failed to update username')
+      }
+    }
+    
+    await loadUsers()
+  }
+  
+  input.onblur = save
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      save()
+    } else if (e.key === 'Escape') {
+      loadUsers()
+    }
+  }
+  
+  element.replaceWith(input)
+  input.focus()
+  input.select()
 }
 
 async function init() {
