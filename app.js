@@ -117,6 +117,133 @@ async function toggleSubscription(id) {
   renderSubscriptions()
 }
 
+async function updateSubscription(id, updates) {
+  const res = await apiFetch('PUT', `/subscriptions/${id}`, updates)
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({error: 'Failed'}))
+    alert(j.error || 'Failed to update subscription')
+    return false
+  }
+  await loadSubscriptions()
+  renderSubscriptions()
+  return true
+}
+
+function openEditSubscriptionModal(sub) {
+  // Create modal overlay
+  const overlay = document.createElement('div')
+  overlay.id = 'editSubModal'
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000;'
+  
+  const categoryType = sub.type || 'expense'
+  const categoryList = categories[categoryType] || []
+  const categoryOptions = categoryList.map(c => 
+    `<option value="${c.name}" ${c.name === sub.category ? 'selected' : ''}>${c.name}</option>`
+  ).join('')
+  
+  const modal = document.createElement('div')
+  modal.style.cssText = 'background:var(--card);border-radius:12px;padding:24px;width:90%;max-width:450px;box-shadow:0 8px 32px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);'
+  modal.innerHTML = `
+    <h3 style="margin:0 0 20px 0;color:var(--accent)">✏️ Edit Subscription</h3>
+    <form id="editSubForm">
+      <div style="margin-bottom:14px">
+        <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Type</label>
+        <select id="editSubType" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;">
+          <option value="expense" ${sub.type === 'expense' ? 'selected' : ''}>Expense</option>
+          <option value="income" ${sub.type === 'income' ? 'selected' : ''}>Income</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Amount</label>
+          <input id="editSubAmount" type="number" step="0.01" value="${sub.amount}" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;"/>
+        </div>
+        <div>
+          <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Category</label>
+          <select id="editSubCategory" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;">
+            ${categoryOptions}
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Description</label>
+        <input id="editSubDescription" type="text" value="${sub.description}" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        <div>
+          <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Frequency</label>
+          <select id="editSubFrequency" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;">
+            <option value="weekly" ${sub.frequency === 'weekly' ? 'selected' : ''}>Weekly</option>
+            <option value="monthly" ${sub.frequency === 'monthly' ? 'selected' : ''}>Monthly</option>
+            <option value="yearly" ${sub.frequency === 'yearly' ? 'selected' : ''}>Yearly</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Start Date</label>
+          <input id="editSubStartDate" type="date" value="${sub.startDate.split('T')[0]}" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" id="cancelEditSub" class="btn-ghost">Cancel</button>
+        <button type="submit" class="btn-primary">Save Changes</button>
+      </div>
+    </form>
+  `
+  
+  overlay.appendChild(modal)
+  document.body.appendChild(overlay)
+  
+  // Update category options when type changes
+  const typeSelect = modal.querySelector('#editSubType')
+  const categorySelect = modal.querySelector('#editSubCategory')
+  typeSelect.addEventListener('change', () => {
+    const newType = typeSelect.value
+    const newCategoryList = categories[newType] || []
+    categorySelect.innerHTML = newCategoryList.map(c => 
+      `<option value="${c.name}">${c.name}</option>`
+    ).join('')
+  })
+  
+  // Close on overlay click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove()
+    }
+  })
+  
+  // Cancel button
+  modal.querySelector('#cancelEditSub').addEventListener('click', () => {
+    overlay.remove()
+  })
+  
+  // Form submit
+  modal.querySelector('#editSubForm').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    
+    const updates = {
+      type: modal.querySelector('#editSubType').value,
+      amount: parseFloat(modal.querySelector('#editSubAmount').value),
+      category: modal.querySelector('#editSubCategory').value,
+      description: modal.querySelector('#editSubDescription').value,
+      frequency: modal.querySelector('#editSubFrequency').value,
+      startDate: modal.querySelector('#editSubStartDate').value
+    }
+    
+    const success = await updateSubscription(sub.id, updates)
+    if (success) {
+      overlay.remove()
+    }
+  })
+}
+
+// Make edit function global
+window.editSubscription = function(id) {
+  const sub = subscriptions.find(s => s.id === id)
+  if (sub) {
+    openEditSubscriptionModal(sub)
+  }
+}
+
 async function processSubscriptions() {
   // Process active subscriptions and add entries if needed
   const today = new Date()
@@ -244,6 +371,9 @@ function renderSubscriptions() {
       </div>
       <div style="font-weight:600;color:${typeColor};margin-right:12px">${fmt(sub.amount)}</div>
       <div style="display:flex;gap:8px">
+        <button onclick="editSubscription(${sub.id})" class="btn-ghost" style="padding:6px 10px;font-size:12px" title="Edit">
+          ✏️
+        </button>
         <button onclick="toggleSubscription(${sub.id})" class="btn-ghost" style="padding:6px 10px;font-size:12px" title="${sub.active ? 'Pause' : 'Activate'}">
           ${sub.active ? '⏸' : '▶️'}
         </button>

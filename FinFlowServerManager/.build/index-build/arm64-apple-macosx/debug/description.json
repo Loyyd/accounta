@@ -1,0 +1,265 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.FinFlowServerManager-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/sources",
+      "importPath" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/FinFlowServerManagerApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/ServerManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "FinFlowServerManager",
+      "moduleOutputPath" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/Modules/FinFlowServerManager.swiftmodule",
+      "objects" : [
+        "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ContentView.swift.o",
+        "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/FinFlowServerManagerApp.swift.o",
+        "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ServerManager.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx13.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "FinFlowServerManager_main",
+        "-swift-version",
+        "5",
+        "-Xfrontend",
+        "-experimental-lazy-typecheck",
+        "-Xfrontend",
+        "-experimental-skip-all-function-bodies",
+        "-Xfrontend",
+        "-experimental-allow-module-with-compiler-errors",
+        "-Xfrontend",
+        "-empty-abi-descriptor",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "finflowservermanager"
+      ],
+      "outputFileMapPath" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/Modules/FinFlowServerManager.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : true,
+      "sources" : [
+        "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/ContentView.swift",
+        "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/FinFlowServerManagerApp.swift",
+        "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/ServerManager.swift"
+      ],
+      "tempsPath" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "FinFlowServerManager" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "FinFlowServerManager",
+      "-package-name",
+      "finflowservermanager",
+      "-c",
+      "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/ContentView.swift",
+      "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/FinFlowServerManagerApp.swift",
+      "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/ServerManager.swift",
+      "-I",
+      "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx13.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "FinFlowServerManager_main",
+      "-swift-version",
+      "5",
+      "-Xfrontend",
+      "-experimental-lazy-typecheck",
+      "-Xfrontend",
+      "-experimental-skip-all-function-bodies",
+      "-Xfrontend",
+      "-experimental-allow-module-with-compiler-errors",
+      "-Xfrontend",
+      "-empty-abi-descriptor",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "finflowservermanager",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "FinFlowServerManager" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/FinFlowServerManagerApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/ServerManager.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/sources"
+    },
+    "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}
