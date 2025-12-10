@@ -574,6 +574,47 @@ def delete_subscription(sub_id):
     return jsonify({'ok': True})
 
 
+@app.route('/api/subscriptions/<int:sub_id>', methods=['PUT'])
+@login_required
+def update_subscription(sub_id):
+    sub = Subscription.query.get(sub_id)
+    if not sub or sub.user_id != request.user_id:
+        return jsonify({'error': 'not found'}), 404
+    
+    data = request.get_json() or {}
+    
+    if 'type' in data:
+        if data['type'] not in ('income', 'expense'):
+            return jsonify({'error': 'invalid type'}), 400
+        sub.type = data['type']
+    
+    if 'amount' in data:
+        try:
+            sub.amount = float(data['amount'])
+        except Exception:
+            return jsonify({'error': 'invalid amount'}), 400
+    
+    if 'category' in data:
+        sub.category = data['category'].strip() or sub.category
+    
+    if 'description' in data:
+        sub.description = data['description'].strip() or sub.description
+    
+    if 'frequency' in data:
+        if data['frequency'] not in ('weekly', 'monthly', 'yearly'):
+            return jsonify({'error': 'invalid frequency'}), 400
+        sub.frequency = data['frequency']
+    
+    if 'startDate' in data:
+        try:
+            sub.start_date = datetime.datetime.fromisoformat(data['startDate']).date()
+        except Exception:
+            return jsonify({'error': 'invalid date'}), 400
+    
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
 @app.route('/api/subscriptions/<int:sub_id>/toggle', methods=['POST'])
 @login_required
 def toggle_subscription(sub_id):

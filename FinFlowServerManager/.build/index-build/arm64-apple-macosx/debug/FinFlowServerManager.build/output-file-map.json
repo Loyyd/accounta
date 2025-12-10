@@ -1,0 +1,26 @@
+{
+  "": {
+    "swift-dependencies": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/master.swiftdeps"
+  },
+  "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/ContentView.swift": {
+    "dependencies": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ContentView.d",
+    "object": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ContentView.swift.o",
+    "swiftmodule": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ContentView.swiftdeps",
+    "diagnostics": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ContentView.dia"
+  },
+  "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/FinFlowServerManagerApp.swift": {
+    "dependencies": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/FinFlowServerManagerApp.d",
+    "object": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/FinFlowServerManagerApp.swift.o",
+    "swiftmodule": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/FinFlowServerManagerApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/FinFlowServerManagerApp.swiftdeps",
+    "diagnostics": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/FinFlowServerManagerApp.dia"
+  },
+  "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/Sources/ServerManager.swift": {
+    "dependencies": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ServerManager.d",
+    "object": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ServerManager.swift.o",
+    "swiftmodule": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ServerManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ServerManager.swiftdeps",
+    "diagnostics": "/Users/konradkunkel/Documents/GitHub/finance-tracker/FinFlowServerManager/.build/index-build/arm64-apple-macosx/debug/FinFlowServerManager.build/ServerManager.dia"
+  }
+}
