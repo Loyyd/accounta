@@ -169,13 +169,42 @@ input[type="text"], input[type="number"], select{width:100%;padding:10px;border-
 /* Login Page */
 .login-container {
   max-width: 480px;
-  margin: 80px auto;
-  padding: 40px 20px;
+  margin: 0 auto;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 100vh;
   justify-content: center;
+  min-height: 100vh;
+}
+
+.login-container .header {
+  text-align: center;
+  margin-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.login-container .header div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.login-container .header h1 {
+  font-size: 3.5em;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.login-container .header .lead {
+  font-size: 1.1em;
+  margin: 8px 0 0 0;
+  line-height: 1.4;
 }
 
 .login-card {
@@ -184,14 +213,87 @@ input[type="text"], input[type="number"], select{width:100%;padding:10px;border-
   backdrop-filter: blur(10px);
 }
 
+.login-card #messages {
+  margin-bottom: 24px;
+  min-height: 20px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.login-card form .row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 28px;
+}
+
+.login-card form .row:last-of-type {
+  margin-bottom: 32px;
+}
+
+.login-card form .row label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+
+.login-card form .row input {
+  padding: 12px 14px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.login-card form .row input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 0 0 3px rgba(110,231,183,0.1);
+}
+
+.login-card form .row.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 0;
+  flex-direction: row;
+}
+
+.login-card form .row.actions button {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
 @media (max-width: 600px) {
   .login-container {
-    margin: 40px auto;
-    padding: 20px;
+    padding: 16px;
   }
-  
+
   .login-card {
-    padding: 30px 24px;
+    padding: 28px 20px;
+  }
+
+  .login-container .header {
+    margin-bottom: 32px;
+  }
+
+  .login-container .header h1 {
+    font-size: 2.8em;
+  }
+
+  .login-card form .row.actions {
+    flex-direction: column;
+  }
+
+  .login-card form .row.actions button {
+    width: 100%;
   }
 }
 
