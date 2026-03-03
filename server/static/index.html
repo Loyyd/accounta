@@ -11,9 +11,12 @@
     <main class="app">
       <header class="header">
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <h1>💰 accounta</h1>
-            <p class="lead">Track your money flow with ease.</p>
+          <div style="display:flex;align-items:center;gap:16px">
+            <img src="accounta.png" alt="accounta" style="height:60px;width:60px;object-fit:contain" />
+            <div>
+              <h1 style="margin:0">accounta</h1>
+              <p class="lead">Track your money flow with ease.</p>
+            </div>
           </div>
           <div id="authArea" style="position:relative;">
             <a href="login.html" id="loginLink" class="btn-ghost" style="margin-right:8px;display:none;">Login / Register</a>
@@ -262,7 +265,7 @@
       </div>
 
       <div id="budgeting-view" class="tab-view">
-        <section class="card" id="budgetOverviewCard" style="background:linear-gradient(135deg, rgba(110, 231, 183, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);border:1px solid rgba(110, 231, 183, 0.2)">
+        <section class="card" id="budgetOverviewCard">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
             <h3 style="margin:0">Budget Overview</h3>
             <select id="budgetMonthSelector" style="padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;font-size:13px;cursor:pointer">
