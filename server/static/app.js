@@ -1367,36 +1367,92 @@ function renderCharts() {
               
               if (visibleDatasets.length === 1 && chart.isDatasetVisible(index)) {
                 // Currently isolated on this dataset, show all
+                // Fade in all datasets
+                chart.data.datasets.forEach((dataset, i) => {
+                  dataset.borderWidth = dataset.chartBorderWidth || 2
+                  dataset.pointRadius = dataset.chartPointRadius || 3
+                  dataset.backgroundColor = dataset.chartBackgroundColor || (dataset.borderColor + '20')
+                })
+                chart.update('none')
                 chart.data.datasets.forEach((dataset, i) => {
                   chart.show(i)
                 })
+                chart.update()
               } else {
-                // Isolate this dataset (hide all others)
+                // Isolate this dataset (hide all others) - fade out others first
+                // First, show all datasets to ensure they're visible for the fade
                 chart.data.datasets.forEach((dataset, i) => {
-                  if (i === index) {
-                    chart.show(i)
-                  } else {
-                    chart.hide(i)
+                  chart.show(i)
+                  // Restore original values if they were faded
+                  if (!dataset.chartBorderWidth) {
+                    dataset.chartBorderWidth = dataset.borderWidth || 2
+                    dataset.chartPointRadius = dataset.pointRadius || 3
+                    dataset.chartBackgroundColor = dataset.backgroundColor || (dataset.borderColor + '20')
+                  }
+                  dataset.borderWidth = dataset.chartBorderWidth
+                  dataset.pointRadius = dataset.chartPointRadius
+                  dataset.backgroundColor = dataset.chartBackgroundColor
+                })
+                chart.update('none')
+                
+                // Now fade out the datasets being hidden
+                chart.data.datasets.forEach((dataset, i) => {
+                  if (i !== index) {
+                    // Set fade values
+                    dataset.borderWidth = 0
+                    dataset.pointRadius = 0
+                    dataset.backgroundColor = (dataset.borderColor || '#9aa5b1') + '00'
                   }
                 })
+                chart.update()
+                
+                // After fade animation completes, hide the datasets
+                setTimeout(() => {
+                  chart.data.datasets.forEach((dataset, i) => {
+                    if (i === index) {
+                      chart.show(i)
+                    } else {
+                      chart.hide(i)
+                    }
+                  })
+                  chart.update('none')
+                }, 300)
               }
             } else {
               // Normal click behavior - toggle this dataset
               const isVisible = chart.isDatasetVisible(index)
               if (isVisible) {
-                chart.hide(index)
+                // Fade out before hiding
+                const dataset = chart.data.datasets[index]
+                dataset.chartBorderWidth = dataset.borderWidth || 2
+                dataset.chartPointRadius = dataset.pointRadius || 3
+                dataset.chartBackgroundColor = dataset.backgroundColor || (dataset.borderColor + '20')
+                dataset.borderWidth = 0
+                dataset.pointRadius = 0
+                dataset.backgroundColor = (dataset.borderColor || '#9aa5b1') + '00'
+                chart.update()
+                
+                setTimeout(() => {
+                  chart.hide(index)
+                  chart.update('none')
+                }, 300)
               } else {
+                // Fade in
+                const dataset = chart.data.datasets[index]
+                dataset.borderWidth = dataset.chartBorderWidth || 2
+                dataset.pointRadius = dataset.chartPointRadius || 3
+                dataset.backgroundColor = dataset.chartBackgroundColor || (dataset.borderColor + '20')
                 chart.show(index)
+                chart.update()
               }
             }
-            chart.update()
           }
         },
         tooltip: {
           enabled: true,
           filter: function(tooltipItem, data) {
-            // Only show tooltip when hovering over chart area, not legend
-            return true
+            // Only show categories with non-zero spending
+            return tooltipItem.parsed.y > 0
           },
           callbacks: {
             label: function(context) {
