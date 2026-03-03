@@ -1,5 +1,5 @@
 ![Accounta logo](./server/static/accounta.png)
-
+<img src="./server/static/accounta.png" alt="drawing" width="200"/>
 # Accounta
 
 Accounta is a lightweight Flask/React bookkeeping app for freelancers and small teams.
