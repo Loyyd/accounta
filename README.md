@@ -1,82 +1,86 @@
-# Expense Tracker (localStorage)
+# Accounta - Dockerized Finance Management
 
-Small, self-contained Expense Tracker app that runs in your browser and stores data to localStorage. It supports:
+Accounta is a comprehensive finance tracker application, now containerized with Docker Compose for easy setup and deployment. It features a Flask backend for API services and data persistence with MySQL, a Redis cache, and a vanilla JavaScript frontend.
 
-- Add income or expense entries (description, amount, category)
-- Auto-calculation of total income, total expenses and net balance
-- Category breakdown for expenses (percentage of total expense)
-- Persist entries using localStorage
+## Features:
 
-## Files
+-   **Frontend**: Intuitive, responsive vanilla JavaScript UI with Chart.js for visualizations.
+    -   Dashboard with financial overview, charts, and transaction lists.
+    -   Login/Register with JWT authentication.
+    -   Admin panel for user management.
+    -   Supports categories, subscriptions, and budgeting.
+-   **Backend**: Robust Flask API
+    -   RESTful endpoints for managing users, entries, categories, subscriptions, and budgets.
+    -   JWT token-based authentication with role-based access control.
+    -   CORS enabled.
+-   **Database**: MySQL for reliable, persistent data storage.
+-   **Caching**: Redis for performance enhancement (e.g., session management, data caching).
+-   **Database Management**: Adminer for easy web-based MySQL administration.
 
-- `index.html` — single-page UI
-- `styles.css` — minimal styling
-- `app.js` — logic: add/remove entries, totals, category percentages, localStorage
+## Services:
 
-## How to run
+The application is composed of the following services, orchestrated by Docker Compose:
 
-Open `index.html` in a browser (no server required):
+-   `backend`: Flask API server (Python) serving the static frontend files and API endpoints.
+-   `db`: MySQL database server.
+-   `redis`: Redis caching and message broker.
+-   `adminer`: Web-based interface for managing the MySQL database.
+
+## Getting Started with Docker Compose
+
+These instructions will get your copy of the project up and running on your local machine.
+
+### Prerequisites
+
+-   Docker Desktop (includes Docker Engine and Docker Compose)
+
+### Installation and Setup
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/konradkunkel/accounta.git
+    cd accounta
+    ```
+
+2.  **Configure Environment Variables:**
+    Copy the example environment file and update it with your desired values. This file contains sensitive information like database credentials and secret keys.
+    ```bash
+    cp .env.example .env
+    # Open .env in your editor and modify values as needed.
+    ```
+    _Note: For production, ensure `SECRET_KEY` is a strong, unique value and `FLASK_ENV` is set to `production`._
+
+3.  **Build and Run with Docker Compose:**
+    This command will build the Docker images (if not already built) and start all the services defined in `docker-compose.yml` and `docker-compose.override.yml`. The `override` file is configured for development with hot-reloading for the Flask backend.
+    ```bash
+    docker-compose up --build
+    ```
+    For a production-like build (without development overrides):
+    ```bash
+    docker-compose -f docker-compose.yml up --build
+    ```
+
+### Accessing the Application
+
+Once all services are up and running:
+
+-   **Frontend**: Open your browser and navigate to `http://localhost:5001`
+-   **Backend API**: The API endpoints are available at `http://localhost:5001/api/...`
+-   **Adminer (Database GUI)**: Access Adminer at `http://localhost:8080` (Server: `db`, Username: `ftuser`, Password: `finance_password` from `.env`)
+
+### Stopping the Application
+
+To stop all running Docker Compose services:
 
 ```bash
-# macOS / Linux
-open index.html
-
-# Or use a small static server
-python3 -m http.server 8000
-# then visit http://localhost:8000
-
-## Backend (optional) — Flask + MySQL
-
-The repository includes a tiny Flask backend (in `/server`) that persists users and entries in a MySQL database. Using it enables login/register and stores each user's entries server-side (instead of localStorage).
-
-Quick start (macOS / Linux):
-
-1. Create a Python virtualenv and install requirements:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r server/requirements.txt
+docker-compose down
 ```
 
-2. Create a MySQL database and user, then run the SQL schema (or you can run `server/app.py` which will create tables for SQLite if `DATABASE_URL` isn't set):
+### Development Notes
 
-```sql
--- connect as a privileged user and run
-CREATE DATABASE finance_tracker CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- create a db user and grant privileges (example user/password)
-CREATE USER 'ftuser'@'localhost' IDENTIFIED BY 'secretpassword';
-GRANT ALL PRIVILEGES ON finance_tracker.* TO 'ftuser'@'localhost';
-```
-
-Then import schema file:
-
-```bash
-mysql -u ftuser -p finance_tracker < server/schema.sql
-```
-
-3. Configure environment variables by copying `server/.env.sample` to `server/.env` and updating values (`DATABASE_URL`, `SECRET_KEY`). Example `DATABASE_URL` for MySQL:
-
-```
-DATABASE_URL=mysql+pymysql://ftuser:secretpassword@localhost:3306/finance_tracker
-```
-
-4. Run the server:
-
-```bash
-# Option A — directly with Python
-cd server
-python app.py
-
-# Option B — using npm (dev helper). This will install a small nodemon dev dependency and run the Python server with auto-reload:
-npm install
-npm run dev
-```
-
-5. Open `login.html` in your browser and create an account or login. By default the front-end expects the backend to run at `http://127.0.0.1:5000` — edit `login.html` and `app.js` if your server runs elsewhere.
-
-Security note: This sample backend is intentionally small and **not** production hardened. For production use, add CSRF protection, secure cookies or comprehensive token management, rate limiting, and other hardening steps.
-```
+-   **Frontend Assets**: All frontend HTML, CSS, and JavaScript files are located in `server/static/`. Flask serves these files directly.
+-   **Database Schema**: The `server/schema.sql` file is automatically imported into the MySQL database upon its first initialization by Docker Compose.
+-   **Hot-reloading**: In development mode (`docker-compose up --build`), changes to files in `server/` will trigger a reload of the Flask backend.
 
 ## Manual tests / Quick checklist
 
