@@ -9,28 +9,28 @@
   </head>
   <body>
     <main class="app login-container">
-      <header class="header" style="margin-bottom:48px">
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+      <header class="header">
+        <div>
           <img src="accounta.png" alt="accounta" style="height:80px;width:80px;object-fit:contain" />
-          <h1 style="font-size:3.5em;margin:0">accounta</h1>
+          <h1>accounta</h1>
         </div>
-        <p class="lead" style="font-size:1.1em">Sign in to access your financial dashboard.</p>
+        <p class="lead">Sign in to access your financial dashboard.</p>
       </header>
 
       <section class="card input-card login-card">
-        <div id="messages" class="muted" style="margin-bottom:20px;min-height:20px;text-align:center"></div>
+        <div id="messages"></div>
         <form id="authForm">
-          <div class="row" style="margin-bottom:24px">
-            <label style="font-size:14px;margin-bottom:10px">Username</label>
-            <input id="username" type="text" placeholder="Enter your username" required style="padding:14px;font-size:15px" />
+          <div class="row">
+            <label>Username</label>
+            <input id="username" type="text" placeholder="Enter your username" required />
           </div>
-          <div class="row" style="margin-bottom:32px">
-            <label style="font-size:14px;margin-bottom:10px">Password</label>
-            <input id="password" type="password" placeholder="Enter your password" required style="padding:14px;font-size:15px" />
+          <div class="row">
+            <label>Password</label>
+            <input id="password" type="password" placeholder="Enter your password" required />
           </div>
-          <div class="row actions" style="justify-content:center;gap:16px;margin-bottom:0">
-            <button id="loginBtn" type="button" class="btn-primary" style="padding:14px 32px;font-size:15px;min-width:140px">Login</button>
-            <button id="regBtn" type="button" class="btn-ghost" style="padding:14px 32px;font-size:15px;min-width:140px">Register</button>
+          <div class="row actions">
+            <button id="loginBtn" type="button" class="btn-primary">Login</button>
+            <button id="regBtn" type="button" class="btn-ghost">Register</button>
           </div>
         </form>
       </section>
