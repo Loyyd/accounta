@@ -1,4 +1,4 @@
-![Accounta logo](./logo.png)
+![Accounta logo](./server/static/accounta.png)
 
 # Accounta
 
