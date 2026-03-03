@@ -679,8 +679,16 @@ def delete_budget(category):
 
 
 
-if __name__ == '__main__':
-    # Development server: create DB tables if missing
-    with app.app_context():
-        db.create_all()
-    app.run(host='127.0.0.1', port=5000, debug=True)
+
+# Serve static frontend files and index.html for non-API routes
+from flask import send_from_directory
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    if path.startswith('api/'):
+        abort(404)
+    static_dir = os.path.join(app.root_path, 'static')
+    if path and os.path.exists(os.path.join(static_dir, path)):
+        return send_from_directory(static_dir, path)
+    return send_from_directory(static_dir, 'login.html')
