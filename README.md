@@ -1,4 +1,3 @@
-![Accounta logo](./server/static/accounta.png)
 <img src="./server/static/accounta.png" alt="drawing" width="200"/>
 # Accounta
 
