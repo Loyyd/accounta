@@ -1,5 +1,5 @@
 const TOKEN_KEY = 'finance-tracker.token'
-const API_BASE = 'http://127.0.0.1:5001/api'
+const API_BASE = '/api'
 
 const $ = (s) => document.querySelector(s)
 const $all = (s) => document.querySelectorAll(s)
