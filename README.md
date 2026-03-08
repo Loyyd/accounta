@@ -13,6 +13,11 @@ or use parts of it in your own projects.
 - Redis queue for background tasks
 - Docker compose setup for dev
 
+### Screenshots
+
+![Dashboard Overview](./server/static/dashboard_overview.png)
+![Spending Trends](./server/static/spending_trends.png)
+
 ### Getting started
 
 1. Clone the repo.
