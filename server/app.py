@@ -14,6 +14,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, text
 from werkzeug.exceptions import HTTPException
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
@@ -71,6 +72,24 @@ def parse_cors_origins(value):
     return [origin.strip() for origin in value.split(",") if origin.strip()]
 
 
+def parse_bool_env(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def parse_int_env(name, default=0):
+    value = (os.getenv(name) or "").strip()
+    if not value:
+        return default
+    try:
+        parsed = int(value)
+    except ValueError:
+        return default
+    return max(parsed, 0)
+
+
 def resolve_secret_key():
     configured_secret = (os.getenv("SECRET_KEY") or "").strip()
     if configured_secret:
@@ -79,7 +98,12 @@ def resolve_secret_key():
 
 
 def is_development_mode(app):
-    return app.config.get("TESTING") or os.getenv("FLASK_DEBUG") == "1" or os.getenv("FLASK_ENV") == "development"
+    return (
+        app.config.get("TESTING")
+        or os.getenv("FLASK_DEBUG") == "1"
+        or os.getenv("FLASK_ENV") == "development"
+        or os.getenv("APP_ENV") == "development"
+    )
 
 
 class User(db.Model):
@@ -438,12 +462,27 @@ def create_app(test_config=None):
         SECRET_KEY=resolve_secret_key(),
         JWT_ALGORITHM=os.getenv("JWT_ALGORITHM", "HS256"),
         JWT_EXP_SECONDS=int(os.getenv("JWT_EXP_SECONDS", "86400")),
+        ALLOW_REGISTRATION=parse_bool_env("ALLOW_REGISTRATION", default=True),
     )
 
     if test_config:
         app.config.update(test_config)
 
     db.init_app(app)
+
+    if not is_development_mode(app) and not (os.getenv("SECRET_KEY") or "").strip():
+        raise RuntimeError("SECRET_KEY must be set in production")
+
+    trust_proxy_count = parse_int_env("TRUST_PROXY_COUNT", default=0)
+    if trust_proxy_count:
+        app.wsgi_app = ProxyFix(
+            app.wsgi_app,
+            x_for=trust_proxy_count,
+            x_proto=trust_proxy_count,
+            x_host=trust_proxy_count,
+            x_port=trust_proxy_count,
+            x_prefix=trust_proxy_count,
+        )
 
     cors_origins = parse_cors_origins(os.getenv("CORS_ORIGINS"))
     if cors_origins:
@@ -469,6 +508,9 @@ def create_app(test_config=None):
 
     @app.route("/api/register", methods=["POST"])
     def register():
+        if not current_app.config["ALLOW_REGISTRATION"]:
+            return jsonify({"error": "registration is disabled"}), 403
+
         data = get_json_body()
         username = normalize_username(data.get("username"))
         password = data.get("password", "")

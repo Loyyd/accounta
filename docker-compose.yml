@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -22,6 +20,8 @@ services:
   sqlite-web:
     image: coleifer/sqlite-web:latest
     container_name: accounta-sqlite-web
+    profiles:
+      - dev-tools
     ports:
       - "8080:8080"
     volumes:

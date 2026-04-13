@@ -2,74 +2,125 @@
 
 # Accounta
 
-Accounta is a lightweight bookkeeping app for freelancers and small teams. It uses a Flask API, a SQLite database, and a static dashboard frontend served directly by the backend.
+Accounta is a lightweight bookkeeping app for freelancers and small teams. It ships as a Flask API with a static frontend and uses SQLite.
 
-## What It Does
+## Current State Of The Repo
 
-- JWT-based registration and login
-- Income and expense tracking
-- Category management with custom colors
-- Recurring subscriptions
-- Budget tracking
-- Admin dashboard for user management
-- Account settings, password changes, and full data export
+Already production-leaning:
 
-## Tech Stack
+- Flask app served by Gunicorn in [`docker/Dockerfile`](./docker/Dockerfile)
+- Health endpoint at `/api/ping`
+- Persistent database path can be controlled with `DATABASE_URL`
+- App and static frontend are bundled together in one container
 
-- Backend: Flask, Flask-SQLAlchemy, PyJWT
-- Frontend: HTML, CSS, vanilla JavaScript, Chart.js
-- Database: SQLite by default
-- Optional tooling: Docker, sqlite-web
+Still development-oriented before this pass:
 
-## Project Structure
+- [`docker-compose.yml`](./docker-compose.yml) exposed `sqlite-web`
+- No dedicated production Compose file
+- `SECRET_KEY` could silently fall back to an ephemeral value
+- No proxy header handling for a reverse proxy in front of the app
+- No registration toggle for locking down public signups after bootstrap
+- No documented persistent data and backup layout for a VM deployment
 
-- [`server/app.py`](./server/app.py): Flask app, models, and API routes
-- [`server/static/`](./server/static): frontend pages, scripts, styles, and images
-- [`instance/dev.db`](./instance/dev.db): local SQLite development database
-- [`docker-compose.yml`](./docker-compose.yml): backend plus sqlite-web
+## Production Deployment On A Proxmox VM
+
+The simplest safe path is:
+
+1. Create a Debian 12 or Ubuntu 24.04 VM in Proxmox.
+2. Install Docker Engine and the Compose plugin.
+3. Clone this repo into a stable path such as `/opt/accounta`.
+4. Copy `.env.example` to `.env` and set a strong `SECRET_KEY`.
+5. Run `docker compose -f compose.prod.yml up -d --build`.
+6. Put Nginx, Caddy, or Traefik in front of `127.0.0.1:5000`.
+
+This keeps the app container replaceable while storing persistent data in `./data` on the VM host.
+
+## Files For Production
+
+- [`compose.prod.yml`](./compose.prod.yml): production deployment
+- [`.env.example`](./.env.example): safer app env template
+- [`docker/backup-sqlite.sh`](./docker/backup-sqlite.sh): simple SQLite backup helper
+
+## Why SQLite For Now
+
+SQLite is the right fit for this repo today because:
+
+- the app already defaults to it
+- the schema bootstrapping logic is SQLite-friendly
+- the production setup only needs one container
+- there is no worker or external database dependency in the codebase
+
+Important gap today: the app does not yet use Alembic or another real migration framework. Schema updates currently rely on `db.create_all()` plus a small manual compatibility patch in [`server/app.py`](./server/app.py). That is workable for simple self-hosting, but schema changes and restores should still be handled carefully.
+
+## Reverse Proxy Notes
+
+The production Compose file binds the app to `127.0.0.1:${APP_PORT}` only, so it is meant to sit behind a reverse proxy on the same VM.
+
+Set:
+
+- `CORS_ORIGINS=https://your-domain.example`
+- `TRUST_PROXY_COUNT=1`
+
+If your proxy chain is more complex, increase `TRUST_PROXY_COUNT` accordingly.
+
+## Registration And Admin Bootstrap
+
+Public signup can now be disabled with `ALLOW_REGISTRATION=false`.
+
+Suggested first bootstrap flow:
+
+1. Deploy with `ALLOW_REGISTRATION=true`.
+2. Register your first user through the app UI.
+3. Promote that user to admin:
+
+```bash
+docker compose -f compose.prod.yml exec app python migrate_admin.py your-username
+```
+
+4. Change `.env` to `ALLOW_REGISTRATION=false`.
+5. Restart the app:
+
+```bash
+docker compose -f compose.prod.yml up -d
+```
+
+## Backups
+
+For SQLite, back up the `data/accounta.db` file regularly. A simple manual backup is:
+
+```bash
+mkdir -p backups
+docker compose -f compose.prod.yml run --rm \
+  -e BACKUP_DIR=/backups \
+  -v "$(pwd)/backups:/backups" \
+  app backup-sqlite.sh
+```
+
+For a real VM deployment, schedule backups of both:
+
+- the repo checkout or deployment directory
+- the persistent `data/` directory or the VM disk snapshot
+
+SQLite backups are simple, but restore discipline matters because there is no migration ledger yet.
 
 ## Local Development
 
-### Option 1: Run With Docker
+Development is still available with:
 
 ```bash
 docker compose up --build
 ```
 
-- App: http://localhost:5001
-- SQLite Web: http://localhost:8080
-
-### Option 2: Run Without Docker
+If you want `sqlite-web`, start it explicitly:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r server/requirements.txt
-python3 server/app.py
+docker compose --profile dev-tools up --build
 ```
-
-The app will be available at http://localhost:5000 unless you override the Flask/Gunicorn host or port.
-
-## Environment Variables
-
-Copy `.env.example` to `.env` if you want to override defaults.
-
-- `DATABASE_URL`: optional SQLAlchemy connection string
-- `SECRET_KEY`: JWT signing secret
-- `JWT_ALGORITHM`: defaults to `HS256`
-- `JWT_EXP_SECONDS`: token lifetime in seconds
-
-If `DATABASE_URL` is not set, Accounta uses the local SQLite database in `instance/dev.db` when available.
 
 ## Tests
 
-Run the API test suite with:
+Run the API tests with:
 
 ```bash
 pytest server/tests
 ```
-
-## Notes
-
-- The app performs lightweight schema bootstrapping on startup for the local database.
-- `server/schema.sql` is a SQLite-oriented reference schema that matches the current ORM models.
