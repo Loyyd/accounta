@@ -209,7 +209,6 @@ def login_required(view_func):
         if len(parts) != 2 or parts[0].lower() != "bearer":
             abort(401, description="Authorization header required")
         g.user_id = decode_token(parts[1])
-        sync_user_subscriptions_for_user(g.user_id)
         return view_func(*args, **kwargs)
 
     return decorated
