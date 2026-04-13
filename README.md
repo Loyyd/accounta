@@ -39,7 +39,10 @@ This keeps the app container replaceable while storing persistent data in `./dat
 
 - [`compose.prod.yml`](./compose.prod.yml): production deployment
 - [`.env.example`](./.env.example): safer app env template
-- [`docker/backup-sqlite.sh`](./docker/backup-sqlite.sh): simple SQLite backup helper
+- [`docker/backup-sqlite.sh`](./docker/backup-sqlite.sh): SQLite backup helper
+- [`docker/restore-sqlite.sh`](./docker/restore-sqlite.sh): SQLite restore helper
+- [`scripts/backup.sh`](./scripts/backup.sh): host-side backup wrapper
+- [`scripts/restore.sh`](./scripts/restore.sh): host-side restore wrapper
 
 ## Why SQLite For Now
 
@@ -86,7 +89,19 @@ docker compose -f compose.prod.yml up -d
 
 ## Backups
 
-For SQLite, back up the `data/accounta.db` file regularly. A simple manual backup is:
+For SQLite, back up the `data/accounta.db` file regularly. The shortest path from the repo root is:
+
+```bash
+./scripts/backup.sh
+```
+
+By default this writes into `./backups`. If you want a different location:
+
+```bash
+BACKUP_DIR=/srv/accounta-backups ./scripts/backup.sh
+```
+
+Under the hood, the wrapper runs:
 
 ```bash
 mkdir -p backups
@@ -96,12 +111,55 @@ docker compose -f compose.prod.yml run --rm \
   app backup-sqlite.sh
 ```
 
+Each backup now creates:
+
+- a timestamped `.db` copy
+- a matching `.sha256` checksum file
+
+Suggested minimum production routine:
+
+1. Run a backup before every deploy.
+2. Keep regular scheduled backups, such as daily plus a longer retention outside the VM.
+3. Back up both the repo checkout and the `data/` directory, or use Proxmox snapshots in addition to file backups.
+
+## Restore Test
+
+Production readiness means proving you can restore, not just create backups.
+
+Safe restore flow on the VM:
+
+1. Stop the app:
+
+```bash
+./scripts/restore.sh accounta-YYYYMMDDTHHMMSSZ.db
+```
+
+You can also restore from an absolute path:
+
+```bash
+./scripts/restore.sh /srv/accounta-backups/accounta-YYYYMMDDTHHMMSSZ.db
+```
+
+Under the hood, the wrapper will:
+
+- stop the app
+- verify the checksum when present
+- save the current database as `data/accounta-pre-restore-<timestamp>.db`
+- restore the chosen backup
+- start the app again
+
+After restore, verify the app:
+
+- open the site and log in
+- confirm your expected users and entries are present
+- check `docker compose -f compose.prod.yml ps`
+
 For a real VM deployment, schedule backups of both:
 
 - the repo checkout or deployment directory
 - the persistent `data/` directory or the VM disk snapshot
 
-SQLite backups are simple, but restore discipline matters because there is no migration ledger yet.
+Before calling this production-ready for yourself, do one full restore test on a fresh VM or clone of the VM and confirm the app boots cleanly with restored data.
 
 ## Local Development
 
