@@ -17,6 +17,7 @@ const categoryInput = $('#category')
 const monthInput = $('#month')
 const yearInput = $('#year')
 const entriesEl = $('#entries')
+const overviewEntriesEl = $('#overviewEntries')
 const totalIncomeEl = $('#totalIncome')
 const totalExpenseEl = $('#totalExpense')
 const netTotalEl = $('#netTotal')
@@ -953,6 +954,17 @@ function getFilteredEntries() {
   })
 }
 
+function getEntriesForMonthYear(month, year) {
+  if (!month || !year) {
+    return []
+  }
+
+  return entries.filter((entry) => {
+    const entryDate = new Date(entry.date)
+    return entryDate.getMonth() + 1 === Number(month) && entryDate.getFullYear() === Number(year)
+  })
+}
+
 function totalsFiltered() {
   const filtered = getFilteredEntries()
   const out = {income: 0, expense: 0}
@@ -1745,40 +1757,28 @@ function breakdownByCategory(){
   return {expenseTotal, totals}
 }
 
-function render(){
-  // render totals with filtered data
-  const t = totalsFiltered()
-  totalIncomeEl.textContent = fmt(t.income)
-  totalExpenseEl.textContent = fmt(t.expense)
-  netTotalEl.textContent = fmt(t.net)
-
-  // Render charts
-  renderCharts()
-  
-  // Update budget overview
-  renderBudgetOverview()
-
-  // render entries list (show filtered entries)
-  const filtered = getFilteredEntries()
-  entriesEl.innerHTML = ''
-  if(filtered.length === 0){
-    const placeholder = document.createElement('div')
-    placeholder.className = 'muted'
-    placeholder.textContent = 'No transactions in this period.'
-    entriesEl.appendChild(placeholder)
+function renderEntriesList(container, list, emptyMessage) {
+  if (!container) {
     return
   }
 
-  // Sort by date descending
-  const sorted = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date))
-  
-  for(const e of sorted){
+  container.innerHTML = ''
+  if (list.length === 0) {
+    const placeholder = document.createElement('div')
+    placeholder.className = 'muted'
+    placeholder.textContent = emptyMessage
+    container.appendChild(placeholder)
+    return
+  }
+
+  const sorted = [...list].sort((a, b) => new Date(b.date) - new Date(a.date))
+
+  for (const e of sorted) {
     const div = document.createElement('div')
     div.className = 'entry'
     div.style.cursor = 'pointer'
     div.style.transition = 'background 0.2s'
-    
-    // Hover effect
+
     div.onmouseenter = () => {
       div.style.background = 'rgba(255,255,255,0.05)'
       div.setAttribute('data-hovering', 'true')
@@ -1787,47 +1787,43 @@ function render(){
       div.style.background = ''
       div.removeAttribute('data-hovering')
     }
-    
+
     const left = document.createElement('div')
     left.className = 'left'
     const chip = document.createElement('div')
     chip.className = 'chip'
-    
-    // Find category color
+
     const categoryType = e.type || 'expense'
     const categoryList = categories[categoryType] || []
     const categoryObj = categoryList.find(c => c.name === e.category)
     const categoryColor = categoryObj ? categoryObj.color : '#9aa5b1'
-    
-    chip.style.background = categoryColor + '20'  // 20% opacity
+
+    chip.style.background = categoryColor + '20'
     chip.style.color = categoryColor
     chip.style.borderLeft = `3px solid ${categoryColor}`
     chip.textContent = e.category
     chip.style.cursor = 'pointer'
-    
-    // Make category editable on click
+
     chip.onclick = (event) => {
       event.stopPropagation()
       editTransactionField(e, 'category', chip)
     }
-    
+
     const desc = document.createElement('div')
     const entryDate = new Date(e.date)
     const dateString = entryDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     desc.innerHTML = `<div style="cursor: pointer;">${e.description}</div><div class="muted" style="font-size:12px; cursor: pointer;" title="Click to edit month">${dateString}</div>`
-    
-    // Make description editable on click
+
     desc.querySelector('div:first-child').onclick = (event) => {
       event.stopPropagation()
       editTransactionField(e, 'description', desc)
     }
-    
-    // Make date editable on click
+
     desc.querySelector('div.muted').onclick = (event) => {
       event.stopPropagation()
       editTransactionField(e, 'date', desc.querySelector('div.muted'))
     }
-    
+
     left.appendChild(chip)
     left.appendChild(desc)
 
@@ -1836,13 +1832,12 @@ function render(){
     amt.className = 'amount ' + (e.type === 'income' ? 'income' : 'expense')
     amt.textContent = (e.type === 'income' ? '+' : '-') + fmt(Math.abs(e.amount))
     amt.style.cursor = 'pointer'
-    
-    // Make amount editable on click
+
     amt.onclick = (event) => {
       event.stopPropagation()
       editTransactionField(e, 'amount', amt)
     }
-    
+
     const btn = document.createElement('button')
     btn.className = 'btn-ghost'
     btn.textContent = 'Delete'
@@ -1856,8 +1851,28 @@ function render(){
 
     div.appendChild(left)
     div.appendChild(right)
-    entriesEl.appendChild(div)
+    container.appendChild(div)
   }
+}
+
+function render(){
+  // render totals with filtered data
+  const t = totalsFiltered()
+  totalIncomeEl.textContent = fmt(t.income)
+  totalExpenseEl.textContent = fmt(t.expense)
+  netTotalEl.textContent = fmt(t.net)
+
+  // Render charts
+  renderCharts()
+  
+  // Update budget overview
+  renderBudgetOverview()
+
+  const filtered = getFilteredEntries()
+  const selectedMonthEntries = getEntriesForMonthYear(monthInput?.value, yearInput?.value)
+
+  renderEntriesList(overviewEntriesEl, filtered, 'No transactions in this period.')
+  renderEntriesList(entriesEl, selectedMonthEntries, 'No transactions in this month.')
 }
 
 // UI wiring
@@ -1904,6 +1919,18 @@ entryForm.addEventListener('submit', (ev)=>{
   amountInput.value = ''
   descriptionInput.value = ''
 })
+
+if (monthInput) {
+  monthInput.addEventListener('change', () => {
+    render()
+  })
+}
+
+if (yearInput) {
+  yearInput.addEventListener('change', () => {
+    render()
+  })
+}
 
 // Note: clearAllBtn is in the UI but not functional - would require server-side bulk delete endpoint
 
@@ -1987,6 +2014,14 @@ if (budgetMonthSelector) {
 async function init(){
   initTabs()
   populateMonthOptions() // Set month names in timeline filter
+  
+  // Set current month and year as default before the first render
+  if (monthInput && yearInput) {
+    const now = new Date()
+    monthInput.value = (now.getMonth() + 1).toString()
+    yearInput.value = now.getFullYear().toString()
+  }
+
   await loadCategories()
   await loadSubscriptions()
   await loadBudgets()
@@ -1996,13 +2031,6 @@ async function init(){
   renderSubscriptions()
   renderBudgets()
   renderBudgetOverview()
-  
-  // Set current month and year as default
-  if (monthInput && yearInput) {
-    const now = new Date()
-    monthInput.value = (now.getMonth() + 1).toString() // getMonth() is 0-indexed
-    yearInput.value = now.getFullYear().toString()
-  }
   
   // Setup subscription form
   const subscriptionForm = $('#subscriptionForm')
