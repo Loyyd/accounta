@@ -1,5 +1,7 @@
+import calendar
 import datetime as dt
 import os
+import secrets
 from functools import wraps
 from pathlib import Path
 
@@ -19,6 +21,12 @@ db = SQLAlchemy()
 
 VALID_ENTRY_TYPES = {"income", "expense"}
 VALID_SUBSCRIPTION_FREQUENCIES = {"weekly", "monthly", "yearly"}
+DEFAULT_DEV_CORS_ORIGINS = (
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
+    "http://localhost:5001",
+    "http://127.0.0.1:5001",
+)
 
 
 def utcnow():
@@ -55,6 +63,23 @@ def resolve_database_url():
             return resolve_default_database_url()
 
     return configured_url
+
+
+def parse_cors_origins(value):
+    if not value:
+        return []
+    return [origin.strip() for origin in value.split(",") if origin.strip()]
+
+
+def resolve_secret_key():
+    configured_secret = (os.getenv("SECRET_KEY") or "").strip()
+    if configured_secret:
+        return configured_secret
+    return secrets.token_urlsafe(32)
+
+
+def is_development_mode(app):
+    return app.config.get("TESTING") or os.getenv("FLASK_DEBUG") == "1" or os.getenv("FLASK_ENV") == "development"
 
 
 class User(db.Model):
@@ -160,6 +185,7 @@ def login_required(view_func):
         if len(parts) != 2 or parts[0].lower() != "bearer":
             abort(401, description="Authorization header required")
         g.user_id = decode_token(parts[1])
+        sync_user_subscriptions_for_user(g.user_id)
         return view_func(*args, **kwargs)
 
     return decorated
@@ -292,6 +318,96 @@ def count_admin_users():
     return User.query.filter_by(is_admin=True).count()
 
 
+def add_months(value, months, anchor_day):
+    month_index = value.month - 1 + months
+    year = value.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(anchor_day, calendar.monthrange(year, month)[1])
+    return dt.date(year, month, day)
+
+
+def add_years(value, years, anchor_month, anchor_day):
+    year = value.year + years
+    day = min(anchor_day, calendar.monthrange(year, anchor_month)[1])
+    return dt.date(year, anchor_month, day)
+
+
+def get_next_occurrence_date(current_date, subscription):
+    if subscription.frequency == "weekly":
+        return current_date + dt.timedelta(days=7)
+    if subscription.frequency == "monthly":
+        return add_months(current_date, 1, subscription.start_date.day)
+    if subscription.frequency == "yearly":
+        return add_years(current_date, 1, subscription.start_date.month, subscription.start_date.day)
+    raise ValueError("invalid subscription frequency")
+
+
+def iter_subscription_occurrences(subscription, today=None):
+    current_date = subscription.start_date
+    final_date = today or utcnow().date()
+
+    while current_date <= final_date:
+        yield current_date
+        current_date = get_next_occurrence_date(current_date, subscription)
+
+
+def subscription_entry_exists(subscription, occurrence_date):
+    occurrence_datetime = dt.datetime.combine(occurrence_date, dt.time.min)
+    return (
+        Entry.query.filter_by(
+            user_id=subscription.user_id,
+            type=subscription.type,
+            description=subscription.description,
+            amount=subscription.amount,
+            category=subscription.category,
+            date=occurrence_datetime,
+        ).first()
+        is not None
+    )
+
+
+def sync_user_subscriptions_for_user(user_id, today=None):
+    subscriptions = Subscription.query.filter_by(user_id=user_id, active=True).all()
+    if not subscriptions:
+        return 0
+
+    created_entries = 0
+    final_date = today or utcnow().date()
+
+    for subscription in subscriptions:
+        if subscription.start_date > final_date:
+            continue
+
+        for occurrence_date in iter_subscription_occurrences(subscription, today=final_date):
+            if subscription_entry_exists(subscription, occurrence_date):
+                continue
+
+            db.session.add(
+                Entry(
+                    user_id=subscription.user_id,
+                    type=subscription.type,
+                    description=subscription.description,
+                    amount=subscription.amount,
+                    category=subscription.category,
+                    date=dt.datetime.combine(occurrence_date, dt.time.min),
+                )
+            )
+            created_entries += 1
+
+    if created_entries:
+        db.session.commit()
+
+    return created_entries
+
+
+def delete_user_related_data(user):
+    Budget.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+    Subscription.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+    Category.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+    Entry.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+    db.session.delete(user)
+
+
 def ensure_user_schema():
     inspector = inspect(db.engine)
     if "users" not in inspector.get_table_names():
@@ -319,7 +435,7 @@ def create_app(test_config=None):
     app.config.update(
         SQLALCHEMY_DATABASE_URI=resolve_database_url(),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret"),
+        SECRET_KEY=resolve_secret_key(),
         JWT_ALGORITHM=os.getenv("JWT_ALGORITHM", "HS256"),
         JWT_EXP_SECONDS=int(os.getenv("JWT_EXP_SECONDS", "86400")),
     )
@@ -327,8 +443,16 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
-    CORS(app)
     db.init_app(app)
+
+    cors_origins = parse_cors_origins(os.getenv("CORS_ORIGINS"))
+    if cors_origins:
+        CORS(app, resources={r"/api/*": {"origins": cors_origins}})
+    elif is_development_mode(app):
+        CORS(app, resources={r"/api/*": {"origins": list(DEFAULT_DEV_CORS_ORIGINS)}})
+
+    if not (os.getenv("SECRET_KEY") or "").strip():
+        app.logger.warning("SECRET_KEY is not set; using a generated ephemeral key for this process.")
 
     @app.errorhandler(HTTPException)
     def handle_http_exception(error):
@@ -388,6 +512,8 @@ def create_app(test_config=None):
         user = User.query.filter_by(username=username).first()
         if not user or not user.verify_password(password):
             return jsonify({"error": "invalid credentials"}), 401
+
+        sync_user_subscriptions_for_user(user.id)
 
         return jsonify(
             {
@@ -535,7 +661,7 @@ def create_app(test_config=None):
         if user.is_admin and count_admin_users() <= 1:
             return jsonify({"error": "cannot delete the last admin account"}), 400
 
-        db.session.delete(user)
+        delete_user_related_data(user)
         db.session.commit()
         return jsonify({"ok": True, "message": "Account deleted successfully"})
 
@@ -614,7 +740,7 @@ def create_app(test_config=None):
         if target_user.is_admin and count_admin_users() <= 1:
             return jsonify({"error": "cannot delete the last admin account"}), 400
 
-        db.session.delete(target_user)
+        delete_user_related_data(target_user)
         db.session.commit()
         return jsonify({"ok": True})
 
@@ -796,6 +922,7 @@ def create_app(test_config=None):
         )
         db.session.add(subscription)
         db.session.commit()
+        sync_user_subscriptions_for_user(g.user_id)
         return jsonify({"ok": True, "id": subscription.id}), 201
 
     @app.route("/api/subscriptions/<int:sub_id>", methods=["DELETE"])
@@ -846,6 +973,7 @@ def create_app(test_config=None):
                 return jsonify({"error": str(exc)}), 400
 
         db.session.commit()
+        sync_user_subscriptions_for_user(g.user_id)
         return jsonify({"ok": True})
 
     @app.route("/api/subscriptions/<int:sub_id>/toggle", methods=["POST"])
@@ -856,6 +984,8 @@ def create_app(test_config=None):
             return jsonify({"error": "not found"}), 404
         subscription.active = not subscription.active
         db.session.commit()
+        if subscription.active:
+            sync_user_subscriptions_for_user(g.user_id)
         return jsonify({"ok": True, "active": subscription.active})
 
     @app.route("/api/budgets", methods=["GET"])

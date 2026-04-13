@@ -1,3 +1,4 @@
+import datetime as dt
 import os
 import sys
 import tempfile
@@ -8,7 +9,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app import User, create_app, db
+import app as app_module
+from app import Budget, Category, Entry, Subscription, User, create_app, db
 
 
 @pytest.fixture()
@@ -136,3 +138,106 @@ def test_last_admin_cannot_delete_account(app, client):
     assert response.status_code == 200
     assert delete_response.status_code == 400
     assert "last admin" in delete_response.get_json()["error"]
+
+
+def test_account_deletion_removes_related_records(app, client):
+    _, payload = register_user(client, username="cleanup")
+    token = payload["token"]
+
+    with app.app_context():
+        user = User.query.filter_by(username="cleanup").first()
+        db.session.add_all(
+            [
+                Entry(
+                    user_id=user.id,
+                    type="expense",
+                    description="Coffee",
+                    amount=4.5,
+                    category="Food",
+                    date=dt.datetime(2026, 4, 1),
+                ),
+                Category(user_id=user.id, type="expense", name="Food", color="#123456"),
+                Subscription(
+                    user_id=user.id,
+                    type="expense",
+                    amount=12,
+                    category="Food",
+                    description="Lunch plan",
+                    frequency="monthly",
+                    start_date=dt.date(2026, 1, 1),
+                    active=True,
+                ),
+                Budget(user_id=user.id, category="Food", amount=100),
+            ]
+        )
+        db.session.commit()
+
+    response = client.delete(
+        "/api/profile",
+        headers=auth_headers(token),
+        json={"confirmText": "cleanup"},
+    )
+
+    assert response.status_code == 200
+
+    with app.app_context():
+        assert User.query.count() == 0
+        assert Entry.query.count() == 0
+        assert Category.query.count() == 0
+        assert Subscription.query.count() == 0
+        assert Budget.query.count() == 0
+
+
+def test_authenticated_requests_materialize_due_subscription_entries(app, client, monkeypatch):
+    _, payload = register_user(client, username="subscriber")
+    token = payload["token"]
+    monkeypatch.setattr(app_module, "utcnow", lambda: dt.datetime(2026, 4, 13, 12, 0, 0))
+
+    response = client.post(
+        "/api/subscriptions",
+        headers=auth_headers(token),
+        json={
+            "type": "expense",
+            "amount": 19.99,
+            "category": "Software",
+            "description": "Design Tool",
+            "frequency": "monthly",
+            "startDate": "2026-01-31",
+        },
+    )
+    assert response.status_code == 201
+
+    first_list_response = client.get("/api/entries", headers=auth_headers(token))
+    second_list_response = client.get("/api/entries", headers=auth_headers(token))
+
+    assert first_list_response.status_code == 200
+    assert second_list_response.status_code == 200
+
+    first_payload = first_list_response.get_json()
+    second_payload = second_list_response.get_json()
+
+    assert len(first_payload) == 3
+    assert len(second_payload) == 3
+    assert [entry["date"][:10] for entry in first_payload] == ["2026-03-31", "2026-02-28", "2026-01-31"]
+
+
+def test_missing_secret_key_uses_generated_value(monkeypatch):
+    fd, db_path = tempfile.mkstemp()
+    os.close(fd)
+
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+
+    temp_app = create_app(
+        {
+            "TESTING": True,
+            "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}",
+            "JWT_EXP_SECONDS": 3600,
+        }
+    )
+
+    try:
+        assert temp_app.config["SECRET_KEY"] != "dev-secret"
+        assert len(temp_app.config["SECRET_KEY"]) >= 32
+    finally:
+        if os.path.exists(db_path):
+            os.unlink(db_path)
