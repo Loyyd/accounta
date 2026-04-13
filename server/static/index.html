@@ -9,21 +9,21 @@
   </head>
   <body>
     <main class="app">
-      <header class="header">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:16px">
-            <img src="accounta.png" alt="accounta" style="height:60px;width:60px;object-fit:contain" />
-            <div>
-              <h1 style="margin:0">accounta</h1>
+      <header class="header page-header">
+        <div class="page-header-top">
+          <div class="brand-row">
+            <img src="accounta.png" alt="accounta" class="brand-logo" />
+            <div class="brand-block">
+              <h1 class="page-title">accounta</h1>
               <p class="lead">Track your money flow with ease.</p>
             </div>
           </div>
-          <div id="authArea" style="position:relative;">
-            <a href="login.html" id="loginLink" class="btn-ghost" style="margin-right:8px;display:none;">Login / Register</a>
+          <div id="authArea" class="auth-area">
+            <a href="login.html" id="loginLink" class="btn-ghost login-link">Login / Register</a>
             <div id="userDropdown" style="display:none;">
               <button id="userMenuBtn" class="user-menu-btn">
                 <span id="userHint"></span>
-                <span style="margin-left:4px;">▼</span>
+                <span class="meta-copy">▼</span>
               </button>
               <div id="userDropdownMenu" class="user-dropdown-menu">
                 <a href="#" id="settingsLink" class="dropdown-item">⚙️ Settings</a>
@@ -45,8 +45,8 @@
 
       <div id="overview-view" class="tab-view active">
         <section class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <h3 style="margin:0">Financial Overview</h3>
+          <div class="header-title-row">
+            <h3 class="section-title">Financial Overview</h3>
             <div class="timeline-selector">
               <select id="timelineFilter">
                 <option value="all" selected>All Time</option>
@@ -61,26 +61,26 @@
             </div>
           </div>
           
-          <div id="customDateRange" style="display:none;margin-bottom:16px;padding:12px;background:rgba(255,255,255,0.02);border-radius:8px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div id="customDateRange" class="custom-range panel-surface">
+            <div class="two-up">
               <div>
-                <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">From</label>
-                <input id="customStartDate" type="date" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit">
+                <label>From</label>
+                <input id="customStartDate" type="date">
               </div>
               <div>
-                <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">To</label>
-                <input id="customEndDate" type="date" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit">
+                <label>To</label>
+                <input id="customEndDate" type="date">
               </div>
             </div>
           </div>
 
           <div class="stats">
             <div class="stat">
-              <h3 id="totalIncome" style="color:var(--accent)">€0.00</h3>
+              <h3 id="totalIncome">€0.00</h3>
               <p>Income</p>
             </div>
             <div class="stat">
-              <h3 id="totalExpense" style="color:var(--danger)">€0.00</h3>
+              <h3 id="totalExpense">€0.00</h3>
               <p>Expense</p>
             </div>
             <div class="stat">
@@ -90,50 +90,50 @@
           </div>
         </section>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" class="charts-row">
+        <div class="split-grid charts-row" style="margin-bottom:16px">
           <section class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <h4 style="margin:0">Breakdown</h4>
-              <select id="breakdownType" style="padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;font-size:12px;cursor:pointer">
+            <div class="section-header">
+              <h4 class="panel-title">Breakdown</h4>
+              <select id="breakdownType" class="surface-select surface-select-sm">
                 <option value="expense" selected>Expenses</option>
                 <option value="income">Income</option>
               </select>
             </div>
-            <canvas id="expenseChart" style="max-height:250px"></canvas>
+            <canvas id="expenseChart" class="chart-canvas-md"></canvas>
             <div id="expenseChartLegend" class="chart-legend"></div>
           </section>
           
           <section class="card">
-            <h4 style="margin-top:0">Income vs Expense</h4>
-            <canvas id="compareChart" style="max-height:250px"></canvas>
+            <h4 class="panel-title">Income vs Expense</h4>
+            <canvas id="compareChart" class="chart-canvas-md"></canvas>
           </section>
         </div>
 
         <section class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <h4 style="margin:0">Spending Trend</h4>
-            <div style="display:flex;align-items:center;gap:16px">
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-                <input type="checkbox" id="showIncomeTrend" checked style="cursor:pointer">
+          <div class="header-title-row">
+            <h4 class="panel-title">Spending Trend</h4>
+            <div class="inline-stack inline-stack-wrap inline-gap-lg">
+              <label class="inline-stack inline-gap-sm meta-copy">
+                <input type="checkbox" id="showIncomeTrend" checked>
                 <span>Income</span>
               </label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-                <input type="checkbox" id="showExpenseTrend" checked style="cursor:pointer">
+              <label class="inline-stack inline-gap-sm meta-copy">
+                <input type="checkbox" id="showExpenseTrend" checked>
                 <span>Expenses</span>
               </label>
-              <select id="trendTimeframe" style="padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;font-size:13px;cursor:pointer">
+              <select id="trendTimeframe" class="surface-select">
                 <option value="3">Last 3 Months</option>
                 <option value="6" selected>Last 6 Months</option>
                 <option value="12">Last Year</option>
               </select>
             </div>
           </div>
-          <canvas id="trendChart" style="max-height:200px"></canvas>
+          <canvas id="trendChart" class="chart-canvas-sm"></canvas>
         </section>
 
         <section class="card">
-          <h4 style="margin-top:0">Monthly Net (Last 6 Months)</h4>
-          <canvas id="profitChart" style="max-height:200px"></canvas>
+          <h4 class="panel-title">Monthly Net (Last 6 Months)</h4>
+          <canvas id="profitChart" class="chart-canvas-sm"></canvas>
         </section>
 
         <section class="card ledger-card">
@@ -168,7 +168,7 @@
 
           <div class="row">
             <label>Date</label>
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+            <div class="split-grid-compact">
               <select id="month" required>
                 <option value="1">January</option>
                 <option value="2">February</option>
@@ -266,15 +266,15 @@
 
       <div id="budgeting-view" class="tab-view">
         <section class="card" id="budgetOverviewCard">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-            <h3 style="margin:0">Budget Overview</h3>
-            <select id="budgetMonthSelector" style="padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;font-size:13px;cursor:pointer">
+          <div class="header-title-row section-header-lg">
+            <h3 class="section-title">Budget Overview</h3>
+            <select id="budgetMonthSelector" class="surface-select">
             </select>
           </div>
           <div id="budgetProgressList"></div>
         </section>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="split-grid">
           <section class="card input-card">
             <h3>💰 Set Budget</h3>
             <form id="budgetForm">
@@ -290,8 +290,8 @@
                 <input id="budgetAmount" type="number" step="0.01" placeholder="0.00" required />
               </div>
 
-              <div class="row actions">
-                <button type="submit" class="btn-primary" style="width:100%">Set Budget</button>
+              <div class="row actions actions-stretch">
+                <button type="submit" class="btn-primary">Set Budget</button>
               </div>
             </form>
           </section>
@@ -306,7 +306,7 @@
       <div id="categories-view" class="tab-view">
         <section class="card">
           <h3>Manage Categories</h3>
-          <form id="categoryForm" style="margin-bottom: 20px;">
+          <form id="categoryForm" class="section-stack" style="margin-bottom:20px;">
             <div class="row">
               <label>Category Name</label>
               <input id="newCategoryName" type="text" placeholder="e.g., Entertainment, Transport" required />
@@ -325,22 +325,22 @@
 
           <div>
             <h4>Expense Categories</h4>
-            <p class="muted" style="font-size: 13px; margin-bottom: 12px;">Click on the color box to change a category's color</p>
+            <p class="muted form-note">Click on the color box to change a category's color</p>
             <ul id="expenseCategoriesList" class="category-list"></ul>
           </div>
 
-          <div style="margin-top: 20px;">
+          <div class="section-spacer-top">
             <h4>Income Categories</h4>
-            <p class="muted" style="font-size: 13px; margin-bottom: 12px;">Click on the color box to change a category's color</p>
+            <p class="muted form-note">Click on the color box to change a category's color</p>
             <ul id="incomeCategoriesList" class="category-list"></ul>
           </div>
         </section>
-      </div>
       </div>
 
       <footer class="footer">Your data is saved securely to your account.</footer>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="shared.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

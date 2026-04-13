@@ -1,114 +1,119 @@
-const TOKEN_KEY = 'finance-tracker.token'
-const API_BASE = '/api'
+const {apiFetch, isLoggedIn, loadProfile, setupDropdown, wireSignOut} = window.AccountaCommon
 
-const $ = (s) => document.querySelector(s)
-const $all = (s) => document.querySelectorAll(s)
-const fmt = (n) => n.toLocaleString(undefined, {style: 'currency', currency: 'EUR', maximumFractionDigits: 2})
+const $ = (selector) => document.querySelector(selector)
 
-function token(){
-  return localStorage.getItem(TOKEN_KEY)
+function formatDate(value) {
+  if (!value) {
+    return 'Unknown join date'
+  }
+  return `Joined ${new Date(value).toLocaleDateString()}`
 }
 
-function isLoggedIn(){
-  return !!token()
-}
-
-async function apiFetch(method, path, body){
-  const headers = {'Content-Type': 'application/json'}
-  const t = token()
-  if(t) headers['Authorization'] = 'Bearer ' + t
-  const opts = {method, headers}
-  if(body) opts.body = JSON.stringify(body)
-  return fetch(API_BASE + path, opts)
+function formatNet(user) {
+  const net = Number(user.total_income || 0) - Number(user.total_expense || 0)
+  return `Net ${net.toLocaleString(undefined, {style: 'currency', currency: 'EUR', maximumFractionDigits: 2})}`
 }
 
 async function loadUsers() {
-  const res = await apiFetch('GET', '/admin/users')
-  if (!res.ok) {
-    if (res.status === 403) {
+  const response = await apiFetch('GET', '/admin/users')
+  if (!response.ok) {
+    if (response.status === 403) {
       alert('Admin access required')
-      location.href = 'login.html'
+      location.href = 'index.html'
       return
     }
+
     alert('Failed to load users')
     return
   }
-  
-  const data = await res.json()
-  const users = data.users || []
-  
+
+  const payload = await response.json()
+  const users = payload.users || []
   $('#totalUsers').textContent = users.length
-  
+
   const usersList = $('#usersList')
   usersList.innerHTML = ''
-  
-  if (users.length === 0) {
-    usersList.innerHTML = '<div class="muted" style="padding:20px;text-align:center">No users found</div>'
+
+  if (!users.length) {
+    usersList.innerHTML = '<div class="muted empty-state">No users found</div>'
     return
   }
-  
-  users.forEach(user => {
+
+  users.forEach((user) => {
     const userRow = document.createElement('div')
-    userRow.className = 'user-row'
-    userRow.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1fr 120px;gap:12px;padding:16px 12px;border-bottom:1px solid rgba(255,255,255,0.05);align-items:center'
-    
-    const roleColor = user.is_admin ? 'var(--accent)' : 'var(--muted)'
-    const roleText = user.is_admin ? '🛡️ Admin' : '👤 User'
-    
+    userRow.className = 'table-row'
+    const roleText = user.is_admin ? 'Admin' : 'User'
+    const roleClass = user.is_admin ? 'admin' : 'user'
+
     userRow.innerHTML = `
-      <div id="username-${user.id}" style="font-weight:600;cursor:pointer;" onclick="editUsername(${user.id}, '${user.username}')" title="Click to edit username">${user.username}</div>
-      <div style="color:${roleColor};font-size:13px">${roleText}</div>
-      <div style="color:var(--muted);font-size:14px">${user.entry_count}</div>
-      <div style="display:flex;gap:6px">
-        <button class="btn-ghost" style="padding:6px 10px;font-size:12px" onclick="toggleAdmin(${user.id})" title="Toggle admin status">
-          ${user.is_admin ? '👤' : '🛡️'}
+      <div id="username-${user.id}" class="table-meta" style="cursor:pointer" title="Click to edit username">
+        <div><strong>${user.username}</strong></div>
+        <div class="helper-text">${formatDate(user.created_at)}. ${formatNet(user)}</div>
+      </div>
+      <div class="role-badge ${roleClass}">${roleText}</div>
+      <div class="muted-copy">${user.entry_count}</div>
+      <div class="table-actions">
+        <button class="btn-ghost btn-sm toggle-admin-btn" title="Toggle admin status">
+          ${user.is_admin ? 'Remove admin' : 'Make admin'}
         </button>
-        <button class="btn-ghost" style="padding:6px 10px;font-size:12px;color:var(--danger)" onclick="deleteUser(${user.id}, '${user.username}')" title="Delete user">
-          🗑️
+        <button class="btn-ghost btn-sm delete-user-btn danger-copy" title="Delete user">
+          Delete
         </button>
       </div>
     `
-    
+
+    userRow.querySelector(`#username-${user.id}`).addEventListener('click', () => {
+      window.editUsername(user.id, user.username)
+    })
+    userRow.querySelector('.toggle-admin-btn').addEventListener('click', () => {
+      window.toggleAdmin(user.id)
+    })
+    userRow.querySelector('.delete-user-btn').addEventListener('click', () => {
+      window.deleteUser(user.id, user.username)
+    })
+
     usersList.appendChild(userRow)
   })
 }
 
-window.deleteUser = async function(userId, username) {
-  if (!confirm(`Delete user "${username}"? This will permanently delete their account and all associated data.`)) {
+window.deleteUser = async function deleteUser(userId, username) {
+  const confirmation = prompt(`Type "${username}" to delete this user and all associated data.`)
+  if (confirmation !== username) {
     return
   }
-  
-  const res = await apiFetch('DELETE', `/admin/users/${userId}`)
-  if (!res.ok) {
-    const j = await res.json().catch(() => ({error: 'Failed to delete user'}))
-    alert(j.error || 'Failed to delete user')
+
+  const response = await apiFetch('DELETE', `/admin/users/${userId}`)
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({error: 'Failed to delete user'}))
+    alert(payload.error || 'Failed to delete user')
     return
   }
-  
+
   await loadUsers()
 }
 
-window.toggleAdmin = async function(userId) {
-  const res = await apiFetch('POST', `/admin/users/${userId}/toggle-admin`)
-  if (!res.ok) {
-    const j = await res.json().catch(() => ({error: 'Failed to update user'}))
-    alert(j.error || 'Failed to update user')
+window.toggleAdmin = async function toggleAdmin(userId) {
+  const response = await apiFetch('POST', `/admin/users/${userId}/toggle-admin`)
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({error: 'Failed to update user'}))
+    alert(payload.error || 'Failed to update user')
     return
   }
-  
+
   await loadUsers()
 }
 
-window.editUsername = async function(userId, currentUsername) {
+window.editUsername = async function editUsername(userId, currentUsername) {
   const element = document.getElementById(`username-${userId}`)
-  if (!element) return
-  
-  // Create input field
+  if (!element) {
+    return
+  }
+
   const input = document.createElement('input')
   input.type = 'text'
   input.value = currentUsername
-  input.style.cssText = 'padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: inherit; font-size: 14px; font-weight: 600; width: 100%;'
-  
+  input.className = 'admin-inline-input'
+
   const save = async () => {
     const newUsername = input.value.trim()
     if (!newUsername) {
@@ -116,89 +121,66 @@ window.editUsername = async function(userId, currentUsername) {
       await loadUsers()
       return
     }
-    
+
     if (newUsername !== currentUsername) {
-      const res = await apiFetch('PUT', `/admin/users/${userId}`, { username: newUsername })
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({error: 'Failed to update username'}))
-        alert(j.error || 'Failed to update username')
+      const response = await apiFetch('PUT', `/admin/users/${userId}`, {username: newUsername})
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({error: 'Failed to update username'}))
+        alert(payload.error || 'Failed to update username')
       }
     }
-    
+
     await loadUsers()
   }
-  
-  input.onblur = save
-  input.onkeydown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
+
+  input.addEventListener('blur', save)
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
       save()
-    } else if (e.key === 'Escape') {
+    } else if (event.key === 'Escape') {
       loadUsers()
     }
-  }
-  
+  })
+
   element.replaceWith(input)
   input.focus()
   input.select()
 }
 
 async function init() {
-  // Check if logged in
   if (!isLoggedIn()) {
     location.href = 'login.html'
     return
   }
-  
-  // Load profile to verify admin status
-  const profileRes = await apiFetch('GET', '/profile')
-  if (!profileRes.ok) {
-    location.href = 'login.html'
+
+  const profile = await loadProfile()
+  if (!profile) {
     return
   }
-  
-  const profile = await profileRes.json()
-  
-  // Redirect if not admin
+
   if (!profile.is_admin) {
     alert('Admin access required')
     location.href = 'index.html'
     return
   }
-  
-  // Set up user menu
+
   const userDropdown = $('#userDropdown')
   const userMenuBtn = $('#userMenuBtn')
   const userDropdownMenu = $('#userDropdownMenu')
   const userHint = $('#userHint')
   const signOutBtn = $('#signOutBtn')
-  
-  if (userDropdown) userDropdown.style.display = 'block'
-  if (userHint) userHint.textContent = profile.username
-  
-  // Toggle dropdown menu
-  if (userMenuBtn && userDropdownMenu) {
-    userMenuBtn.addEventListener('click', (e) => {
-      e.stopPropagation()
-      userDropdownMenu.classList.toggle('show')
-    })
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', () => {
-      userDropdownMenu.classList.remove('show')
-    })
+
+  if (userDropdown) {
+    userDropdown.style.display = 'block'
   }
-  
-  // Sign out
-  if (signOutBtn) {
-    signOutBtn.addEventListener('click', (e) => {
-      e.preventDefault()
-      localStorage.removeItem(TOKEN_KEY)
-      location.href = 'login.html'
-    })
+  if (userHint) {
+    userHint.textContent = profile.username
   }
-  
-  // Load users
+
+  setupDropdown(userMenuBtn, userDropdownMenu)
+  wireSignOut(signOutBtn)
+
   await loadUsers()
 }
 

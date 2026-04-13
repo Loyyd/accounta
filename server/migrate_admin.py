@@ -1,33 +1,25 @@
 #!/usr/bin/env python3
 """
-Migration script to add is_admin column to users table
+Grant admin access to an existing user.
 """
-from app import app, db, User
+import sys
 
-def migrate():
+from app import User, app, db
+
+
+def grant_admin(username):
     with app.app_context():
-        # Check if is_admin column exists
-        from sqlalchemy import inspect
-        inspector = inspect(db.engine)
-        columns = [col['name'] for col in inspector.get_columns('users')]
-        
-        if 'is_admin' not in columns:
-            # Add is_admin column using raw SQL
-            with db.engine.connect() as conn:
-                conn.execute(db.text('ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0'))
-                conn.commit()
-            print('✅ Added is_admin column to users table')
-        else:
-            print('✅ is_admin column already exists')
-        
-        # Make Konrad an admin for testing
-        user = User.query.filter_by(username='Konrad').first()
-        if user:
-            user.is_admin = True
-            db.session.commit()
-            print(f'✅ Made {user.username} an admin')
-        else:
-            print('ℹ️ User Konrad not found - you can create an admin user manually')
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            print(f'User "{username}" not found')
+            return 1
 
-if __name__ == '__main__':
-    migrate()
+        user.is_admin = True
+        db.session.commit()
+        print(f'Granted admin access to "{username}"')
+        return 0
+
+
+if __name__ == "__main__":
+    target_username = sys.argv[1] if len(sys.argv) > 1 else "Konrad"
+    raise SystemExit(grant_admin(target_username))

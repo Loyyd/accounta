@@ -1,35 +1,75 @@
-<img src="./server/static/accounta.png" alt="drawing" width="200"/>
+<img src="./server/static/accounta.png" alt="accounta logo" width="200"/>
+
 # Accounta
 
-Accounta is a lightweight Flask/React bookkeeping app for freelancers and small teams.
+Accounta is a lightweight bookkeeping app for freelancers and small teams. It uses a Flask API, a SQLite database, and a static dashboard frontend served directly by the backend.
 
-I’ve open‑sourced the backend and frontend so you can run it locally, hack on it,
-or use parts of it in your own projects.
+## What It Does
 
-### Features
+- JWT-based registration and login
+- Income and expense tracking
+- Category management with custom colors
+- Recurring subscriptions
+- Budget tracking
+- Admin dashboard for user management
+- Account settings, password changes, and full data export
 
-- Flask API with JWT auth
-- React dashboard with charts
-- Redis queue for background tasks
-- Docker compose setup for dev
+## Tech Stack
 
-### Screenshots
+- Backend: Flask, Flask-SQLAlchemy, PyJWT
+- Frontend: HTML, CSS, vanilla JavaScript, Chart.js
+- Database: SQLite by default
+- Optional tooling: Docker, sqlite-web
 
-![Dashboard Overview](./server/static/dashboard_overview.png)
-![Spending Trends](./server/static/spending_trends.png)
+## Project Structure
 
-### Getting started
+- [`server/app.py`](./server/app.py): Flask app, models, and API routes
+- [`server/static/`](./server/static): frontend pages, scripts, styles, and images
+- [`instance/dev.db`](./instance/dev.db): local SQLite development database
+- [`docker-compose.yml`](./docker-compose.yml): backend plus sqlite-web
 
-1. Clone the repo.
-2. `docker compose up` (make sure Docker is installed).
-3. Backend on http://localhost:5001, frontend on http://localhost:3000.
+## Local Development
 
-### Development
+### Option 1: Run With Docker
 
-Edit `server/` or `client/`, volumes are mounted by `docker-compose.override.yml`.
-Run tests with `make test` or `pytest` from the `server` directory.
+```bash
+docker compose up --build
+```
 
+- App: http://localhost:5001
+- SQLite Web: http://localhost:8080
 
+### Option 2: Run Without Docker
 
-Use it however you like. Let me
-know if you build something cool with it!
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r server/requirements.txt
+python3 server/app.py
+```
+
+The app will be available at http://localhost:5000 unless you override the Flask/Gunicorn host or port.
+
+## Environment Variables
+
+Copy `.env.example` to `.env` if you want to override defaults.
+
+- `DATABASE_URL`: optional SQLAlchemy connection string
+- `SECRET_KEY`: JWT signing secret
+- `JWT_ALGORITHM`: defaults to `HS256`
+- `JWT_EXP_SECONDS`: token lifetime in seconds
+
+If `DATABASE_URL` is not set, Accounta uses the local SQLite database in `instance/dev.db` when available.
+
+## Tests
+
+Run the API test suite with:
+
+```bash
+pytest server/tests
+```
+
+## Notes
+
+- The app performs lightweight schema bootstrapping on startup for the local database.
+- `server/schema.sql` is a SQLite-oriented reference schema that matches the current ORM models.
