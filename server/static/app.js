@@ -94,8 +94,9 @@ async function addSubscription(type, amount, category, description, frequency, s
     return false
   }
   await loadSubscriptions()
+  await loadEntries()
   renderSubscriptions()
-  await processSubscriptions()
+  render()
   return true
 }
 
@@ -107,6 +108,7 @@ async function deleteSubscription(id) {
   }
   await loadSubscriptions()
   renderSubscriptions()
+  render()
 }
 
 async function toggleSubscription(id) {
@@ -116,7 +118,9 @@ async function toggleSubscription(id) {
     return
   }
   await loadSubscriptions()
+  await loadEntries()
   renderSubscriptions()
+  render()
 }
 
 async function updateSubscription(id, updates) {
@@ -127,7 +131,9 @@ async function updateSubscription(id, updates) {
     return false
   }
   await loadSubscriptions()
+  await loadEntries()
   renderSubscriptions()
+  render()
   return true
 }
 
@@ -244,108 +250,6 @@ window.editSubscription = function(id) {
   if (sub) {
     openEditSubscriptionModal(sub)
   }
-}
-
-async function processSubscriptions() {
-  // Process active subscriptions and add entries if needed
-  const today = new Date()
-  
-  for (const sub of subscriptions) {
-    if (!sub.active) continue
-    
-    const start = new Date(sub.startDate)
-    if (start > today) continue
-    
-    // Generate all missing entries from start date to today
-    if (sub.frequency === 'monthly') {
-      let current = new Date(start)
-      while (current <= today) {
-        const year = current.getFullYear()
-        const month = current.getMonth() + 1
-        const day = current.getDate()
-        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-        
-        // Check if entry exists for this month
-        if (!hasSubscriptionEntry(sub, current)) {
-          await addEntry({
-            type: sub.type,
-            description: sub.description,
-            amount: sub.amount,
-            category: sub.category,
-            date: date
-          })
-        }
-        
-        // Move to next month
-        current.setMonth(current.getMonth() + 1)
-      }
-    } else if (sub.frequency === 'weekly') {
-      let current = new Date(start)
-      while (current <= today) {
-        const year = current.getFullYear()
-        const month = current.getMonth() + 1
-        const day = current.getDate()
-        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-        
-        if (!hasSubscriptionEntry(sub, current)) {
-          await addEntry({
-            type: sub.type,
-            description: sub.description,
-            amount: sub.amount,
-            category: sub.category,
-            date: date
-          })
-        }
-        
-        // Move to next week
-        current.setDate(current.getDate() + 7)
-      }
-    } else if (sub.frequency === 'yearly') {
-      let current = new Date(start)
-      while (current <= today) {
-        const year = current.getFullYear()
-        const month = current.getMonth() + 1
-        const day = current.getDate()
-        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-        
-        if (!hasSubscriptionEntry(sub, current)) {
-          await addEntry({
-            type: sub.type,
-            description: sub.description,
-            amount: sub.amount,
-            category: sub.category,
-            date: date
-          })
-        }
-        
-        // Move to next year
-        current.setFullYear(current.getFullYear() + 1)
-      }
-    }
-  }
-}
-
-function hasSubscriptionEntry(sub, targetDate) {
-  // Check if there's already an entry for this subscription at this specific period
-  return entries.some(e => {
-    if (e.description !== sub.description) return false
-    if (e.type !== sub.type) return false
-    if (parseFloat(e.amount) !== sub.amount) return false
-    
-    const entryDate = new Date(e.date)
-    
-    if (sub.frequency === 'monthly') {
-      return entryDate.getMonth() === targetDate.getMonth() && 
-             entryDate.getFullYear() === targetDate.getFullYear()
-    } else if (sub.frequency === 'weekly') {
-      // Check if dates are within the same week
-      const daysDiff = Math.abs((entryDate - targetDate) / (1000 * 60 * 60 * 24))
-      return daysDiff < 7
-    } else if (sub.frequency === 'yearly') {
-      return entryDate.getFullYear() === targetDate.getFullYear()
-    }
-    return false
-  })
 }
 
 function renderSubscriptions() {
@@ -2083,7 +1987,6 @@ async function init(){
   await loadSubscriptions()
   await loadBudgets()
   await loadEntries()
-  await processSubscriptions() // Check and add subscription entries if needed
   render()
   renderCategories()
   renderSubscriptions()
@@ -2127,7 +2030,7 @@ async function init(){
       updateSubCategoryInput()
     }
     
-    subscriptionForm.addEventListener('submit', (ev) => {
+    subscriptionForm.addEventListener('submit', async (ev) => {
       ev.preventDefault()
       const type = $('#subType').value
       const amount = $('#subAmount').value
@@ -2136,13 +2039,12 @@ async function init(){
       const frequency = $('#subFrequency').value
       const startDate = $('#subStartDate').value
       
-      if (addSubscription(type, amount, category, description, frequency, startDate)) {
+      if (await addSubscription(type, amount, category, description, frequency, startDate)) {
         subscriptionForm.reset()
         if (subStartDate) {
           subStartDate.value = new Date().toISOString().split('T')[0]
         }
         updateSubCategoryInput()
-        render() // Re-render in case subscription added new entries
       }
     })
   }
