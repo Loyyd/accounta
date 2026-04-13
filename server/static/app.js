@@ -138,10 +138,9 @@ async function updateSubscription(id, updates) {
 }
 
 function openEditSubscriptionModal(sub) {
-  // Create modal overlay
   const overlay = document.createElement('div')
   overlay.id = 'editSubModal'
-  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000;'
+  overlay.className = 'subscription-modal-overlay'
   
   const categoryType = sub.type || 'expense'
   const categoryList = categories[categoryType] || []
@@ -150,48 +149,48 @@ function openEditSubscriptionModal(sub) {
   ).join('')
   
   const modal = document.createElement('div')
-  modal.style.cssText = 'background:var(--card);border-radius:12px;padding:24px;width:90%;max-width:450px;box-shadow:0 8px 32px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);'
+  modal.className = 'subscription-modal'
   modal.innerHTML = `
-    <h3 style="margin:0 0 20px 0;color:var(--accent)">✏️ Edit Subscription</h3>
-    <form id="editSubForm">
-      <div style="margin-bottom:14px">
-        <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Type</label>
-        <select id="editSubType" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;">
+    <h3 class="subscription-modal-title">Edit Subscription</h3>
+    <form id="editSubForm" class="subscription-modal-form">
+      <div class="subscription-modal-row">
+        <label>Type</label>
+        <select id="editSubType" required>
           <option value="expense" ${sub.type === 'expense' ? 'selected' : ''}>Expense</option>
           <option value="income" ${sub.type === 'income' ? 'selected' : ''}>Income</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div>
-          <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Amount</label>
-          <input id="editSubAmount" type="number" step="0.01" value="${sub.amount}" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;"/>
+      <div class="subscription-modal-grid">
+        <div class="subscription-modal-row">
+          <label>Amount</label>
+          <input id="editSubAmount" type="number" step="0.01" value="${sub.amount}" required />
         </div>
-        <div>
-          <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Category</label>
-          <select id="editSubCategory" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;">
+        <div class="subscription-modal-row">
+          <label>Category</label>
+          <select id="editSubCategory" required>
             ${categoryOptions}
           </select>
         </div>
       </div>
-      <div style="margin-bottom:14px">
-        <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Description</label>
-        <input id="editSubDescription" type="text" value="${sub.description}" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;"/>
+      <div class="subscription-modal-row">
+        <label>Description</label>
+        <input id="editSubDescription" type="text" value="${sub.description}" required />
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-        <div>
-          <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Frequency</label>
-          <select id="editSubFrequency" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;">
+      <div class="subscription-modal-grid">
+        <div class="subscription-modal-row">
+          <label>Frequency</label>
+          <select id="editSubFrequency" required>
             <option value="weekly" ${sub.frequency === 'weekly' ? 'selected' : ''}>Weekly</option>
             <option value="monthly" ${sub.frequency === 'monthly' ? 'selected' : ''}>Monthly</option>
             <option value="yearly" ${sub.frequency === 'yearly' ? 'selected' : ''}>Yearly</option>
           </select>
         </div>
-        <div>
-          <label style="display:block;color:var(--muted);font-size:13px;margin-bottom:6px">Start Date</label>
-          <input id="editSubStartDate" type="date" value="${sub.startDate.split('T')[0]}" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;"/>
+        <div class="subscription-modal-row">
+          <label>Start Date</label>
+          <input id="editSubStartDate" type="date" value="${sub.startDate.split('T')[0]}" required />
         </div>
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end">
+      <div class="subscription-modal-actions">
         <button type="button" id="cancelEditSub" class="btn-ghost">Cancel</button>
         <button type="submit" class="btn-primary">Save Changes</button>
       </div>
@@ -257,34 +256,39 @@ function renderSubscriptions() {
   if (!subsList) return
   
   if (subscriptions.length === 0) {
-    subsList.innerHTML = '<div class="muted" style="text-align:center;padding:20px">No subscriptions yet. Add one above!</div>'
+    subsList.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">+</div>
+        <div class="empty-state-title">No subscriptions yet</div>
+        <div class="helper-text">Add a recurring payment or income stream to keep future entries in sync.</div>
+      </div>
+    `
     return
   }
   
   subsList.innerHTML = ''
   subscriptions.forEach(sub => {
     const div = document.createElement('div')
-    div.className = 'entry'
-    div.style.opacity = sub.active ? '1' : '0.5'
+    div.className = `subscription-card${sub.active ? '' : ' is-inactive'}`
     
     const typeColor = sub.type === 'income' ? 'var(--accent)' : 'var(--danger)'
     const freqText = sub.frequency.charAt(0).toUpperCase() + sub.frequency.slice(1)
     
     div.innerHTML = `
-      <div style="flex:1">
-        <div style="font-weight:600;margin-bottom:4px">${sub.description}</div>
-        <div style="font-size:13px;color:var(--muted)">${sub.category} • ${freqText} • Since ${new Date(sub.startDate).toLocaleDateString()}</div>
+      <div class="subscription-main">
+        <div class="subscription-title">${sub.description}</div>
+        <div class="subscription-meta">${sub.category} • ${freqText} • Since ${new Date(sub.startDate).toLocaleDateString()}</div>
       </div>
-      <div style="font-weight:600;color:${typeColor};margin-right:12px">${fmt(sub.amount)}</div>
-      <div style="display:flex;gap:8px">
-        <button onclick="editSubscription(${sub.id})" class="btn-ghost" style="padding:6px 10px;font-size:12px" title="Edit">
-          ✏️
+      <div class="subscription-amount" style="color:${typeColor}">${fmt(sub.amount)}</div>
+      <div class="subscription-actions">
+        <button onclick="editSubscription(${sub.id})" class="btn-ghost btn-sm" title="Edit">
+          Edit
         </button>
-        <button onclick="toggleSubscription(${sub.id})" class="btn-ghost" style="padding:6px 10px;font-size:12px" title="${sub.active ? 'Pause' : 'Activate'}">
-          ${sub.active ? '⏸' : '▶️'}
+        <button onclick="toggleSubscription(${sub.id})" class="btn-ghost btn-sm" title="${sub.active ? 'Pause' : 'Activate'}">
+          ${sub.active ? 'Pause' : 'Activate'}
         </button>
-        <button onclick="deleteSubscription(${sub.id})" class="btn-ghost" style="padding:6px 10px;font-size:12px;color:var(--danger)" title="Delete">
-          🗑️
+        <button onclick="deleteSubscription(${sub.id})" class="btn-ghost btn-sm danger-copy" title="Delete">
+          Remove
         </button>
       </div>
     `
@@ -357,9 +361,10 @@ function renderBudgets() {
   
   if (budgets.length === 0) {
     budgetsList.innerHTML = `
-      <div style="text-align:center;padding:30px 20px;color:var(--muted)">
-        <div style="font-size:32px;margin-bottom:8px">💰</div>
-        <div style="font-size:14px">No budgets yet</div>
+      <div class="empty-state">
+        <div class="empty-state-icon">+</div>
+        <div class="empty-state-title">No budgets yet</div>
+        <div class="helper-text">Set a monthly target to start tracking spending against your limits.</div>
       </div>
     `
     return
@@ -368,17 +373,15 @@ function renderBudgets() {
   budgetsList.innerHTML = ''
   budgets.forEach(budget => {
     const div = document.createElement('div')
-    div.style.cssText = 'padding:14px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;transition:background 0.2s'
-    div.onmouseenter = () => div.style.background = 'rgba(255,255,255,0.03)'
-    div.onmouseleave = () => div.style.background = 'transparent'
+    div.className = 'budget-row'
     
     div.innerHTML = `
-      <div>
-        <div style="font-weight:600;margin-bottom:2px">${budget.category}</div>
-        <div style="font-size:13px;color:var(--accent)">${fmt(budget.amount)} / month</div>
+      <div class="budget-row-meta">
+        <div class="budget-row-title">${budget.category}</div>
+        <div class="budget-row-value">${fmt(budget.amount)} / month</div>
       </div>
-      <button onclick="deleteBudget('${budget.category}')" class="btn-ghost" style="padding:8px 12px;font-size:13px;color:var(--danger)" title="Delete budget">
-        🗑️ Remove
+      <button onclick="deleteBudget('${budget.category}')" class="btn-ghost btn-sm danger-copy" title="Delete budget">
+        Remove
       </button>
     `
     budgetsList.appendChild(div)
@@ -423,10 +426,10 @@ function renderBudgetOverview() {
   
   if (budgets.length === 0) {
     budgetProgressList.innerHTML = `
-      <div style="text-align:center;padding:40px 20px">
-        <div style="font-size:48px;margin-bottom:12px">📊</div>
-        <div style="color:var(--muted);margin-bottom:8px">No budgets set yet</div>
-        <div style="font-size:13px;color:var(--muted)">Set a budget below to start tracking your spending</div>
+      <div class="empty-state">
+        <div class="empty-state-icon">%</div>
+        <div class="empty-state-title">No budgets set yet</div>
+        <div class="helper-text">Set a budget below to start tracking your spending for each category.</div>
       </div>
     `
     return
@@ -457,56 +460,60 @@ function renderBudgetOverview() {
   
   let statusIcon = '✅'
   let statusText = 'All budgets on track!'
-  let statusColor = 'var(--accent)'
+  let statusTone = 'budget-good'
   
   if (overBudgetCount > 0) {
     statusIcon = '⚠️'
     statusText = `${overBudgetCount} ${overBudgetCount === 1 ? 'budget' : 'budgets'} exceeded`
-    statusColor = 'var(--danger)'
+    statusTone = 'budget-danger'
   } else if (warningCount > 0) {
     statusIcon = '⚡'
     statusText = `${warningCount} ${warningCount === 1 ? 'budget' : 'budgets'} at 80%+`
-    statusColor = '#fbbf24'
+    statusTone = 'budget-warning'
   }
   
   const circumference = 2 * Math.PI * 70 // radius = 70
   const offset = circumference - (Math.min(totalPercentage, 100) / 100) * circumference
+  const progressColor = totalPercentage > 100 ? 'var(--danger)' : totalPercentage > 80 ? '#fbbf24' : 'var(--accent)'
   
   summaryCard.innerHTML = `
-    <div style="display:flex;gap:30px;align-items:center">
-      <div style="position:relative;width:160px;height:160px;flex-shrink:0">
-        <svg width="160" height="160" style="transform:rotate(-90deg)">
+    <div class="panel-surface budget-summary">
+      <div class="budget-summary-chart">
+        <svg viewBox="0 0 160 160" aria-hidden="true">
           <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="12"></circle>
           <circle cx="80" cy="80" r="70" fill="none" 
-            stroke="${totalPercentage > 100 ? 'var(--danger)' : totalPercentage > 80 ? '#fbbf24' : 'var(--accent)'}" 
+            stroke="${progressColor}" 
             stroke-width="12" 
             stroke-dasharray="${circumference}" 
             stroke-dashoffset="${offset}"
             stroke-linecap="round"
-            style="transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;filter:drop-shadow(0 0 8px ${totalPercentage > 100 ? 'rgba(239, 68, 68, 0.4)' : totalPercentage > 80 ? 'rgba(251, 191, 36, 0.4)' : 'rgba(110, 231, 183, 0.4)'})"></circle>
+            style="transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;"></circle>
         </svg>
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);text-align:center">
-          <div style="font-size:32px;font-weight:700;color:${statusColor}">${totalPercentage.toFixed(0)}%</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">used</div>
+        <div class="budget-summary-center">
+          <div class="budget-summary-percent ${statusTone}">${totalPercentage.toFixed(0)}%</div>
+          <div class="budget-summary-label">used</div>
         </div>
       </div>
       
-      <div style="flex:1">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-          <div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Spent</div>
-            <div style="font-size:18px;font-weight:600;color:${totalPercentage > 100 ? 'var(--danger)' : 'inherit'}">${fmt(totalSpent)}</div>
-          </div>
-          <div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Budget</div>
-            <div style="font-size:18px;font-weight:600">${fmt(totalBudget)}</div>
-          </div>
+      <div>
+        <div class="budget-summary-status ${statusTone}">
+          <span>${statusIcon}</span>
+          <span>${statusText}</span>
         </div>
-        
-        <div style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.1)">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Remaining</div>
-          <div style="font-size:18px;font-weight:600;color:${totalSpent > totalBudget ? 'var(--danger)' : 'var(--accent)'}">
-            ${totalSpent > totalBudget ? '-' : ''}${fmt(Math.abs(totalBudget - totalSpent))}
+        <div class="budget-summary-metrics">
+          <div class="budget-metric">
+            <div class="budget-metric-label">Spent</div>
+            <div class="budget-metric-value ${totalPercentage > 100 ? 'budget-danger' : ''}">${fmt(totalSpent)}</div>
+          </div>
+          <div class="budget-metric">
+            <div class="budget-metric-label">Budget</div>
+            <div class="budget-metric-value">${fmt(totalBudget)}</div>
+          </div>
+          <div class="budget-metric">
+            <div class="budget-metric-label">Remaining</div>
+            <div class="budget-metric-value ${totalSpent > totalBudget ? 'budget-danger' : 'budget-good'}">
+              ${totalSpent > totalBudget ? '-' : ''}${fmt(Math.abs(totalBudget - totalSpent))}
+            </div>
           </div>
         </div>
       </div>
@@ -521,39 +528,36 @@ function renderBudgetOverview() {
     const isOverBudget = spent > budget.amount
     const isWarning = percentage > 80 && !isOverBudget
     const remaining = budget.amount - spent
+    const statusToneClass = isOverBudget ? 'budget-danger' : isWarning ? 'budget-warning' : 'budget-good'
+    const progressColor = isOverBudget ? 'var(--danger)' : isWarning ? '#fbbf24' : 'var(--accent)'
     
     const div = document.createElement('div')
-    div.style.cssText = `padding:16px;margin-bottom:12px;background:rgba(255,255,255,0.03);border-radius:10px;border-left:4px solid ${isOverBudget ? 'var(--danger)' : isWarning ? '#fbbf24' : 'var(--accent)'};transition:all 0.2s;cursor:default`
-    div.onmouseenter = () => div.style.background = 'rgba(255,255,255,0.06)'
-    div.onmouseleave = () => div.style.background = 'rgba(255,255,255,0.03)'
+    div.className = 'budget-item'
     
     let statusEmoji = '✓'
-    let statusColor = 'var(--accent)'
     if (isOverBudget) {
       statusEmoji = '⚠️'
-      statusColor = 'var(--danger)'
     } else if (isWarning) {
       statusEmoji = '⚡'
-      statusColor = '#fbbf24'
     }
     
     div.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="budget-item-head">
         <div>
-          <div style="font-weight:600;font-size:15px;margin-bottom:2px">${budget.category}</div>
-          <div style="font-size:12px;color:var(--muted)">${fmt(spent)} / ${fmt(budget.amount)}</div>
+          <div class="budget-item-title">${budget.category}</div>
+          <div class="budget-item-meta">${fmt(spent)} / ${fmt(budget.amount)}</div>
         </div>
-        <div style="text-align:right">
-          <div style="font-size:16px;font-weight:600;color:${statusColor}">
+        <div class="budget-item-status">
+          <div class="budget-item-percentage ${statusToneClass}">
             ${statusEmoji} ${percentage.toFixed(0)}%
           </div>
-          <div style="font-size:12px;color:${isOverBudget ? 'var(--danger)' : 'var(--muted)'}">
+          <div class="budget-item-remaining ${isOverBudget ? 'budget-danger' : ''}">
             ${isOverBudget ? 'Over by ' + fmt(Math.abs(remaining)) : fmt(remaining) + ' left'}
           </div>
         </div>
       </div>
-      <div style="background:rgba(255,255,255,0.1);border-radius:6px;height:8px;overflow:hidden">
-        <div style="background:${isOverBudget ? 'var(--danger)' : isWarning ? '#fbbf24' : 'var(--accent)'};height:100%;width:${Math.min(percentage, 100)}%;transition:width 0.3s"></div>
+      <div class="budget-progress">
+        <div class="budget-progress-bar" style="background:${progressColor};width:${Math.min(percentage, 100)}%"></div>
       </div>
     `
     budgetProgressList.appendChild(div)

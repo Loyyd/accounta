@@ -136,10 +136,6 @@
           <canvas id="profitChart" class="chart-canvas-sm"></canvas>
         </section>
 
-        <section class="card ledger-card">
-          <h3>Recent Transactions</h3>
-          <div id="entries" class="entries"></div>
-        </section>
       </div>
 
       <div id="add-transaction-view" class="tab-view">
@@ -206,11 +202,16 @@
           </div>
         </form>
       </section>
+
+        <section class="card ledger-card">
+          <h3>Recent Transactions</h3>
+          <div id="entries" class="entries"></div>
+        </section>
       </div>
 
       <div id="subscriptions-view" class="tab-view">
         <section class="card input-card">
-          <h3>Add Recurring Transaction / Subscription</h3>
+          <h3 class="panel-title">Add Subscription</h3>
           <form id="subscriptionForm">
             <div class="row">
               <label>Type</label>
@@ -259,8 +260,8 @@
         </section>
 
         <section class="card">
-          <h3>Active Subscriptions</h3>
-          <div id="subscriptionsList" class="entries"></div>
+          <h3 class="panel-title">Active Subscriptions</h3>
+          <div id="subscriptionsList" class="subscription-list"></div>
         </section>
       </div>
 
@@ -271,12 +272,12 @@
             <select id="budgetMonthSelector" class="surface-select">
             </select>
           </div>
-          <div id="budgetProgressList"></div>
+          <div id="budgetProgressList" class="budget-stack"></div>
         </section>
 
         <div class="split-grid">
           <section class="card input-card">
-            <h3>💰 Set Budget</h3>
+            <h3 class="panel-title">Set Budget</h3>
             <form id="budgetForm">
               <div class="row">
                 <label>Category</label>
@@ -297,8 +298,8 @@
           </section>
 
           <section class="card">
-            <h3>📋 Your Budgets</h3>
-            <div id="budgetsList"></div>
+            <h3 class="panel-title">Your Budgets</h3>
+            <div id="budgetsList" class="budget-list"></div>
           </section>
         </div>
       </div>
