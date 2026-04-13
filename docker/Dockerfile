@@ -14,7 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 COPY server/ .
 COPY docker/backup-sqlite.sh /usr/local/bin/backup-sqlite.sh
+COPY docker/restore-sqlite.sh /usr/local/bin/restore-sqlite.sh
 RUN chmod +x /usr/local/bin/backup-sqlite.sh
+RUN chmod +x /usr/local/bin/restore-sqlite.sh
 
 RUN adduser --system --group accounta \
     && mkdir -p /app/data \
