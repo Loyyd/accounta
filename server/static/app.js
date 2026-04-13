@@ -874,6 +874,11 @@ async function addEntry({type, description, amount, category, date}){
 }
 
 async function removeEntry(idValue){
+  if(idValue === undefined || idValue === null || idValue === ''){
+    alert('Could not determine which transaction to delete')
+    return
+  }
+
   const res = await apiFetch('DELETE', '/entries/' + idValue)
   if(!res.ok){
     const j = await res.json().catch(()=>({error:'Failed'}))
@@ -1839,11 +1844,12 @@ function renderEntriesList(container, list, emptyMessage) {
     }
 
     const btn = document.createElement('button')
+    btn.type = 'button'
     btn.className = 'btn-ghost'
     btn.textContent = 'Delete'
-    btn.onclick = (event) => {
+    btn.onclick = async (event) => {
       event.stopPropagation()
-      removeEntry(e.id)
+      await removeEntry(e.id ?? e.entry_id)
     }
 
     right.appendChild(amt)
