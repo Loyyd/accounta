@@ -4,7 +4,9 @@ const API_BASE = '/api' // change if backend is hosted elsewhere
 // Helpers
 const $ = (s) => document.querySelector(s)
 const $all = (s) => document.querySelectorAll(s)
-const fmt = (n) => n.toLocaleString(undefined, {style: 'currency', currency: 'EUR', maximumFractionDigits: 2})
+const fmt = (window.AccountaCommon && window.AccountaCommon.fmtCurrency)
+  ? window.AccountaCommon.fmtCurrency
+  : (n) => n.toLocaleString(undefined, {style: 'currency', currency: 'EUR', maximumFractionDigits: 2})
 
 // DOM
 const entryForm = $('#entryForm')
@@ -891,14 +893,17 @@ window.removeCategory = removeCategory
 window.updateCategoryColor = updateCategoryColor
 
 function token(){
-  return localStorage.getItem(TOKEN_KEY)
+  return window.AccountaCommon ? window.AccountaCommon.getToken() : localStorage.getItem(TOKEN_KEY)
 }
 
 function isLoggedIn(){
-  return !!token()
+  return window.AccountaCommon ? window.AccountaCommon.isLoggedIn() : !!token()
 }
 
 async function apiFetch(method, path, body){
+  if(window.AccountaCommon){
+    return window.AccountaCommon.apiFetch(method, path, body)
+  }
   const headers = {'Content-Type': 'application/json'}
   const t = token()
   if(t) headers['Authorization'] = 'Bearer ' + t
@@ -2252,7 +2257,11 @@ async function init(){
     if(signOutBtn){
       signOutBtn.addEventListener('click', (e)=>{
         e.preventDefault()
-        localStorage.removeItem(TOKEN_KEY)
+        if(window.AccountaCommon){
+          window.AccountaCommon.clearToken()
+        } else {
+          localStorage.removeItem(TOKEN_KEY)
+        }
         location.href = 'login.html'
       })
     }

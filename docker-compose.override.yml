@@ -11,10 +11,7 @@ services:
       - FLASK_DEBUG=1
     volumes:
       - ./server:/app
+      - ./instance:/app/instance
       - /app/__pycache__
     ports:
       - "5001:5000"
-
-  redis:
-    ports:
-      - "6379:6379"

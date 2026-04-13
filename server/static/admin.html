@@ -9,20 +9,20 @@
   </head>
   <body>
     <main class="app">
-      <header class="header">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:16px">
-            <img src="accounta.png" alt="accounta" style="height:60px;width:60px;object-fit:contain" />
-            <div>
-              <h1 style="margin:0">🛡️ Admin Dashboard</h1>
+      <header class="header page-header">
+        <div class="page-header-top">
+          <div class="brand-row">
+            <img src="accounta.png" alt="accounta" class="brand-logo" />
+            <div class="brand-block">
+              <h1 class="page-title">🛡️ Admin Dashboard</h1>
               <p class="lead">Manage all accounta users and accounts.</p>
             </div>
           </div>
-          <div id="authArea" style="position:relative;">
+          <div id="authArea" class="auth-area">
             <div id="userDropdown" style="display:none;">
               <button id="userMenuBtn" class="user-menu-btn">
                 <span id="userHint"></span>
-                <span style="margin-left:4px;">▼</span>
+                <span class="meta-copy">▼</span>
               </button>
               <div id="userDropdownMenu" class="user-dropdown-menu">
                 <a href="index.html" class="dropdown-item">📊 User Dashboard</a>
@@ -34,15 +34,15 @@
       </header>
 
       <section class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-          <h3 style="margin:0">User Accounts</h3>
-          <div style="color:var(--muted);font-size:14px">
-            Total Users: <span id="totalUsers" style="color:var(--accent);font-weight:600">0</span>
+        <div class="header-title-row section-header-lg">
+          <h3 class="section-title">User Accounts</h3>
+          <div class="muted-copy">
+            Total Users: <span id="totalUsers" class="accent-copy"><strong>0</strong></span>
           </div>
         </div>
 
         <div id="usersTable">
-          <div class="table-header" style="display:grid;grid-template-columns:2fr 1fr 1fr 120px;gap:12px;padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;font-weight:600;margin-bottom:8px">
+          <div class="table-header">
             <div>Username</div>
             <div>Role</div>
             <div>Entries</div>
@@ -54,6 +54,7 @@
 
       <footer class="footer">Admin Dashboard - Manage users with care</footer>
     </main>
+    <script src="shared.js"></script>
     <script src="admin.js"></script>
   </body>
 </html>
