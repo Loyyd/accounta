@@ -98,9 +98,21 @@
         if (!app.state.customStart || !app.state.customEnd) {
           return app.state.entries
         }
-        startDate = new Date(app.state.customStart)
-        endDate = new Date(app.state.customEnd)
-        endDate.setHours(23, 59, 59, 999)
+        startDate = parseMonthRangeStart(app.state.customStart)
+        endDate = parseMonthRangeEnd(app.state.customEnd)
+
+        if (!startDate || !endDate) {
+          return app.state.entries
+        }
+
+        if (startDate > endDate) {
+          const originalStart = startDate
+          startDate = parseMonthRangeStart(app.state.customEnd)
+          endDate = parseMonthRangeEnd(app.state.customStart)
+          if (!startDate || !endDate) {
+            startDate = originalStart
+          }
+        }
         break
       case 'all':
       default:
@@ -111,6 +123,39 @@
       const entryDate = new Date(entry.date)
       return entryDate >= startDate && entryDate <= endDate
     })
+  }
+
+  function parseMonthRangeStart(value) {
+    if (!value || !/^\d{4}-\d{2}$/.test(value)) {
+      return null
+    }
+
+    const [year, month] = value.split('-').map(Number)
+    return new Date(year, month - 1, 1)
+  }
+
+  function parseMonthRangeEnd(value) {
+    if (!value || !/^\d{4}-\d{2}$/.test(value)) {
+      return null
+    }
+
+    const [year, month] = value.split('-').map(Number)
+    return new Date(year, month, 0, 23, 59, 59, 999)
+  }
+
+  function updateCustomRangeValue(boundary) {
+    const monthSelect = boundary === 'start' ? app.dom.customStartMonth : app.dom.customEndMonth
+    const yearSelect = boundary === 'start' ? app.dom.customStartYear : app.dom.customEndYear
+
+    if (!monthSelect || !yearSelect || !monthSelect.value || !yearSelect.value) {
+      return
+    }
+
+    if (boundary === 'start') {
+      app.state.customStart = `${yearSelect.value}-${monthSelect.value}`
+    } else {
+      app.state.customEnd = `${yearSelect.value}-${monthSelect.value}`
+    }
   }
 
   function getEntriesForMonthYear(month, year) {
@@ -477,23 +522,29 @@
       })
     }
 
-    if (app.dom.customStartDate) {
-      app.dom.customStartDate.addEventListener('change', (event) => {
-        app.state.customStart = event.target.value
+    ;[
+      app.dom.customStartMonth,
+      app.dom.customStartYear,
+    ].filter(Boolean).forEach((element) => {
+      element.addEventListener('change', () => {
+        updateCustomRangeValue('start')
         if (app.state.customStart && app.state.customEnd) {
           app.render()
         }
       })
-    }
+    })
 
-    if (app.dom.customEndDate) {
-      app.dom.customEndDate.addEventListener('change', (event) => {
-        app.state.customEnd = event.target.value
+    ;[
+      app.dom.customEndMonth,
+      app.dom.customEndYear,
+    ].filter(Boolean).forEach((element) => {
+      element.addEventListener('change', () => {
+        updateCustomRangeValue('end')
         if (app.state.customStart && app.state.customEnd) {
           app.render()
         }
       })
-    }
+    })
 
     if (app.dom.breakdownTypeSelector) {
       app.dom.breakdownTypeSelector.addEventListener('change', (event) => {

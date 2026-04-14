@@ -31,8 +31,10 @@
     clearAllBtn: $('#clearAll'),
     timelineFilter: $('#timelineFilter'),
     customDateRange: $('#customDateRange'),
-    customStartDate: $('#customStartDate'),
-    customEndDate: $('#customEndDate'),
+    customStartMonth: $('#customStartMonth'),
+    customStartYear: $('#customStartYear'),
+    customEndMonth: $('#customEndMonth'),
+    customEndYear: $('#customEndYear'),
     breakdownTypeSelector: $('#breakdownType'),
     trendTimeframeSelector: $('#trendTimeframe'),
     showIncomeTrendCheckbox: $('#showIncomeTrend'),
@@ -107,24 +109,72 @@
         }
       }
     },
+    getRollingMonths(count = 12, baseDate = new Date()) {
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December']
+
+      return Array.from({length: count}, (_, offset) => {
+        const date = new Date(baseDate.getFullYear(), baseDate.getMonth() - offset, 1)
+        return {
+          key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+          monthValue: String(date.getMonth() + 1).padStart(2, '0'),
+          yearValue: String(date.getFullYear()),
+          monthLabel: monthNames[date.getMonth()],
+          monthYearLabel: `${monthNames[date.getMonth()]} ${date.getFullYear()}`,
+        }
+      })
+    },
     populateTransactionMonthOptions() {
       if (!app.dom.monthInput) {
         return
       }
 
-      const now = new Date()
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December']
-
       app.dom.monthInput.innerHTML = ''
 
-      for (let offset = 0; offset < 12; offset += 1) {
-        const monthIndex = (now.getMonth() - offset + 12) % 12
+      app.getRollingMonths(12).forEach((month) => {
         const option = document.createElement('option')
-        option.value = String(monthIndex + 1)
-        option.textContent = monthNames[monthIndex]
+        option.value = String(Number(month.monthValue))
+        option.textContent = month.monthLabel
         app.dom.monthInput.appendChild(option)
+      })
+    },
+    populateCustomRangeOptions() {
+      const monthSelects = [app.dom.customStartMonth, app.dom.customEndMonth].filter(Boolean)
+      const yearSelects = [app.dom.customStartYear, app.dom.customEndYear].filter(Boolean)
+
+      if (!monthSelects.length || !yearSelects.length) {
+        return
       }
+
+      const now = new Date()
+      const currentMonth = now.getMonth() + 1
+      const currentYear = now.getFullYear()
+      const rollingMonths = app.getRollingMonths(12, now)
+
+      monthSelects.forEach((select) => {
+        select.innerHTML = ''
+        rollingMonths.forEach((month) => {
+          const option = document.createElement('option')
+          option.value = month.monthValue
+          option.textContent = month.monthLabel
+          option.selected = Number(month.monthValue) === currentMonth
+          select.appendChild(option)
+        })
+      })
+
+      yearSelects.forEach((select) => {
+        select.innerHTML = ''
+        for (let year = currentYear; year >= currentYear - 5; year -= 1) {
+          const option = document.createElement('option')
+          option.value = String(year)
+          option.textContent = String(year)
+          option.selected = year === currentYear
+          select.appendChild(option)
+        }
+      })
+
+      app.state.customStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}`
+      app.state.customEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}`
     },
     render() {
       const totals = app.totalsFiltered()

@@ -112,18 +112,13 @@
       }
 
       selector.innerHTML = ''
-      const months = ['January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December']
-
-      for (let i = 0; i < 12; i += 1) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      app.getRollingMonths(12, now).forEach((month) => {
         const option = document.createElement('option')
-        option.value = monthKey
-        option.textContent = `${months[date.getMonth()]} ${date.getFullYear()}`
-        option.selected = monthKey === app.state.budgetViewMonth
+        option.value = month.key
+        option.textContent = month.monthYearLabel
+        option.selected = month.key === app.state.budgetViewMonth
         selector.appendChild(option)
-      }
+      })
     }
 
     if (app.state.budgets.length === 0) {
