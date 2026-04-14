@@ -4,10 +4,7 @@
   async function setupAuthUI() {
     try {
       const loginLink = document.getElementById('loginLink')
-      const userDropdown = document.getElementById('userDropdown')
-      const userMenuBtn = document.getElementById('userMenuBtn')
-      const userDropdownMenu = document.getElementById('userDropdownMenu')
-      const userHint = document.getElementById('userHint')
+      const userActions = document.getElementById('userActions')
       const signOutBtn = document.getElementById('signOutBtn')
       const settingsLink = document.getElementById('settingsLink')
       const adminLink = document.getElementById('adminLink')
@@ -17,22 +14,19 @@
         if (loginLink) {
           loginLink.style.display = 'none'
         }
-        if (userDropdown) {
-          userDropdown.style.display = 'block'
+        if (userActions) {
+          userActions.style.display = 'flex'
         }
 
         try {
-          const response = await app.apiFetch('GET', '/profile')
-          if (response.ok) {
-            const profile = await response.json()
-            if (userHint) {
-              userHint.textContent = profile.username
-            }
+            const response = await app.apiFetch('GET', '/profile')
+            if (response.ok) {
+              const profile = await response.json()
             if (footer) {
               footer.textContent = 'Saved to your account (server)'
             }
             if (profile.is_admin && adminLink) {
-              adminLink.style.display = 'block'
+              adminLink.style.display = 'grid'
             }
           }
         } catch (error) {
@@ -41,10 +35,6 @@
       } else {
         location.href = 'login.html'
         return
-      }
-
-      if (window.AccountaCommon?.setupDropdown) {
-        window.AccountaCommon.setupDropdown(userMenuBtn, userDropdownMenu)
       }
 
       if (settingsLink) {
@@ -71,6 +61,7 @@
   async function init() {
     app.initTabs()
     app.populateMonthOptions()
+    app.populateTransactionMonthOptions()
 
     if (app.dom.monthInput && app.dom.yearInput) {
       const now = new Date()

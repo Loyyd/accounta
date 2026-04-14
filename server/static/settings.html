@@ -10,111 +10,130 @@
   <body>
     <main class="app">
       <header class="header page-header">
-        <div class="brand-row">
-          <img src="accounta.png" alt="accounta" class="brand-logo" />
-          <div class="brand-block">
-            <h1 class="page-title">⚙️ Settings</h1>
-            <p class="lead">Manage your account and preferences</p>
+        <div class="page-header-top">
+          <div class="brand-row">
+            <img src="accounta.png" alt="accounta" class="brand-logo" />
+            <div class="brand-block">
+              <h1 class="page-title">Settings</h1>
+              <p class="lead">Manage your account and preferences</p>
+            </div>
+          </div>
+          <div id="authArea" class="auth-area">
+            <div id="userActions" class="auth-actions" style="display:none;">
+              <a href="index.html" class="header-icon-btn" aria-label="Dashboard" title="Dashboard">
+                <img src="assets/icons/header/home.png" alt="" class="header-icon-img" />
+              </a>
+              <button id="settingsLink" type="button" class="header-icon-btn is-active" aria-label="Settings" title="Settings">
+                <img src="assets/icons/header/setting-wheel.png" alt="" class="header-icon-img" />
+              </button>
+              <a href="admin.html" id="adminLink" class="header-icon-btn" style="display:none;" aria-label="Admin Dashboard" title="Admin Dashboard">
+                <img src="assets/icons/header/admin-console.png" alt="" class="header-icon-img header-icon-img-admin" />
+              </a>
+              <button id="signOutBtn" type="button" class="header-icon-btn" aria-label="Logout" title="Logout">
+                <img src="assets/icons/header/logout.png" alt="" class="header-icon-img" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <div class="settings-container">
-        <a href="index.html" class="back-link">← Back to Dashboard</a>
+      <div class="settings-shell">
+        <div class="settings-container">
 
-        <div id="successMessage" class="flash-message success-message"></div>
-        <div id="errorMessage" class="flash-message error-message"></div>
+          <div id="successMessage" class="flash-message success-message"></div>
+          <div id="errorMessage" class="flash-message error-message"></div>
 
-        <section class="card settings-section">
-          <h4 class="settings-heading">👤 Profile</h4>
-          <div class="settings-row">
-            <span class="settings-label">Username</span>
-            <span class="settings-value" id="username">Loading...</span>
-          </div>
-          <div class="settings-row">
-            <span class="settings-label">Account ID</span>
-            <span class="settings-value" id="userId">-</span>
-          </div>
-          <div class="settings-row">
-            <span class="settings-label">Account Type</span>
-            <span class="settings-value" id="accountType">Standard</span>
-          </div>
-          <div class="settings-row">
-            <span class="settings-label">Created</span>
-            <span class="settings-value" id="createdAt">-</span>
-          </div>
-        </section>
+          <section class="card settings-section">
+            <h4 class="settings-heading">Profile</h4>
+            <div class="settings-row">
+              <span class="settings-label">Username</span>
+              <span class="settings-value" id="username">Loading...</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">Account ID</span>
+              <span class="settings-value" id="userId">-</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">Account Type</span>
+              <span class="settings-value" id="accountType">Standard</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">Created</span>
+              <span class="settings-value" id="createdAt">-</span>
+            </div>
+          </section>
 
-        <section class="card settings-section">
-          <h4 class="settings-heading">📊 Account Statistics</h4>
-          <div class="stats-grid">
-            <div class="stat-box">
-              <div class="value" id="totalTransactions">0</div>
-              <div class="label">Transactions</div>
+          <section class="card settings-section">
+            <h4 class="settings-heading">Account Statistics</h4>
+            <div class="stats-grid">
+              <div class="stat-box">
+                <div class="value" id="totalTransactions">0</div>
+                <div class="label">Transactions</div>
+              </div>
+              <div class="stat-box income">
+                <div class="value" id="totalIncome">€0</div>
+                <div class="label">Total Income</div>
+              </div>
+              <div class="stat-box expense">
+                <div class="value" id="totalExpense">€0</div>
+                <div class="label">Total Expenses</div>
+              </div>
             </div>
-            <div class="stat-box income">
-              <div class="value" id="totalIncome">€0</div>
-              <div class="label">Total Income</div>
-            </div>
-            <div class="stat-box expense">
-              <div class="value" id="totalExpense">€0</div>
-              <div class="label">Total Expenses</div>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <section class="card settings-section">
-          <h4 class="settings-heading">🔒 Change Password</h4>
-          <form id="passwordForm">
-            <div class="form-group">
-              <label for="currentPassword">Current Password</label>
-              <input type="password" id="currentPassword" required />
-            </div>
-            <div class="form-group">
-              <label for="newPassword">New Password</label>
-              <input type="password" id="newPassword" required minlength="8" />
-              <p class="helper-text">Use at least 8 characters and include both letters and numbers.</p>
-            </div>
-            <div class="form-group">
-              <label for="confirmPassword">Confirm New Password</label>
-              <input type="password" id="confirmPassword" required minlength="8" />
-            </div>
-            <button type="submit" class="btn-primary">Update Password</button>
-          </form>
-        </section>
+          <section class="card settings-section">
+            <h4 class="settings-heading">Change Password</h4>
+            <form id="passwordForm">
+              <div class="form-group">
+                <label for="currentPassword">Current Password</label>
+                <input type="password" id="currentPassword" required />
+              </div>
+              <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <input type="password" id="newPassword" required minlength="8" />
+                <p class="helper-text">Use at least 8 characters and include both letters and numbers.</p>
+              </div>
+              <div class="form-group">
+                <label for="confirmPassword">Confirm New Password</label>
+                <input type="password" id="confirmPassword" required minlength="8" />
+              </div>
+              <button type="submit" class="btn-primary">Update Password</button>
+            </form>
+          </section>
 
-        <section class="card settings-section">
-          <h4 class="settings-heading">📥 Data Management</h4>
-          <div class="settings-row">
-            <div>
-              <span class="settings-label">Export All Data</span>
-              <p class="helper-text">Download your profile, transactions, categories, subscriptions, and budgets as JSON</p>
+          <section class="card settings-section">
+            <h4 class="settings-heading">Data Management</h4>
+            <div class="settings-row">
+              <div>
+                <span class="settings-label">Export All Data</span>
+                <p class="helper-text">Download your profile, transactions, categories, subscriptions, and budgets as JSON</p>
+              </div>
+              <button class="btn-secondary" id="exportBtn">Export Data</button>
             </div>
-            <button class="btn-secondary" id="exportBtn">Export Data</button>
-          </div>
-          <div class="settings-row">
-            <div>
-              <span class="settings-label">Import Transactions</span>
-              <p class="helper-text">Import transactions from a raw array or a full account export file</p>
+            <div class="settings-row">
+              <div>
+                <span class="settings-label">Import Transactions</span>
+                <p class="helper-text">Import transactions from a raw array or a full account export file</p>
+              </div>
+              <div>
+                <input type="file" id="importFileInput" accept=".json" style="display:none" />
+                <button class="btn-secondary" id="importBtn">Import Data</button>
+              </div>
             </div>
-            <div>
-              <input type="file" id="importFileInput" accept=".json" style="display:none" />
-              <button class="btn-secondary" id="importBtn">Import Data</button>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <section class="card settings-section">
-          <h4 class="settings-heading danger-copy">⚠️ Danger Zone</h4>
-          <div class="danger-zone">
-            <p>Once you delete your account, there is no going back. Type your username to confirm.</p>
-            <div class="form-group">
-              <label for="deleteConfirmInput">Confirm username</label>
-              <input type="text" id="deleteConfirmInput" placeholder="Your username" />
+          <section class="card settings-section">
+            <h4 class="settings-heading danger-copy">Danger Zone</h4>
+            <div class="danger-zone">
+              <p>Once you delete your account, there is no going back. Type your username to confirm.</p>
+              <div class="form-group">
+                <label for="deleteConfirmInput">Confirm username</label>
+                <input type="text" id="deleteConfirmInput" placeholder="Your username" />
+              </div>
+              <button class="btn-danger" id="deleteAccountBtn">Delete My Account</button>
             </div>
-            <button class="btn-danger" id="deleteAccountBtn">Delete My Account</button>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
 
       <footer class="footer">accounta - Smart Finance Tracker</footer>

@@ -202,7 +202,32 @@ async function initSettings() {
     return
   }
 
-  await loadAccountProfile()
+  const profile = await loadAccountProfile()
+  const userActions = document.getElementById('userActions')
+  const settingsLink = document.getElementById('settingsLink')
+  const adminLink = document.getElementById('adminLink')
+  const signOutBtn = document.getElementById('signOutBtn')
+
+  if (userActions) {
+    userActions.style.display = 'flex'
+  }
+  if (settingsLink) {
+    settingsLink.addEventListener('click', (event) => {
+      event.preventDefault()
+      location.href = 'settings.html'
+    })
+  }
+  if (adminLink && profile?.is_admin) {
+    adminLink.style.display = 'grid'
+  }
+  if (signOutBtn) {
+    signOutBtn.addEventListener('click', (event) => {
+      event.preventDefault()
+      clearToken()
+      location.href = 'login.html'
+    })
+  }
+
   await loadStats()
 }
 

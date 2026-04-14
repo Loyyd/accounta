@@ -1,5 +1,9 @@
 (function () {
-  const common = window.AccountaCommon || {}
+  const common = window.AccountaCommon
+
+  if (!common) {
+    throw new Error('AccountaCommon is required before app-core.js loads')
+  }
 
   const $ = (selector) => document.querySelector(selector)
   const $all = (selector) => document.querySelectorAll(selector)
@@ -62,36 +66,13 @@
       profit: null,
     },
     token() {
-      return common.getToken ? common.getToken() : localStorage.getItem('finance-tracker.token')
+      return common.getToken()
     },
     isLoggedIn() {
-      return common.isLoggedIn ? common.isLoggedIn() : !!app.token()
+      return common.isLoggedIn()
     },
     async apiFetch(method, path, body) {
-      if (common.apiFetch) {
-        return common.apiFetch(method, path, body)
-      }
-
-      const headers = {'Content-Type': 'application/json'}
-      const token = app.token()
-      if (token) {
-        headers.Authorization = `Bearer ${token}`
-      }
-
-      const response = await fetch('/api' + path, {
-        method,
-        headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
-      })
-
-      if (response.status === 401) {
-        localStorage.removeItem('finance-tracker.token')
-        alert('Session expired or invalid, please log in again.')
-        location.href = 'login.html'
-        throw new Error('Unauthorized')
-      }
-
-      return response
+      return common.apiFetch(method, path, body)
     },
     switchTab(tabName) {
       app.$all('.tab-btn').forEach((button) => {
@@ -124,6 +105,25 @@
         if (option) {
           option.textContent = `${monthNames[actualMonth]} ${actualYear}`
         }
+      }
+    },
+    populateTransactionMonthOptions() {
+      if (!app.dom.monthInput) {
+        return
+      }
+
+      const now = new Date()
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December']
+
+      app.dom.monthInput.innerHTML = ''
+
+      for (let offset = 0; offset < 12; offset += 1) {
+        const monthIndex = (now.getMonth() - offset + 12) % 12
+        const option = document.createElement('option')
+        option.value = String(monthIndex + 1)
+        option.textContent = monthNames[monthIndex]
+        app.dom.monthInput.appendChild(option)
       }
     },
     render() {

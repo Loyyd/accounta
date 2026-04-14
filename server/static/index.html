@@ -20,16 +20,19 @@
           </div>
           <div id="authArea" class="auth-area">
             <a href="login.html" id="loginLink" class="btn-ghost login-link">Login / Register</a>
-            <div id="userDropdown" style="display:none;">
-              <button id="userMenuBtn" class="user-menu-btn">
-                <span id="userHint"></span>
-                <span class="meta-copy">▼</span>
+            <div id="userActions" class="auth-actions" style="display:none;">
+              <a href="index.html" class="header-icon-btn is-active" aria-label="Dashboard" title="Dashboard">
+                <img src="assets/icons/header/home.png" alt="" class="header-icon-img" />
+              </a>
+              <button id="settingsLink" type="button" class="header-icon-btn" aria-label="Settings" title="Settings">
+                <img src="assets/icons/header/setting-wheel.png" alt="" class="header-icon-img" />
               </button>
-              <div id="userDropdownMenu" class="user-dropdown-menu">
-                <a href="#" id="settingsLink" class="dropdown-item">⚙️ Settings</a>
-                <a href="admin.html" id="adminLink" class="dropdown-item" style="display:none;">🛡️ Admin Dashboard</a>
-                <a href="#" id="signOutBtn" class="dropdown-item">🚪 Logout</a>
-              </div>
+              <a href="admin.html" id="adminLink" class="header-icon-btn" style="display:none;" aria-label="Admin Dashboard" title="Admin Dashboard">
+                <img src="assets/icons/header/admin-console.png" alt="" class="header-icon-img header-icon-img-admin" />
+              </a>
+              <button id="signOutBtn" type="button" class="header-icon-btn" aria-label="Logout" title="Logout">
+                <img src="assets/icons/header/logout.png" alt="" class="header-icon-img" />
+              </button>
             </div>
           </div>
         </div>
@@ -143,30 +146,9 @@
 
       </div>
 
-      <div id="add-transaction-view" class="tab-view">
+      <div id="add-transaction-view" class="tab-view split-grid">
         <section class="card input-card">
         <form id="entryForm">
-          <div class="row">
-            <label>Type</label>
-            <select id="type" required>
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-            </select>
-          </div>
-
-          <div class="row two-up">
-            <div>
-              <label>Amount</label>
-              <input id="amount" type="number" step="0.01" placeholder="0.00" required />
-            </div>
-            <div>
-              <label>Category</label>
-              <select id="category" required>
-                <option value="">Select a category</option>
-              </select>
-            </div>
-          </div>
-
           <div class="row">
             <label>Date</label>
             <div class="split-grid-compact">
@@ -194,6 +176,27 @@
                 <option value="2028">2028</option>
               </select>
             </div>
+          </div>
+
+          <div class="row split-grid-compact">
+            <div>
+              <label>Amount</label>
+              <input id="amount" type="number" step="0.01" placeholder="0.00" required />
+            </div>
+            <div>
+              <label>Type</label>
+              <select id="type" required>
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <label>Category</label>
+            <select id="category" required>
+              <option value="">Select a category</option>
+            </select>
           </div>
 
           <div class="row">

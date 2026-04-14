@@ -1,4 +1,4 @@
-const {API_BASE, setToken} = window.AccountaCommon
+const {apiFetch, setToken} = window.AccountaCommon
 
 const $ = (selector) => document.querySelector(selector)
 const messages = $('#messages')
@@ -6,14 +6,6 @@ const messages = $('#messages')
 function showMessage(message, isError = false) {
   messages.textContent = message
   messages.style.color = isError ? '#ff6b6b' : 'var(--muted)'
-}
-
-async function post(endpoint, body) {
-  return fetch(API_BASE + endpoint, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body),
-  })
 }
 
 async function submitAuth(endpoint, successMessage) {
@@ -25,7 +17,9 @@ async function submitAuth(endpoint, successMessage) {
     return
   }
 
-  const response = await post(endpoint, {username, password})
+  const response = await apiFetch('POST', endpoint, {username, password}, {
+    redirectOnUnauthorized: false,
+  })
   const payload = await response.json().catch(() => ({error: 'Request failed'}))
 
   if (!response.ok) {
