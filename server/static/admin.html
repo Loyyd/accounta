@@ -14,43 +14,49 @@
           <div class="brand-row">
             <img src="accounta.png" alt="accounta" class="brand-logo" />
             <div class="brand-block">
-              <h1 class="page-title">🛡️ Admin Dashboard</h1>
-              <p class="lead">Manage all accounta users and accounts.</p>
+              <h1 class="page-title">Admin Dashboard</h1>
+              <p class="lead">Manage users and account access across accounta.</p>
             </div>
           </div>
           <div id="authArea" class="auth-area">
-            <div id="userDropdown" style="display:none;">
-              <button id="userMenuBtn" class="user-menu-btn">
-                <span id="userHint"></span>
-                <span class="meta-copy">▼</span>
+            <div id="userActions" class="auth-actions" style="display:none;">
+              <a href="index.html" class="header-icon-btn" aria-label="Dashboard" title="Dashboard">
+                <img src="assets/icons/header/home.png" alt="" class="header-icon-img" />
+              </a>
+              <button id="settingsLink" type="button" class="header-icon-btn" aria-label="Settings" title="Settings">
+                <img src="assets/icons/header/setting-wheel.png" alt="" class="header-icon-img" />
               </button>
-              <div id="userDropdownMenu" class="user-dropdown-menu">
-                <a href="index.html" class="dropdown-item">📊 User Dashboard</a>
-                <a href="#" id="signOutBtn" class="dropdown-item">🚪 Logout</a>
-              </div>
+              <a href="admin.html" class="header-icon-btn is-active" aria-label="Admin Dashboard" title="Admin Dashboard">
+                <img src="assets/icons/header/admin-console.png" alt="" class="header-icon-img header-icon-img-admin" />
+              </a>
+              <button id="signOutBtn" type="button" class="header-icon-btn" aria-label="Logout" title="Logout">
+                <img src="assets/icons/header/logout.png" alt="" class="header-icon-img" />
+              </button>
             </div>
           </div>
         </div>
       </header>
 
-      <section class="card">
-        <div class="header-title-row section-header-lg">
-          <h3 class="section-title">User Accounts</h3>
-          <div class="muted-copy">
-            Total Users: <span id="totalUsers" class="accent-copy"><strong>0</strong></span>
+      <div class="admin-shell">
+        <section class="card">
+          <div class="header-title-row section-header-lg">
+            <h3 class="section-title">User Accounts</h3>
+            <div class="muted-copy">
+              Total Users: <span id="totalUsers" class="accent-copy"><strong>0</strong></span>
+            </div>
           </div>
-        </div>
 
-        <div id="usersTable">
-          <div class="table-header">
-            <div>Username</div>
-            <div>Role</div>
-            <div>Entries</div>
-            <div>Actions</div>
+          <div id="usersTable">
+            <div class="table-header">
+              <div>Username</div>
+              <div>Role</div>
+              <div>Entries</div>
+              <div>Actions</div>
+            </div>
+            <div id="usersList"></div>
           </div>
-          <div id="usersList"></div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <footer class="footer">Admin Dashboard - Manage users with care</footer>
     </main>

@@ -1,4 +1,4 @@
-const {apiFetch, isLoggedIn, loadProfile, setupDropdown, wireSignOut} = window.AccountaCommon
+const {apiFetch, isLoggedIn, loadProfile, wireSignOut} = window.AccountaCommon
 
 const $ = (selector) => document.querySelector(selector)
 
@@ -165,20 +165,20 @@ async function init() {
     return
   }
 
-  const userDropdown = $('#userDropdown')
-  const userMenuBtn = $('#userMenuBtn')
-  const userDropdownMenu = $('#userDropdownMenu')
-  const userHint = $('#userHint')
+  const userActions = $('#userActions')
+  const settingsLink = $('#settingsLink')
   const signOutBtn = $('#signOutBtn')
 
-  if (userDropdown) {
-    userDropdown.style.display = 'block'
-  }
-  if (userHint) {
-    userHint.textContent = profile.username
+  if (userActions) {
+    userActions.style.display = 'flex'
   }
 
-  setupDropdown(userMenuBtn, userDropdownMenu)
+  if (settingsLink) {
+    settingsLink.addEventListener('click', (event) => {
+      event.preventDefault()
+      location.href = 'settings.html'
+    })
+  }
   wireSignOut(signOutBtn)
 
   await loadUsers()
