@@ -68,11 +68,17 @@
             <div class="two-up">
               <div>
                 <label>From</label>
-                <input id="customStartDate" type="date">
+                <div class="split-grid-compact">
+                  <select id="customStartMonth"></select>
+                  <select id="customStartYear"></select>
+                </div>
               </div>
               <div>
                 <label>To</label>
-                <input id="customEndDate" type="date">
+                <div class="split-grid-compact">
+                  <select id="customEndMonth"></select>
+                  <select id="customEndYear"></select>
+                </div>
               </div>
             </div>
           </div>
@@ -332,16 +338,18 @@
             </div>
           </form>
 
-          <div>
-            <h4>Expense Categories</h4>
-            <p class="muted form-note">Click on the color box to change a category's color</p>
-            <ul id="expenseCategoriesList" class="category-list"></ul>
-          </div>
+          <div class="split-grid">
+            <div>
+              <h4>Expense Categories</h4>
+              <p class="muted form-note">Click on the color box to change a category's color</p>
+              <ul id="expenseCategoriesList" class="category-list"></ul>
+            </div>
 
-          <div class="section-spacer-top">
-            <h4>Income Categories</h4>
-            <p class="muted form-note">Click on the color box to change a category's color</p>
-            <ul id="incomeCategoriesList" class="category-list"></ul>
+            <div>
+              <h4>Income Categories</h4>
+              <p class="muted form-note">Click on the color box to change a category's color</p>
+              <ul id="incomeCategoriesList" class="category-list"></ul>
+            </div>
           </div>
         </section>
       </div>
