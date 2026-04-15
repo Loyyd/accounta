@@ -65,6 +65,24 @@
   }
 
   function getFilteredEntries() {
+    const range = getActiveTimelineRange()
+    if (!range) {
+      return app.state.entries
+    }
+
+    return app.state.entries.filter((entry) => isTimestampWithinRange(entry.date, range))
+  }
+
+  function getFilteredTransfers() {
+    const range = getActiveTimelineRange()
+    if (!range) {
+      return app.state.pouchTransfers
+    }
+
+    return app.state.pouchTransfers.filter((transfer) => isTimestampWithinRange(transfer.date, range))
+  }
+
+  function getActiveTimelineRange() {
     const now = new Date()
     let startDate
     let endDate
@@ -96,13 +114,13 @@
         break
       case 'custom':
         if (!app.state.customStart || !app.state.customEnd) {
-          return app.state.entries
+          return null
         }
         startDate = parseMonthRangeStart(app.state.customStart)
         endDate = parseMonthRangeEnd(app.state.customEnd)
 
         if (!startDate || !endDate) {
-          return app.state.entries
+          return null
         }
 
         if (startDate > endDate) {
@@ -116,13 +134,15 @@
         break
       case 'all':
       default:
-        return app.state.entries
+        return null
     }
 
-    return app.state.entries.filter((entry) => {
-      const entryDate = new Date(entry.date)
-      return entryDate >= startDate && entryDate <= endDate
-    })
+    return {startDate, endDate}
+  }
+
+  function isTimestampWithinRange(timestamp, range) {
+    const itemDate = new Date(timestamp)
+    return itemDate >= range.startDate && itemDate <= range.endDate
   }
 
   function parseMonthRangeStart(value) {
@@ -170,15 +190,25 @@
   }
 
   function totalsFiltered() {
-    return getFilteredEntries().reduce((totals, entry) => {
+    const totals = getFilteredEntries().reduce((summary, entry) => {
       if (entry.type === 'income') {
-        totals.income += entry.amount
+        summary.income += entry.amount
       } else {
-        totals.expense += entry.amount
+        summary.expense += entry.amount
       }
-      totals.net = totals.income - totals.expense
-      return totals
-    }, {income: 0, expense: 0, net: 0})
+      return summary
+    }, {income: 0, expense: 0, transfersIn: 0, transfersOut: 0, net: 0})
+
+    getFilteredTransfers().forEach((transfer) => {
+      if (transfer.direction === 'to_pouch') {
+        totals.transfersOut += transfer.amount
+      } else {
+        totals.transfersIn += transfer.amount
+      }
+    })
+
+    totals.net = totals.income - totals.expense - totals.transfersOut + totals.transfersIn
+    return totals
   }
 
   function breakdownByCategoryFiltered(type = 'expense') {
@@ -584,6 +614,7 @@
   app.addEntry = addEntry
   app.removeEntry = removeEntry
   app.getFilteredEntries = getFilteredEntries
+  app.getFilteredTransfers = getFilteredTransfers
   app.getEntriesForMonthYear = getEntriesForMonthYear
   app.totalsFiltered = totalsFiltered
   app.breakdownByCategoryFiltered = breakdownByCategoryFiltered

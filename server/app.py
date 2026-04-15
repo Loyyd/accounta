@@ -22,6 +22,7 @@ db = SQLAlchemy()
 
 VALID_ENTRY_TYPES = {"income", "expense"}
 VALID_SUBSCRIPTION_FREQUENCIES = {"weekly", "monthly", "yearly"}
+VALID_TRANSFER_DIRECTIONS = {"to_pouch", "from_pouch"}
 DEFAULT_DEV_CORS_ORIGINS = (
     "http://localhost:5000",
     "http://127.0.0.1:5000",
@@ -175,6 +176,30 @@ class Budget(db.Model):
     amount = db.Column(db.Numeric(12, 2), nullable=False)
 
 
+class Pouch(db.Model):
+    __tablename__ = "pouches"
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "name", name="uq_pouch_user_name"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    name = db.Column(db.String(80), nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+
+class PouchTransfer(db.Model):
+    __tablename__ = "pouch_transfers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    pouch_id = db.Column(db.Integer, db.ForeignKey("pouches.id"), nullable=False)
+    direction = db.Column(db.String(20), nullable=False)
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    date = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+
 def create_token(user_id):
     payload = {
         "sub": str(user_id),
@@ -274,6 +299,34 @@ def serialize_budget(budget):
     return {"category": budget.category, "amount": float(budget.amount)}
 
 
+def serialize_pouch_transfer(transfer):
+    return {
+        "id": transfer.id,
+        "pouchId": transfer.pouch_id,
+        "direction": transfer.direction,
+        "amount": float(transfer.amount),
+        "description": transfer.description,
+        "date": serialize_datetime(transfer.date),
+    }
+
+
+def serialize_pouch(pouch, transfers=None):
+    pouch_transfers = transfers or []
+    total_in = sum(float(transfer.amount) for transfer in pouch_transfers if transfer.direction == "to_pouch")
+    total_out = sum(float(transfer.amount) for transfer in pouch_transfers if transfer.direction == "from_pouch")
+    balance = total_in - total_out
+
+    return {
+        "id": pouch.id,
+        "name": pouch.name,
+        "createdAt": serialize_datetime(pouch.created_at),
+        "balance": balance,
+        "totalIn": total_in,
+        "totalOut": total_out,
+        "transferCount": len(pouch_transfers),
+    }
+
+
 def normalize_username(value):
     return (value or "").strip()
 
@@ -339,6 +392,19 @@ def parse_start_date(value):
 
 def count_admin_users():
     return User.query.filter_by(is_admin=True).count()
+
+
+def get_pouch_balance(user_id, pouch_id):
+    transfers = PouchTransfer.query.filter_by(user_id=user_id, pouch_id=pouch_id).all()
+    balance = 0.0
+
+    for transfer in transfers:
+        if transfer.direction == "to_pouch":
+            balance += float(transfer.amount)
+        elif transfer.direction == "from_pouch":
+            balance -= float(transfer.amount)
+
+    return round(balance, 2)
 
 
 def add_months(value, months, anchor_day):
@@ -424,6 +490,8 @@ def sync_user_subscriptions_for_user(user_id, today=None):
 
 
 def delete_user_related_data(user):
+    PouchTransfer.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+    Pouch.query.filter_by(user_id=user.id).delete(synchronize_session=False)
     Budget.query.filter_by(user_id=user.id).delete(synchronize_session=False)
     Subscription.query.filter_by(user_id=user.id).delete(synchronize_session=False)
     Category.query.filter_by(user_id=user.id).delete(synchronize_session=False)
@@ -714,6 +782,15 @@ def create_app(test_config=None):
         categories = Category.query.filter_by(user_id=user.id).order_by(Category.type.asc(), Category.name.asc()).all()
         subscriptions = Subscription.query.filter_by(user_id=user.id).order_by(Subscription.start_date.desc()).all()
         budgets = Budget.query.filter_by(user_id=user.id).order_by(Budget.category.asc()).all()
+        pouches = Pouch.query.filter_by(user_id=user.id).order_by(Pouch.created_at.asc(), Pouch.id.asc()).all()
+        pouch_transfers = (
+            PouchTransfer.query.filter_by(user_id=user.id)
+            .order_by(PouchTransfer.date.desc(), PouchTransfer.id.desc())
+            .all()
+        )
+        transfers_by_pouch = {}
+        for transfer in pouch_transfers:
+            transfers_by_pouch.setdefault(transfer.pouch_id, []).append(transfer)
 
         return jsonify(
             {
@@ -728,6 +805,8 @@ def create_app(test_config=None):
                 "categories": [serialize_category(category) for category in categories],
                 "subscriptions": [serialize_subscription(subscription) for subscription in subscriptions],
                 "budgets": [serialize_budget(budget) for budget in budgets],
+                "pouches": [serialize_pouch(pouch, transfers_by_pouch.get(pouch.id, [])) for pouch in pouches],
+                "pouchTransfers": [serialize_pouch_transfer(transfer) for transfer in pouch_transfers],
             }
         )
 
@@ -1067,6 +1146,98 @@ def create_app(test_config=None):
         db.session.delete(budget)
         db.session.commit()
         return jsonify({"ok": True})
+
+    @app.route("/api/pouches", methods=["GET"])
+    @login_required
+    def get_pouches():
+        pouches = Pouch.query.filter_by(user_id=g.user_id).order_by(Pouch.created_at.asc(), Pouch.id.asc()).all()
+        transfers = (
+            PouchTransfer.query.filter_by(user_id=g.user_id)
+            .order_by(PouchTransfer.date.desc(), PouchTransfer.id.desc())
+            .all()
+        )
+        transfers_by_pouch = {}
+        for transfer in transfers:
+            transfers_by_pouch.setdefault(transfer.pouch_id, []).append(transfer)
+
+        return jsonify([serialize_pouch(pouch, transfers_by_pouch.get(pouch.id, [])) for pouch in pouches])
+
+    @app.route("/api/pouches", methods=["POST"])
+    @login_required
+    def add_pouch():
+        data = get_json_body()
+        name = (data.get("name") or "").strip()
+
+        if not name:
+            return jsonify({"error": "name is required"}), 400
+        if len(name) > 80:
+            return jsonify({"error": "name must be 80 characters or fewer"}), 400
+
+        existing = Pouch.query.filter_by(user_id=g.user_id, name=name).first()
+        if existing:
+            return jsonify({"error": "pouch already exists"}), 400
+
+        pouch = Pouch(user_id=g.user_id, name=name)
+        db.session.add(pouch)
+        db.session.commit()
+        return jsonify(serialize_pouch(pouch, [])), 201
+
+    @app.route("/api/pouches/<int:pouch_id>", methods=["DELETE"])
+    @login_required
+    def delete_pouch(pouch_id):
+        pouch = db.session.get(Pouch, pouch_id)
+        if not pouch or pouch.user_id != g.user_id:
+            return jsonify({"error": "not found"}), 404
+
+        PouchTransfer.query.filter_by(user_id=g.user_id, pouch_id=pouch.id).delete(synchronize_session=False)
+        db.session.delete(pouch)
+        db.session.commit()
+        return jsonify({"ok": True})
+
+    @app.route("/api/pouch-transfers", methods=["GET"])
+    @login_required
+    def get_pouch_transfers():
+        transfers = (
+            PouchTransfer.query.filter_by(user_id=g.user_id)
+            .order_by(PouchTransfer.date.desc(), PouchTransfer.id.desc())
+            .all()
+        )
+        return jsonify([serialize_pouch_transfer(transfer) for transfer in transfers])
+
+    @app.route("/api/pouches/<int:pouch_id>/transfers", methods=["POST"])
+    @login_required
+    def create_pouch_transfer(pouch_id):
+        pouch = db.session.get(Pouch, pouch_id)
+        if not pouch or pouch.user_id != g.user_id:
+            return jsonify({"error": "not found"}), 404
+
+        data = get_json_body()
+        direction = data.get("direction")
+        description = (data.get("description") or "").strip() or "Pouch transfer"
+
+        if direction not in VALID_TRANSFER_DIRECTIONS:
+            return jsonify({"error": "invalid transfer direction"}), 400
+
+        try:
+            amount = parse_amount(data.get("amount"))
+            transfer_date = parse_entry_date(data.get("date"))
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+
+        if direction == "from_pouch" and amount > get_pouch_balance(g.user_id, pouch.id):
+            return jsonify({"error": "insufficient pouch balance"}), 400
+
+        transfer = PouchTransfer(
+            user_id=g.user_id,
+            pouch_id=pouch.id,
+            direction=direction,
+            amount=amount,
+            description=description,
+            date=transfer_date,
+        )
+        db.session.add(transfer)
+        db.session.commit()
+        return jsonify(serialize_pouch_transfer(transfer)), 201
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")

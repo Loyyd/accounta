@@ -16,6 +16,7 @@
       })
 
   const dom = {
+    tabBar: $('.tab-bar'),
     entryForm: $('#entryForm'),
     typeInput: $('#type'),
     descriptionInput: $('#description'),
@@ -40,6 +41,14 @@
     showIncomeTrendCheckbox: $('#showIncomeTrend'),
     showExpenseTrendCheckbox: $('#showExpenseTrend'),
     budgetMonthSelector: $('#budgetMonthSelector'),
+    pouchTabsEl: $('#pouchTabs'),
+    pouchViewsEl: $('#pouchViews'),
+    addPouchBtn: $('#addPouchTabBtn'),
+    pouchModal: $('#pouchModal'),
+    createPouchForm: $('#createPouchForm'),
+    newPouchNameInput: $('#newPouchName'),
+    closePouchModalBtn: $('#closePouchModal'),
+    cancelPouchModalBtn: $('#cancelPouchModal'),
   }
 
   const app = {
@@ -49,6 +58,8 @@
     fmt,
     state: {
       entries: [],
+      pouches: [],
+      pouchTransfers: [],
       categories: {expense: [], income: []},
       subscriptions: [],
       budgets: [],
@@ -86,10 +97,17 @@
       })
     },
     initTabs() {
-      app.$all('.tab-btn').forEach((button) => {
-        button.addEventListener('click', () => {
-          app.switchTab(button.dataset.tab)
-        })
+      if (!app.dom.tabBar) {
+        return
+      }
+
+      app.dom.tabBar.addEventListener('click', (event) => {
+        const button = event.target.closest('.tab-btn[data-tab]')
+        if (!button) {
+          return
+        }
+
+        app.switchTab(button.dataset.tab)
       })
     },
     populateMonthOptions() {
@@ -193,6 +211,9 @@
       }
       if (app.renderBudgetOverview) {
         app.renderBudgetOverview()
+      }
+      if (app.renderPouches) {
+        app.renderPouches()
       }
 
       const filteredEntries = app.getFilteredEntries ? app.getFilteredEntries() : []
