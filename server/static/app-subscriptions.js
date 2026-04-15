@@ -1,6 +1,59 @@
 (function () {
   const app = window.AccountaApp
 
+  function formatLocalDate(date = new Date()) {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  function getDaysInMonth(year, month) {
+    return new Date(Number(year), Number(month), 0).getDate()
+  }
+
+  function renderDayOptions(selectedDay, dayCount) {
+    return Array.from({length: dayCount}, (_, index) => {
+      const value = String(index + 1)
+      const selected = value === String(selectedDay) ? ' selected' : ''
+      return `<option value="${value}"${selected}>${value}</option>`
+    }).join('')
+  }
+
+  function renderMonthOptions(selectedMonth) {
+    const months = app.getSelectableMonths ? app.getSelectableMonths() : []
+    return months.map((month) => {
+      const selected = month.value === String(selectedMonth) ? ' selected' : ''
+      return `<option value="${month.value}"${selected}>${month.label}</option>`
+    }).join('')
+  }
+
+  function renderYearOptions(selectedYear) {
+    const years = app.getSelectableYears ? app.getSelectableYears() : []
+    return years.map((year) => {
+      const selected = year === String(selectedYear) ? ' selected' : ''
+      return `<option value="${year}"${selected}>${year}</option>`
+    }).join('')
+  }
+
+  function syncDateSelects(daySelect, monthSelect, yearSelect, selectedDay) {
+    if (!daySelect || !monthSelect || !yearSelect) {
+      return
+    }
+
+    const dayCount = getDaysInMonth(yearSelect.value, monthSelect.value)
+    const dayValue = Math.min(Number(selectedDay || daySelect.value || 1), dayCount)
+    daySelect.innerHTML = renderDayOptions(dayValue, dayCount)
+    daySelect.value = String(dayValue)
+  }
+
+  function buildDateFromSelects(daySelect, monthSelect, yearSelect) {
+    const day = String(daySelect.value).padStart(2, '0')
+    const month = String(monthSelect.value).padStart(2, '0')
+    const year = String(yearSelect.value)
+    return `${year}-${month}-${day}`
+  }
+
   async function loadSubscriptions() {
     try {
       const response = await app.apiFetch('GET', '/subscriptions')
@@ -88,6 +141,8 @@
       `<option value="${category.name}" ${category.name === subscription.category ? 'selected' : ''}>${category.name}</option>`
     ).join('')
 
+    const selectedDate = subscription.startDate.split('T')[0]
+    const [selectedYear, selectedMonth, selectedDay] = selectedDate.split('-').map(Number)
     const modal = document.createElement('div')
     modal.className = 'subscription-modal'
     modal.innerHTML = `
@@ -127,7 +182,17 @@
           </div>
           <div class="subscription-modal-row">
             <label>Start Date</label>
-            <input id="editSubStartDate" type="date" value="${subscription.startDate.split('T')[0]}" required />
+            <div class="subscription-date-grid">
+              <select id="editSubStartDay" required>
+                ${renderDayOptions(selectedDay, getDaysInMonth(selectedYear, selectedMonth))}
+              </select>
+              <select id="editSubStartMonth" required>
+                ${renderMonthOptions(selectedMonth)}
+              </select>
+              <select id="editSubStartYear" required>
+                ${renderYearOptions(selectedYear)}
+              </select>
+            </div>
           </div>
         </div>
         <div class="subscription-modal-actions">
@@ -142,12 +207,21 @@
 
     const typeSelect = modal.querySelector('#editSubType')
     const categorySelect = modal.querySelector('#editSubCategory')
+    const editDaySelect = modal.querySelector('#editSubStartDay')
+    const editMonthSelect = modal.querySelector('#editSubStartMonth')
+    const editYearSelect = modal.querySelector('#editSubStartYear')
 
     typeSelect.addEventListener('change', () => {
       const nextCategories = app.state.categories[typeSelect.value] || []
       categorySelect.innerHTML = nextCategories.map((category) =>
         `<option value="${category.name}">${category.name}</option>`
       ).join('')
+    })
+
+    ;[editMonthSelect, editYearSelect].forEach((select) => {
+      select.addEventListener('change', () => {
+        syncDateSelects(editDaySelect, editMonthSelect, editYearSelect, editDaySelect.value)
+      })
     })
 
     overlay.addEventListener('click', (event) => {
@@ -169,7 +243,7 @@
         category: modal.querySelector('#editSubCategory').value,
         description: modal.querySelector('#editSubDescription').value,
         frequency: modal.querySelector('#editSubFrequency').value,
-        startDate: modal.querySelector('#editSubStartDate').value,
+        startDate: buildDateFromSelects(editDaySelect, editMonthSelect, editYearSelect),
       })
 
       if (success) {
@@ -247,14 +321,29 @@
   function setupSubscriptionForm() {
     const form = app.$('#subscriptionForm')
     const typeSelect = app.$('#subType')
-    const startDateInput = app.$('#subStartDate')
+    const startDaySelect = app.$('#subStartDay')
+    const startMonthSelect = app.$('#subStartMonth')
+    const startYearSelect = app.$('#subStartYear')
 
     if (!form) {
       return
     }
 
-    if (startDateInput) {
-      startDateInput.value = new Date().toISOString().split('T')[0]
+    if (startMonthSelect) {
+      startMonthSelect.innerHTML = renderMonthOptions(new Date().getMonth() + 1)
+    }
+
+    if (startYearSelect) {
+      startYearSelect.innerHTML = renderYearOptions(new Date().getFullYear())
+    }
+
+    if (startDaySelect && startMonthSelect && startYearSelect) {
+      syncDateSelects(startDaySelect, startMonthSelect, startYearSelect, new Date().getDate())
+      ;[startMonthSelect, startYearSelect].forEach((select) => {
+        select.addEventListener('change', () => {
+          syncDateSelects(startDaySelect, startMonthSelect, startYearSelect, startDaySelect.value)
+        })
+      })
     }
 
     if (typeSelect) {
@@ -271,13 +360,19 @@
         app.$('#subCategory').value,
         app.$('#subDescription').value,
         app.$('#subFrequency').value,
-        app.$('#subStartDate').value,
+        buildDateFromSelects(startDaySelect, startMonthSelect, startYearSelect),
       )
 
       if (saved) {
         form.reset()
-        if (startDateInput) {
-          startDateInput.value = new Date().toISOString().split('T')[0]
+        if (startMonthSelect) {
+          startMonthSelect.innerHTML = renderMonthOptions(new Date().getMonth() + 1)
+        }
+        if (startYearSelect) {
+          startYearSelect.innerHTML = renderYearOptions(new Date().getFullYear())
+        }
+        if (startDaySelect && startMonthSelect && startYearSelect) {
+          syncDateSelects(startDaySelect, startMonthSelect, startYearSelect, new Date().getDate())
         }
         refreshSubscriptionCategoryInput()
       }
