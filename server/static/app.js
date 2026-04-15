@@ -62,6 +62,7 @@
     app.initTabs()
     app.populateMonthOptions()
     app.populateTransactionMonthOptions()
+    app.populateTransactionYearOptions()
     app.populateCustomRangeOptions()
 
     if (app.dom.monthInput && app.dom.yearInput) {

@@ -285,6 +285,19 @@ def test_pouch_lifecycle_transfers_and_export(client):
     assert export_payload["pouches"][0]["balance"] == 100
     assert len(export_payload["pouchTransfers"]) == 2
 
+    delete_transfer_response = client.delete(
+        f"/api/pouch-transfers/{list_transfers_payload[0]['id']}",
+        headers=auth_headers(token),
+    )
+
+    assert delete_transfer_response.status_code == 200
+
+    refreshed_pouches_response = client.get("/api/pouches", headers=auth_headers(token))
+    refreshed_pouches_payload = refreshed_pouches_response.get_json()
+
+    assert refreshed_pouches_response.status_code == 200
+    assert refreshed_pouches_payload[0]["balance"] == 125
+
 
 def test_authenticated_requests_materialize_due_subscription_entries(app, client, monkeypatch):
     _, payload = register_user(client, username="subscriber")
