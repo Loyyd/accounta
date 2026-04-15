@@ -51,3 +51,24 @@ CREATE TABLE IF NOT EXISTS budgets (
   FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
   UNIQUE (user_id, category)
 );
+
+CREATE TABLE IF NOT EXISTS pouches (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  UNIQUE (user_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS pouch_transfers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  pouch_id INTEGER NOT NULL,
+  direction TEXT NOT NULL CHECK (direction IN ('to_pouch', 'from_pouch')),
+  amount NUMERIC(12, 2) NOT NULL,
+  description TEXT NOT NULL,
+  date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  FOREIGN KEY (pouch_id) REFERENCES pouches (id) ON DELETE CASCADE
+);

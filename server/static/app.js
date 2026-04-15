@@ -74,17 +74,20 @@
     app.setupSubscriptionForm()
     app.setupBudgetForm()
     app.setupCategoryForm()
+    app.setupPouchInteractions?.()
 
     await app.loadCategories()
     await app.loadSubscriptions()
     await app.loadBudgets()
     await app.loadEntries()
+    await app.loadPouches?.()
 
     app.render()
     app.renderCategories()
     app.renderSubscriptions()
     app.renderBudgets()
     app.renderBudgetOverview()
+    app.renderPouches?.()
 
     await setupAuthUI()
   }

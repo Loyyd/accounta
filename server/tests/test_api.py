@@ -10,7 +10,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import app as app_module
-from app import Budget, Category, Entry, Subscription, User, create_app, db
+from app import Budget, Category, Entry, Pouch, PouchTransfer, Subscription, User, create_app, db
 
 
 @pytest.fixture()
@@ -168,7 +168,21 @@ def test_account_deletion_removes_related_records(app, client):
                     active=True,
                 ),
                 Budget(user_id=user.id, category="Food", amount=100),
+                Pouch(user_id=user.id, name="Savings"),
             ]
+        )
+        db.session.commit()
+
+        pouch = Pouch.query.filter_by(user_id=user.id, name="Savings").first()
+        db.session.add(
+            PouchTransfer(
+                user_id=user.id,
+                pouch_id=pouch.id,
+                direction="to_pouch",
+                amount=50,
+                description="Starter transfer",
+                date=dt.datetime(2026, 4, 2),
+            )
         )
         db.session.commit()
 
@@ -186,6 +200,90 @@ def test_account_deletion_removes_related_records(app, client):
         assert Category.query.count() == 0
         assert Subscription.query.count() == 0
         assert Budget.query.count() == 0
+        assert Pouch.query.count() == 0
+        assert PouchTransfer.query.count() == 0
+
+
+def test_pouch_lifecycle_transfers_and_export(client):
+    _, payload = register_user(client, username="saver")
+    token = payload["token"]
+
+    create_pouch_response = client.post(
+        "/api/pouches",
+        headers=auth_headers(token),
+        json={"name": "Savings Account"},
+    )
+    create_pouch_payload = create_pouch_response.get_json()
+
+    assert create_pouch_response.status_code == 201
+    assert create_pouch_payload["name"] == "Savings Account"
+    assert create_pouch_payload["balance"] == 0
+
+    pouch_id = create_pouch_payload["id"]
+
+    first_transfer = client.post(
+        f"/api/pouches/{pouch_id}/transfers",
+        headers=auth_headers(token),
+        json={
+            "direction": "to_pouch",
+            "amount": 125,
+            "description": "Monthly savings",
+            "date": "2026-04-10",
+        },
+    )
+    second_transfer = client.post(
+        f"/api/pouches/{pouch_id}/transfers",
+        headers=auth_headers(token),
+        json={
+            "direction": "from_pouch",
+            "amount": 25,
+            "description": "Moved back",
+            "date": "2026-04-12",
+        },
+    )
+
+    assert first_transfer.status_code == 201
+    assert second_transfer.status_code == 201
+
+    list_pouches_response = client.get("/api/pouches", headers=auth_headers(token))
+    list_pouches_payload = list_pouches_response.get_json()
+
+    assert list_pouches_response.status_code == 200
+    assert len(list_pouches_payload) == 1
+    assert list_pouches_payload[0]["balance"] == 100
+    assert list_pouches_payload[0]["totalIn"] == 125
+    assert list_pouches_payload[0]["totalOut"] == 25
+    assert list_pouches_payload[0]["transferCount"] == 2
+
+    list_transfers_response = client.get("/api/pouch-transfers", headers=auth_headers(token))
+    list_transfers_payload = list_transfers_response.get_json()
+
+    assert list_transfers_response.status_code == 200
+    assert len(list_transfers_payload) == 2
+    assert list_transfers_payload[0]["direction"] == "from_pouch"
+    assert list_transfers_payload[1]["direction"] == "to_pouch"
+
+    insufficient_response = client.post(
+        f"/api/pouches/{pouch_id}/transfers",
+        headers=auth_headers(token),
+        json={
+            "direction": "from_pouch",
+            "amount": 500,
+            "description": "Too much",
+            "date": "2026-04-13",
+        },
+    )
+
+    assert insufficient_response.status_code == 400
+    assert "insufficient pouch balance" in insufficient_response.get_json()["error"]
+
+    export_response = client.get("/api/export", headers=auth_headers(token))
+    export_payload = export_response.get_json()
+
+    assert export_response.status_code == 200
+    assert export_payload["pouches"][0]["name"] == "Savings Account"
+    assert export_payload["pouches"][0]["balance"] == 100
+    assert len(export_payload["pouchTransfers"]) == 2
 
 
 def test_authenticated_requests_materialize_due_subscription_entries(app, client, monkeypatch):

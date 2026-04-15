@@ -44,6 +44,8 @@
         <button class="tab-btn" data-tab="subscriptions">Subscriptions</button>
         <button class="tab-btn" data-tab="budgeting">Budgeting</button>
         <button class="tab-btn" data-tab="categories">Categories</button>
+        <button id="addPouchTabBtn" class="tab-btn tab-btn-add" type="button" aria-label="Add pouch" title="Add pouch">+</button>
+        <div id="pouchTabs" class="tab-dynamic-group"></div>
       </nav>
 
       <div id="overview-view" class="tab-view active">
@@ -94,7 +96,7 @@
             </div>
             <div class="stat">
               <h3 id="netTotal">€0.00</h3>
-              <p>Net</p>
+              <p>Available</p>
             </div>
           </div>
         </section>
@@ -354,8 +356,32 @@
         </section>
       </div>
 
+      <div id="pouchViews"></div>
+
       <footer class="footer">Your data is saved securely to your account.</footer>
     </main>
+
+    <div id="pouchModal" class="modal-shell" hidden>
+      <div class="modal-backdrop" data-close-pouch-modal="true"></div>
+      <section class="modal-card card card-tight">
+        <div class="header-title-row">
+          <h3 class="section-title">Create Pouch</h3>
+          <button id="closePouchModal" type="button" class="btn-ghost btn-sm">Close</button>
+        </div>
+        <p class="lead">Create a savings pouch, goal fund, or any custom account tab you want to transfer money into.</p>
+        <form id="createPouchForm" class="section-stack">
+          <div class="row">
+            <label>Pouch Name</label>
+            <input id="newPouchName" type="text" maxlength="80" placeholder="e.g., Savings Account" required />
+          </div>
+          <div class="actions">
+            <button id="cancelPouchModal" type="button" class="btn-ghost">Cancel</button>
+            <button type="submit" class="btn-primary">Create Pouch</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="shared.js"></script>
     <script src="app-core.js"></script>
@@ -363,6 +389,7 @@
     <script src="app-budgets.js"></script>
     <script src="app-categories.js"></script>
     <script src="app-entries.js"></script>
+    <script src="app-pouches.js"></script>
     <script src="app-charts.js"></script>
     <script src="app.js"></script>
   </body>
