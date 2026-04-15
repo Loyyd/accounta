@@ -1,11 +1,29 @@
 (function () {
   const app = window.AccountaApp
 
-  function formatDateInputValue(date = new Date()) {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
+  function getCurrentMonthValue(date = new Date()) {
+    return String(date.getMonth() + 1)
+  }
+
+  function getCurrentYearValue(date = new Date()) {
+    return String(date.getFullYear())
+  }
+
+  function renderMonthOptions(selectedMonth = getCurrentMonthValue()) {
+    const months = app.getSelectableMonths ? app.getSelectableMonths() : [{value: selectedMonth, label: selectedMonth}]
+
+    return months.map((month) => {
+      const selected = month.value === String(selectedMonth) ? ' selected' : ''
+      return `<option value="${month.value}"${selected}>${month.label}</option>`
+    }).join('')
+  }
+
+  function renderYearOptions(selectedYear = getCurrentYearValue()) {
+    const years = app.getSelectableYears ? app.getSelectableYears() : [getCurrentYearValue()]
+    return years.map((year) => {
+      const selected = year === String(selectedYear) ? ' selected' : ''
+      return `<option value="${year}"${selected}>${year}</option>`
+    }).join('')
   }
 
   function formatTransferDirection(direction) {
@@ -103,6 +121,19 @@
     return true
   }
 
+  async function removePouchTransfer(transferId) {
+    const response = await app.apiFetch('DELETE', `/pouch-transfers/${transferId}`)
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({error: 'Failed to delete transfer'}))
+      alert(payload.error || 'Failed to delete transfer')
+      return false
+    }
+
+    await loadPouches()
+    app.render()
+    return true
+  }
+
   function openPouchModal() {
     if (!app.dom.pouchModal) {
       return
@@ -179,23 +210,25 @@
           <div class="header-title-row">
             <div>
               <h3 class="section-title">${pouch.name}</h3>
-              <p class="lead">A separate pouch balance with lightweight transfer history.</p>
+              <p class="lead">A separate pouch balance.</p>
             </div>
             <button type="button" class="btn-danger btn-sm" data-delete-pouch="${pouch.id}">Delete Pouch</button>
           </div>
 
           <div class="stats-grid pouch-stats-grid">
-            <div class="stat-box">
+            <div class="stat-box pouch-balance-box">
               <div class="value ${currentBalanceClass}">${app.fmt(pouch.balance)}</div>
               <div class="label">Current Balance</div>
             </div>
-            <div class="stat-box income">
-              <div class="value">${app.fmt(pouch.totalIn)}</div>
-              <div class="label">Transferred In</div>
-            </div>
-            <div class="stat-box expense">
-              <div class="value">${app.fmt(pouch.totalOut)}</div>
-              <div class="label">Transferred Out</div>
+            <div class="pouch-support-stack">
+              <div class="stat-box income pouch-support-box">
+                <div class="value">${app.fmt(pouch.totalIn)}</div>
+                <div class="label">Transferred In</div>
+              </div>
+              <div class="stat-box expense pouch-support-box">
+                <div class="value">${app.fmt(pouch.totalOut)}</div>
+                <div class="label">Transferred Out</div>
+              </div>
             </div>
           </div>
         </section>
@@ -219,7 +252,14 @@
                 </div>
                 <div>
                   <label>Date</label>
-                  <input name="date" type="date" value="${formatDateInputValue()}" required />
+                  <div class="split-grid-compact">
+                    <select name="month" required>
+                      ${renderMonthOptions()}
+                    </select>
+                    <select name="year" required>
+                      ${renderYearOptions()}
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -265,18 +305,24 @@
         event.preventDefault()
         const pouchId = Number(form.dataset.pouchTransferForm)
         const formData = new FormData(form)
+        const month = String(formData.get('month') || '').padStart(2, '0')
+        const year = String(formData.get('year') || '')
         const saved = await addTransfer(pouchId, {
           direction: formData.get('direction'),
           amount: parseFloat(formData.get('amount')),
           description: (formData.get('description') || '').toString().trim(),
-          date: formData.get('date'),
+          date: `${year}-${month}-01`,
         })
 
         if (saved) {
           form.reset()
-          const dateInput = form.querySelector('input[name="date"]')
-          if (dateInput) {
-            dateInput.value = formatDateInputValue()
+          const monthSelect = form.querySelector('select[name="month"]')
+          const yearSelect = form.querySelector('select[name="year"]')
+          if (monthSelect) {
+            monthSelect.value = getCurrentMonthValue()
+          }
+          if (yearSelect) {
+            yearSelect.value = getCurrentYearValue()
           }
         }
       })
@@ -311,6 +357,7 @@
   }
 
   app.loadPouches = loadPouches
+  app.removePouchTransfer = removePouchTransfer
   app.renderPouches = renderPouches
   app.setupPouchInteractions = setupPouchInteractions
 })()

@@ -142,6 +142,16 @@
         }
       })
     },
+    getSelectableMonths(baseDate = new Date()) {
+      return app.getRollingMonths(12, baseDate).map((month) => ({
+        value: String(Number(month.monthValue)),
+        label: month.monthLabel,
+      }))
+    },
+    getSelectableYears(baseDate = new Date()) {
+      const currentYear = baseDate.getFullYear()
+      return Array.from({length: 6}, (_, offset) => String(currentYear - offset))
+    },
     populateTransactionMonthOptions() {
       if (!app.dom.monthInput) {
         return
@@ -149,11 +159,27 @@
 
       app.dom.monthInput.innerHTML = ''
 
-      app.getRollingMonths(12).forEach((month) => {
+      app.getSelectableMonths().forEach((month) => {
         const option = document.createElement('option')
-        option.value = String(Number(month.monthValue))
-        option.textContent = month.monthLabel
+        option.value = month.value
+        option.textContent = month.label
         app.dom.monthInput.appendChild(option)
+      })
+    },
+    populateTransactionYearOptions() {
+      if (!app.dom.yearInput) {
+        return
+      }
+
+      const currentYear = String(new Date().getFullYear())
+      app.dom.yearInput.innerHTML = ''
+
+      app.getSelectableYears().forEach((year) => {
+        const option = document.createElement('option')
+        option.value = year
+        option.textContent = year
+        option.selected = year === currentYear
+        app.dom.yearInput.appendChild(option)
       })
     },
     populateCustomRangeOptions() {
@@ -167,28 +193,27 @@
       const now = new Date()
       const currentMonth = now.getMonth() + 1
       const currentYear = now.getFullYear()
-      const rollingMonths = app.getRollingMonths(12, now)
 
       monthSelects.forEach((select) => {
         select.innerHTML = ''
-        rollingMonths.forEach((month) => {
+        app.getSelectableMonths(now).forEach((month) => {
           const option = document.createElement('option')
-          option.value = month.monthValue
-          option.textContent = month.monthLabel
-          option.selected = Number(month.monthValue) === currentMonth
+          option.value = month.value.padStart(2, '0')
+          option.textContent = month.label
+          option.selected = Number(month.value) === currentMonth
           select.appendChild(option)
         })
       })
 
       yearSelects.forEach((select) => {
         select.innerHTML = ''
-        for (let year = currentYear; year >= currentYear - 5; year -= 1) {
+        app.getSelectableYears(now).forEach((year) => {
           const option = document.createElement('option')
-          option.value = String(year)
-          option.textContent = String(year)
-          option.selected = year === currentYear
+          option.value = year
+          option.textContent = year
+          option.selected = year === String(currentYear)
           select.appendChild(option)
-        }
+        })
       })
 
       app.state.customStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}`
@@ -216,7 +241,7 @@
         app.renderPouches()
       }
 
-      const filteredEntries = app.getFilteredEntries ? app.getFilteredEntries() : []
+      const filteredEntries = app.getDisplayEntries ? app.getDisplayEntries() : []
       const monthEntries = app.getEntriesForMonthYear
         ? app.getEntriesForMonthYear(app.dom.monthInput?.value, app.dom.yearInput?.value)
         : []

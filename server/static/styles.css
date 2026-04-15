@@ -445,10 +445,18 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
 }
 .success-message{background:rgba(110,231,183,0.1);border:1px solid rgba(110,231,183,0.3);color:var(--accent)}
 .error-message{background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);color:var(--danger)}
-.settings-shell{max-width:760px;margin:0 auto}
-.settings-container{max-width:720px;margin:0 auto}
-.admin-shell{max-width:920px;margin:0 auto}
+.settings-shell{max-width:980px;margin:0 auto}
+.settings-container{max-width:980px;margin:0 auto}
+.admin-shell{max-width:980px;margin:0 auto}
+.settings-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  align-items:start;
+}
 .settings-section{margin-bottom:24px}
+.settings-grid .settings-section{margin-bottom:0}
+.settings-section-full{grid-column:1 / -1}
 .settings-heading{margin:0 0 16px 0;color:var(--accent);font-size:18px;display:flex;align-items:center;gap:8px}
 .settings-row{
   justify-content:space-between;
@@ -657,7 +665,36 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
   width:min(100%, 520px);
   margin:0;
 }
-.pouch-stats-grid{margin-top:0}
+.pouch-stats-grid{
+  margin-top:0;
+  grid-template-columns:1.7fr 1fr;
+  align-items:stretch;
+}
+.pouch-support-stack{
+  display:grid;
+  gap:12px;
+}
+.pouch-balance-box{
+  padding:22px 24px;
+  text-align:left;
+  background:linear-gradient(180deg, rgba(110,231,183,0.08), rgba(255,255,255,0.03));
+  border:1px solid rgba(110,231,183,0.16);
+}
+.pouch-balance-box .value{
+  font-size:32px;
+  line-height:1.05;
+  margin-bottom:8px;
+}
+.pouch-balance-box .label{
+  font-size:13px;
+  letter-spacing:0.02em;
+}
+.pouch-support-box{
+  padding:14px 16px;
+}
+.pouch-support-box .value{
+  font-size:18px;
+}
 .pouch-transfer-chip.income{color:var(--accent)}
 .pouch-transfer-chip.expense{color:var(--danger)}
 
@@ -808,6 +845,10 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
   .section-header {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .settings-grid {
+    grid-template-columns:1fr;
   }
 
   .table-header,

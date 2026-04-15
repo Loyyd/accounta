@@ -64,6 +64,33 @@
     app.render()
   }
 
+  function buildTransferActivityEntry(transfer) {
+    const pouch = app.state.pouches.find((item) => item.id === transfer.pouchId)
+    const pouchName = pouch ? pouch.name : 'Pouch'
+    const note = transfer.description?.trim()
+    const directionLabel = transfer.direction === 'to_pouch' ? `Transfer to ${pouchName}` : `Transfer from ${pouchName}`
+
+    return {
+      id: `pouch-transfer-${transfer.id}`,
+      transferId: transfer.id,
+      source: 'pouch_transfer',
+      type: transfer.direction === 'to_pouch' ? 'expense' : 'income',
+      description: note ? `${directionLabel} - ${note}` : directionLabel,
+      amount: transfer.amount,
+      category: 'Pouch Transfer',
+      date: transfer.date,
+      pouchId: transfer.pouchId,
+      pouchName,
+    }
+  }
+
+  function getDisplayEntries() {
+    return [
+      ...getFilteredEntries(),
+      ...getFilteredTransfers().map((transfer) => buildTransferActivityEntry(transfer)),
+    ]
+  }
+
   function getFilteredEntries() {
     const range = getActiveTimelineRange()
     if (!range) {
@@ -183,10 +210,19 @@
       return []
     }
 
-    return app.state.entries.filter((entry) => {
+    const monthEntries = app.state.entries.filter((entry) => {
       const entryDate = new Date(entry.date)
       return entryDate.getMonth() + 1 === Number(month) && entryDate.getFullYear() === Number(year)
     })
+
+    const monthTransfers = app.state.pouchTransfers
+      .filter((transfer) => {
+        const transferDate = new Date(transfer.date)
+        return transferDate.getMonth() + 1 === Number(month) && transferDate.getFullYear() === Number(year)
+      })
+      .map((transfer) => buildTransferActivityEntry(transfer))
+
+    return [...monthEntries, ...monthTransfers]
   }
 
   function totalsFiltered() {
@@ -439,35 +475,42 @@
 
       const chip = document.createElement('div')
       chip.className = 'chip'
+      const isPouchTransfer = entry.source === 'pouch_transfer'
 
       const categoryType = entry.type || 'expense'
       const categoryList = app.state.categories[categoryType] || []
       const category = categoryList.find((item) => item.name === entry.category)
-      const categoryColor = category ? category.color : '#9aa5b1'
+      const categoryColor = isPouchTransfer
+        ? (entry.type === 'income' ? '#6ee7b7' : '#fbbf24')
+        : (category ? category.color : '#9aa5b1')
 
       chip.style.background = categoryColor + '20'
       chip.style.color = categoryColor
       chip.style.borderLeft = `3px solid ${categoryColor}`
       chip.textContent = entry.category
-      chip.style.cursor = 'pointer'
-      chip.onclick = (event) => {
-        event.stopPropagation()
-        editTransactionField(entry, 'category', chip)
+      if (!isPouchTransfer) {
+        chip.style.cursor = 'pointer'
+        chip.onclick = (event) => {
+          event.stopPropagation()
+          editTransactionField(entry, 'category', chip)
+        }
       }
 
       const description = document.createElement('div')
       const entryDate = new Date(entry.date)
       const dateLabel = entryDate.toLocaleDateString('en-US', {month: 'short', year: 'numeric'})
-      description.innerHTML = `<div style="cursor: pointer;">${entry.description}</div><div class="muted" style="font-size:12px; cursor: pointer;" title="Click to edit month">${dateLabel}</div>`
+      description.innerHTML = `<div style="cursor: ${isPouchTransfer ? 'default' : 'pointer'};">${entry.description}</div><div class="muted" style="font-size:12px; cursor: ${isPouchTransfer ? 'default' : 'pointer'};" ${isPouchTransfer ? '' : 'title="Click to edit month"'}>${dateLabel}</div>`
 
-      description.querySelector('div:first-child').onclick = (event) => {
-        event.stopPropagation()
-        editTransactionField(entry, 'description', description)
-      }
+      if (!isPouchTransfer) {
+        description.querySelector('div:first-child').onclick = (event) => {
+          event.stopPropagation()
+          editTransactionField(entry, 'description', description)
+        }
 
-      description.querySelector('div.muted').onclick = (event) => {
-        event.stopPropagation()
-        editTransactionField(entry, 'date', description.querySelector('div.muted'))
+        description.querySelector('div.muted').onclick = (event) => {
+          event.stopPropagation()
+          editTransactionField(entry, 'date', description.querySelector('div.muted'))
+        }
       }
 
       left.appendChild(chip)
@@ -477,10 +520,12 @@
       const amount = document.createElement('div')
       amount.className = `amount ${entry.type === 'income' ? 'income' : 'expense'}`
       amount.textContent = `${entry.type === 'income' ? '+' : '-'}${app.fmt(Math.abs(entry.amount))}`
-      amount.style.cursor = 'pointer'
-      amount.onclick = (event) => {
-        event.stopPropagation()
-        editTransactionField(entry, 'amount', amount)
+      if (!isPouchTransfer) {
+        amount.style.cursor = 'pointer'
+        amount.onclick = (event) => {
+          event.stopPropagation()
+          editTransactionField(entry, 'amount', amount)
+        }
       }
 
       const button = document.createElement('button')
@@ -489,6 +534,11 @@
       button.textContent = 'Delete'
       button.onclick = async (event) => {
         event.stopPropagation()
+        if (entry.source === 'pouch_transfer') {
+          await app.removePouchTransfer?.(entry.transferId)
+          return
+        }
+
         await removeEntry(entry.id ?? entry.entry_id)
       }
 
@@ -613,6 +663,7 @@
   app.updateEntry = updateEntry
   app.addEntry = addEntry
   app.removeEntry = removeEntry
+  app.getDisplayEntries = getDisplayEntries
   app.getFilteredEntries = getFilteredEntries
   app.getFilteredTransfers = getFilteredTransfers
   app.getEntriesForMonthYear = getEntriesForMonthYear

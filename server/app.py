@@ -1239,6 +1239,17 @@ def create_app(test_config=None):
         db.session.commit()
         return jsonify(serialize_pouch_transfer(transfer)), 201
 
+    @app.route("/api/pouch-transfers/<int:transfer_id>", methods=["DELETE"])
+    @login_required
+    def delete_pouch_transfer(transfer_id):
+        transfer = db.session.get(PouchTransfer, transfer_id)
+        if not transfer or transfer.user_id != g.user_id:
+            return jsonify({"error": "not found"}), 404
+
+        db.session.delete(transfer)
+        db.session.commit()
+        return jsonify({"ok": True})
+
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     def serve_frontend(path):
