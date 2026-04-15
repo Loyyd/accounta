@@ -379,6 +379,11 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
   flex-wrap:wrap;
   justify-content:flex-end;
 }
+.subscription-date-grid{
+  display:grid;
+  grid-template-columns:1fr 1.4fr 1fr;
+  gap:10px;
+}
 .subscription-modal-overlay{
   position:fixed;
   inset:0;
@@ -643,6 +648,7 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
 .tab-view{display:none}
 .tab-view.active{display:block}
 #add-transaction-view.tab-view.active{display:grid}
+#subscriptions-view.tab-view.active{display:grid}
 
 .modal-shell{
   position:fixed;
@@ -885,6 +891,10 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
   }
 
   .subscription-modal-grid {
+    grid-template-columns:1fr;
+  }
+
+  .subscription-date-grid {
     grid-template-columns:1fr;
   }
 }

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>accounta - Smart Finance Tracker</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>💰</text></svg>" />
+    <link rel="icon" type="image/png" href="accounta.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -218,29 +218,29 @@
         </section>
       </div>
 
-      <div id="subscriptions-view" class="tab-view">
+      <div id="subscriptions-view" class="tab-view split-grid">
         <section class="card input-card">
           <h3 class="panel-title">Add Subscription</h3>
           <form id="subscriptionForm">
-            <div class="row">
-              <label>Type</label>
-              <select id="subType" required>
-                <option value="expense">Expense</option>
-                <option value="income">Income</option>
-              </select>
-            </div>
-
             <div class="row two-up">
               <div>
                 <label>Amount</label>
                 <input id="subAmount" type="number" step="0.01" placeholder="0.00" required />
               </div>
               <div>
-                <label>Category</label>
-                <select id="subCategory" required>
-                  <option value="">Select a category</option>
+                <label>Type</label>
+                <select id="subType" required>
+                  <option value="expense">Expense</option>
+                  <option value="income">Income</option>
                 </select>
               </div>
+            </div>
+
+            <div class="row">
+              <label>Category</label>
+              <select id="subCategory" required>
+                <option value="">Select a category</option>
+              </select>
             </div>
 
             <div class="row">
@@ -248,18 +248,23 @@
               <input id="subDescription" type="text" placeholder="e.g., Netflix, Rent, Salary" required />
             </div>
 
-            <div class="row">
-              <label>Frequency</label>
-              <select id="subFrequency" required>
-                <option value="monthly">Monthly</option>
-                <option value="weekly">Weekly</option>
-                <option value="yearly">Yearly</option>
-              </select>
-            </div>
-
-            <div class="row">
-              <label>Start Date</label>
-              <input id="subStartDate" type="date" required />
+            <div class="row two-up">
+              <div>
+                <label>Frequency</label>
+                <select id="subFrequency" required>
+                  <option value="monthly">Monthly</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+              <div>
+                <label>Start Date</label>
+                <div class="subscription-date-grid">
+                  <select id="subStartDay" required></select>
+                  <select id="subStartMonth" required></select>
+                  <select id="subStartYear" required></select>
+                </div>
+              </div>
             </div>
 
             <div class="row actions">
@@ -268,8 +273,10 @@
           </form>
         </section>
 
-        <section class="card">
-          <h3 class="panel-title">Active Subscriptions</h3>
+        <section class="card ledger-card">
+          <div class="header-title-row">
+            <h3 class="panel-title">Active Subscriptions</h3>
+          </div>
           <div id="subscriptionsList" class="subscription-list"></div>
         </section>
       </div>
