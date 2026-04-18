@@ -906,6 +906,28 @@ def create_app(test_config=None):
         db.session.commit()
         return jsonify({"ok": True})
 
+    @app.route("/api/admin/users/<int:user_id>/reset-password", methods=["POST"])
+    @login_required
+    def admin_reset_user_password(user_id):
+        require_admin()
+        target_user = db.session.get(User, user_id)
+        if not target_user:
+            return jsonify({"error": "user not found"}), 404
+
+        data = get_json_body()
+        new_password = data.get("newPassword", "")
+
+        if not new_password:
+            return jsonify({"error": "new password is required"}), 400
+
+        password_error = validate_password(new_password)
+        if password_error:
+            return jsonify({"error": password_error}), 400
+
+        target_user.set_password(new_password)
+        db.session.commit()
+        return jsonify({"ok": True, "message": "Password reset successfully"})
+
     @app.route("/api/categories", methods=["GET"])
     @login_required
     def get_categories():
