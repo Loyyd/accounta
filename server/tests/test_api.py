@@ -140,6 +140,39 @@ def test_last_admin_cannot_delete_account(app, client):
     assert "last admin" in delete_response.get_json()["error"]
 
 
+def test_admin_can_reset_user_password(app, client):
+    member_id = None
+
+    with app.app_context():
+        admin = User(username="admin", is_admin=True)
+        admin.set_password("AdminPass123")
+        member = User(username="member", is_admin=False)
+        member.set_password("MemberPass123")
+        db.session.add_all([admin, member])
+        db.session.commit()
+        member_id = member.id
+
+    login_response, admin_payload = login_user(client, "admin", "AdminPass123")
+    assert login_response.status_code == 200
+
+    reset_response = client.post(
+        f"/api/admin/users/{member_id}/reset-password",
+        headers=auth_headers(admin_payload["token"]),
+        json={
+            "newPassword": "TempPass456",
+        },
+    )
+
+    assert reset_response.status_code == 200
+
+    old_login_response, _ = login_user(client, "member", "MemberPass123")
+    new_login_response, new_login_payload = login_user(client, "member", "TempPass456")
+
+    assert old_login_response.status_code == 401
+    assert new_login_response.status_code == 200
+    assert new_login_payload["username"] == "member"
+
+
 def test_account_deletion_removes_related_records(app, client):
     _, payload = register_user(client, username="cleanup")
     token = payload["token"]

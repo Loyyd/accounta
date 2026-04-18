@@ -517,6 +517,29 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
   border-bottom:1px solid var(--line-soft);
 }
 .table-meta{display:flex;flex-direction:column;gap:4px}
+.admin-user-heading{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.admin-password-btn{
+  width:30px;
+  height:30px;
+  padding:0;
+  display:grid;
+  place-items:center;
+}
+.admin-password-icon{
+  width:15px;
+  height:15px;
+  object-fit:contain;
+  display:block;
+  filter:brightness(0) saturate(100%) invert(72%) sepia(8%) saturate(258%) hue-rotate(176deg) brightness(92%) contrast(88%);
+}
+.admin-password-btn:hover .admin-password-icon{
+  filter:brightness(0) saturate(100%) invert(79%) sepia(23%) saturate(575%) hue-rotate(103deg) brightness(97%) contrast(92%);
+}
 .table-actions{display:flex;gap:6px}
 .role-badge{font-size:13px}
 .role-badge.admin{color:var(--accent)}

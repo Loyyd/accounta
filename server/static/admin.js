@@ -14,6 +14,25 @@ function formatNet(user) {
   return `Net ${net.toLocaleString(undefined, {style: 'currency', currency: 'EUR', maximumFractionDigits: 2})}`
 }
 
+async function resetUserPassword(userId, username) {
+  const newPassword = prompt(`Enter the new one-time password for ${username}. This replaces their current password.`)
+  if (!newPassword) {
+    return
+  }
+
+  const response = await apiFetch('POST', `/admin/users/${userId}/reset-password`, {
+    newPassword,
+  })
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({error: 'Failed to reset password'}))
+    alert(payload.error || 'Failed to reset password')
+    return
+  }
+
+  alert(`Password reset for ${username}. The new password has replaced the old one.`)
+}
+
 async function loadUsers() {
   const response = await apiFetch('GET', '/admin/users')
   if (!response.ok) {
@@ -47,7 +66,12 @@ async function loadUsers() {
 
     userRow.innerHTML = `
       <div id="username-${user.id}" class="table-meta" style="cursor:pointer" title="Click to edit username">
-        <div><strong>${user.username}</strong></div>
+        <div class="admin-user-heading">
+          <strong>${user.username}</strong>
+          <button class="btn-ghost btn-sm admin-password-btn" type="button" title="Reset password">
+            <img src="assets/icons/header/lock.png" alt="" class="admin-password-icon" />
+          </button>
+        </div>
         <div class="helper-text">${formatDate(user.created_at)}. ${formatNet(user)}</div>
       </div>
       <div class="role-badge ${roleClass}">${roleText}</div>
@@ -64,6 +88,10 @@ async function loadUsers() {
 
     userRow.querySelector(`#username-${user.id}`).addEventListener('click', () => {
       window.editUsername(user.id, user.username)
+    })
+    userRow.querySelector('.admin-password-btn').addEventListener('click', (event) => {
+      event.stopPropagation()
+      resetUserPassword(user.id, user.username)
     })
     userRow.querySelector('.toggle-admin-btn').addEventListener('click', () => {
       window.toggleAdmin(user.id)
