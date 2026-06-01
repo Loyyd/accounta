@@ -70,6 +70,115 @@ def test_register_login_and_profile_flow(client):
     assert profile_payload["username"] == "alice"
     assert profile_payload["is_admin"] is False
     assert profile_payload["createdAt"].endswith("Z")
+    assert profile_payload["googleLinked"] is False
+
+
+def test_google_login_creates_user_and_can_login_again(app, client, monkeypatch):
+    google_profile = {
+        "sub": "google-user-123",
+        "email": "google.user@example.com",
+        "email_verified": True,
+        "name": "Google User",
+        "given_name": "Google",
+        "family_name": "User",
+        "picture": "https://example.com/google-user.png",
+    }
+
+    monkeypatch.setattr(app_module, "verify_google_credential", lambda credential: google_profile)
+    app.config["GOOGLE_CLIENT_ID"] = "test-google-client"
+
+    response = client.post("/api/auth/google", json={"credential": "valid-google-token"})
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["username"] == "google.user"
+    assert "token" in payload
+
+    second_response = client.post("/api/auth/google", json={"credential": "valid-google-token"})
+    second_payload = second_response.get_json()
+
+    assert second_response.status_code == 200
+    assert second_payload["username"] == "google.user"
+
+    with app.app_context():
+        assert User.query.count() == 1
+        user = User.query.filter_by(username="google.user").first()
+        assert user.google_sub == "google-user-123"
+        assert user.google_email == "google.user@example.com"
+        assert user.google_name == "Google User"
+        assert user.google_given_name == "Google"
+        assert user.google_family_name == "User"
+        assert user.google_picture == "https://example.com/google-user.png"
+
+
+def test_authenticated_user_can_link_google_account(app, client, monkeypatch):
+    _, payload = register_user(client, username="linked")
+    google_profile = {
+        "sub": "google-link-123",
+        "email": "linked@example.com",
+        "email_verified": True,
+        "name": "Linked User",
+        "given_name": "Linked",
+        "family_name": "User",
+        "picture": "https://example.com/linked.png",
+    }
+
+    monkeypatch.setattr(app_module, "verify_google_credential", lambda credential: google_profile)
+    app.config["GOOGLE_CLIENT_ID"] = "test-google-client"
+
+    response = client.post(
+        "/api/profile/google-link",
+        headers=auth_headers(payload["token"]),
+        json={"credential": "valid-google-token"},
+    )
+    link_payload = response.get_json()
+
+    assert response.status_code == 200
+    assert link_payload["googleLinked"] is True
+    assert link_payload["googleEmail"] == "linked@example.com"
+    assert link_payload["googleName"] == "Linked User"
+    assert link_payload["googleGivenName"] == "Linked"
+    assert link_payload["googleFamilyName"] == "User"
+    assert link_payload["googlePicture"] == "https://example.com/linked.png"
+
+    profile_response = client.get("/api/profile", headers=auth_headers(payload["token"]))
+    profile_payload = profile_response.get_json()
+    assert profile_response.status_code == 200
+    assert profile_payload["googleLinked"] is True
+    assert profile_payload["googleEmail"] == "linked@example.com"
+    assert profile_payload["googleName"] == "Linked User"
+    assert profile_payload["googleGivenName"] == "Linked"
+    assert profile_payload["googleFamilyName"] == "User"
+    assert profile_payload["googlePicture"] == "https://example.com/linked.png"
+
+
+def test_google_link_rejects_account_already_linked_to_another_user(app, client, monkeypatch):
+    google_profile = {
+        "sub": "shared-google-sub",
+        "email": "shared@example.com",
+        "email_verified": True,
+        "name": "Shared Google",
+    }
+
+    with app.app_context():
+        linked_user = User(username="already-linked")
+        linked_user.set_password("Password123")
+        linked_user.google_sub = google_profile["sub"]
+        db.session.add(linked_user)
+        db.session.commit()
+
+    _, payload = register_user(client, username="second")
+    monkeypatch.setattr(app_module, "verify_google_credential", lambda credential: google_profile)
+    app.config["GOOGLE_CLIENT_ID"] = "test-google-client"
+
+    response = client.post(
+        "/api/profile/google-link",
+        headers=auth_headers(payload["token"]),
+        json={"credential": "valid-google-token"},
+    )
+
+    assert response.status_code == 409
+    assert "already linked" in response.get_json()["error"]
 
 
 def test_register_rejects_weak_password(client):
@@ -171,6 +280,38 @@ def test_admin_can_reset_user_password(app, client):
     assert old_login_response.status_code == 401
     assert new_login_response.status_code == 200
     assert new_login_payload["username"] == "member"
+
+
+def test_admin_users_includes_google_profile_details(app, client):
+    with app.app_context():
+        admin = User(username="admin", is_admin=True)
+        admin.set_password("AdminPass123")
+        member = User(username="member", is_admin=False)
+        member.set_password("MemberPass123")
+        member.google_sub = "google-member"
+        member.google_email = "member@example.com"
+        member.google_name = "Member Example"
+        member.google_given_name = "Member"
+        member.google_family_name = "Example"
+        member.google_picture = "https://example.com/member.png"
+        db.session.add_all([admin, member])
+        db.session.commit()
+
+    login_response, admin_payload = login_user(client, "admin", "AdminPass123")
+    assert login_response.status_code == 200
+
+    response = client.get("/api/admin/users", headers=auth_headers(admin_payload["token"]))
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    member_payload = next(user for user in payload["users"] if user["username"] == "member")
+    assert member_payload["google_linked"] is True
+    assert member_payload["google_email"] == "member@example.com"
+    assert member_payload["google_name"] == "Member Example"
+    assert member_payload["google_given_name"] == "Member"
+    assert member_payload["google_family_name"] == "Example"
+    assert member_payload["google_picture"] == "https://example.com/member.png"
+    assert member_payload["is_admin"] is False
 
 
 def test_account_deletion_removes_related_records(app, client):

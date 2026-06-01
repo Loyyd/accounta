@@ -1,4 +1,5 @@
 const {apiFetch, clearToken, fmtCurrency, loadProfile, requireLogin} = window.AccountaCommon
+let googleClientId = ''
 
 function showFlashMessage(id, message) {
   const successEl = document.getElementById('successMessage')
@@ -23,6 +24,23 @@ function showError(message) {
   showFlashMessage('errorMessage', message)
 }
 
+function openModal(id, focusSelector = 'input, button') {
+  const modal = document.getElementById(id)
+  if (!modal) {
+    return
+  }
+  modal.hidden = false
+  modal.querySelector(focusSelector)?.focus()
+}
+
+function closeModal(id) {
+  const modal = document.getElementById(id)
+  if (!modal) {
+    return
+  }
+  modal.hidden = true
+}
+
 async function loadAccountProfile() {
   const profile = await loadProfile()
   if (!profile) {
@@ -36,8 +54,97 @@ async function loadAccountProfile() {
     ? new Date(profile.createdAt).toLocaleDateString()
     : 'Unknown'
   document.getElementById('deleteConfirmInput').placeholder = profile.username
+  updateGoogleStatus(profile)
 
   return profile
+}
+
+function updateGoogleStatus(profile) {
+  const status = document.getElementById('googleStatus')
+  const button = document.getElementById('googleLinkBtn')
+
+  if (!status || !button) {
+    return
+  }
+
+  if (profile.googleLinked) {
+    status.textContent = profile.googleEmail
+      ? `Linked to ${profile.googleEmail}`
+      : 'Linked to Google'
+    button.style.display = 'none'
+    return
+  }
+
+  status.textContent = googleClientId ? 'Not linked yet' : 'Google login is not configured'
+  button.style.display = googleClientId ? 'inline-flex' : 'none'
+}
+
+function loadGoogleScript() {
+  return new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) {
+      resolve()
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.onload = resolve
+    script.onerror = reject
+    document.head.appendChild(script)
+  })
+}
+
+async function initGoogleLinking() {
+  const configResponse = await apiFetch('GET', '/auth/google/config')
+  if (!configResponse.ok) {
+    return
+  }
+
+  const config = await configResponse.json()
+  if (!config.enabled || !config.clientId) {
+    updateGoogleStatus({googleLinked: false})
+    return
+  }
+
+  googleClientId = config.clientId
+  await loadGoogleScript()
+}
+
+async function requestGoogleLink() {
+  if (!googleClientId) {
+    showError('Google login is not configured')
+    return
+  }
+
+  window.google.accounts.id.initialize({
+    client_id: googleClientId,
+    callback: async (response) => {
+      if (!response?.credential) {
+        showError('Google sign-in did not return a credential')
+        return
+      }
+
+      const linkResponse = await apiFetch('POST', '/profile/google-link', {
+        credential: response.credential,
+      })
+      const payload = await linkResponse.json().catch(() => ({error: 'Failed to link Google account'}))
+
+      if (!linkResponse.ok) {
+        showError(payload.error || 'Failed to link Google account')
+        return
+      }
+
+      updateGoogleStatus(payload)
+      showSuccess('Google account linked successfully')
+    },
+  })
+  window.google.accounts.id.prompt((notification) => {
+    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+      showError('Google sign-in was not completed')
+    }
+  })
 }
 
 async function loadStats() {
@@ -64,6 +171,30 @@ async function loadStats() {
   document.getElementById('totalExpense').textContent = fmtCurrency(totalExpense)
 }
 
+document.getElementById('openPasswordModalBtn').addEventListener('click', () => {
+  document.getElementById('passwordForm').reset()
+  openModal('passwordModal', '#currentPassword')
+})
+
+document.getElementById('openDeleteModalBtn').addEventListener('click', () => {
+  document.getElementById('deleteConfirmInput').value = ''
+  openModal('deleteAccountModal', '#deleteConfirmInput')
+})
+
+document.querySelectorAll('[data-close-modal]').forEach((element) => {
+  element.addEventListener('click', () => {
+    closeModal(element.dataset.closeModal)
+  })
+})
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') {
+    return
+  }
+  closeModal('passwordModal')
+  closeModal('deleteAccountModal')
+})
+
 document.getElementById('passwordForm').addEventListener('submit', async (event) => {
   event.preventDefault()
 
@@ -88,6 +219,7 @@ document.getElementById('passwordForm').addEventListener('submit', async (event)
   }
 
   document.getElementById('passwordForm').reset()
+  closeModal('passwordModal')
   showSuccess('Password updated successfully')
 })
 
@@ -192,6 +324,7 @@ document.getElementById('deleteAccountBtn').addEventListener('click', async () =
     return
   }
 
+  closeModal('deleteAccountModal')
   clearToken()
   alert('Your account has been deleted.')
   location.href = 'login.html'
@@ -202,6 +335,7 @@ async function initSettings() {
     return
   }
 
+  await initGoogleLinking()
   const profile = await loadAccountProfile()
   const userActions = document.getElementById('userActions')
   const settingsLink = document.getElementById('settingsLink')
@@ -227,6 +361,8 @@ async function initSettings() {
       location.href = 'login.html'
     })
   }
+
+  document.getElementById('googleLinkBtn')?.addEventListener('click', requestGoogleLink)
 
   await loadStats()
 }

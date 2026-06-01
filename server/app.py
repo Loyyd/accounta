@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 from flask import Flask, abort, current_app, g, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 from sqlalchemy import inspect, text
 from werkzeug.exceptions import HTTPException
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -113,6 +115,13 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    google_sub = db.Column(db.String(255), unique=True, nullable=True)
+    google_email = db.Column(db.String(255), nullable=True)
+    google_name = db.Column(db.String(255), nullable=True)
+    google_given_name = db.Column(db.String(255), nullable=True)
+    google_family_name = db.Column(db.String(255), nullable=True)
+    google_picture = db.Column(db.String(1024), nullable=True)
+    google_linked_at = db.Column(db.DateTime, nullable=True)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
@@ -347,6 +356,88 @@ def validate_password(password):
     return None
 
 
+def is_google_auth_enabled():
+    return bool((current_app.config.get("GOOGLE_CLIENT_ID") or "").strip())
+
+
+def verify_google_credential(credential):
+    client_id = (current_app.config.get("GOOGLE_CLIENT_ID") or "").strip()
+    if not client_id:
+        abort(503, description="Google login is not configured")
+
+    if not credential:
+        abort(400, description="Google credential is required")
+
+    try:
+        payload = google_id_token.verify_oauth2_token(
+            credential,
+            google_requests.Request(),
+            client_id,
+        )
+    except ValueError as exc:
+        abort(401, description="Invalid Google credential")
+
+    if payload.get("aud") != client_id:
+        abort(401, description="Invalid Google audience")
+
+    if not payload.get("sub"):
+        abort(401, description="Google account identifier is missing")
+
+    if payload.get("email") and payload.get("email_verified") is False:
+        abort(401, description="Google email is not verified")
+
+    return payload
+
+
+def derive_google_username(profile):
+    candidates = [
+        (profile.get("email") or "").split("@")[0],
+        profile.get("name"),
+        f"google-{profile.get('sub', '')[:10]}",
+    ]
+
+    for candidate in candidates:
+        username = normalize_username(candidate)
+        if not username:
+            continue
+        username = username[:80]
+        if len(username) < 3:
+            username = f"{username}-google"
+        if not validate_username(username):
+            break
+    else:
+        username = f"google-{secrets.token_hex(4)}"
+
+    base_username = username[:80]
+    username = base_username
+    suffix = 2
+    while User.query.filter_by(username=username).first():
+        suffix_text = f"-{suffix}"
+        username = f"{base_username[:80 - len(suffix_text)]}{suffix_text}"
+        suffix += 1
+
+    return username
+
+
+def apply_google_profile(user, profile):
+    user.google_sub = profile["sub"]
+    user.google_email = profile.get("email")
+    user.google_name = profile.get("name")
+    user.google_given_name = profile.get("given_name")
+    user.google_family_name = profile.get("family_name")
+    user.google_picture = profile.get("picture")
+    user.google_linked_at = utcnow()
+
+
+def create_google_user(profile):
+    user = User(username=derive_google_username(profile))
+    user.set_password(secrets.token_urlsafe(48))
+    apply_google_profile(user, profile)
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
 def parse_amount(value):
     try:
         amount = round(float(value), 2)
@@ -515,6 +606,37 @@ def ensure_user_schema():
         db.session.execute(text("UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
         db.session.commit()
 
+    if "google_sub" not in columns:
+        db.session.execute(text("ALTER TABLE users ADD COLUMN google_sub VARCHAR(255)"))
+        db.session.commit()
+
+    if "google_email" not in columns:
+        db.session.execute(text("ALTER TABLE users ADD COLUMN google_email VARCHAR(255)"))
+        db.session.commit()
+
+    if "google_name" not in columns:
+        db.session.execute(text("ALTER TABLE users ADD COLUMN google_name VARCHAR(255)"))
+        db.session.commit()
+
+    if "google_given_name" not in columns:
+        db.session.execute(text("ALTER TABLE users ADD COLUMN google_given_name VARCHAR(255)"))
+        db.session.commit()
+
+    if "google_family_name" not in columns:
+        db.session.execute(text("ALTER TABLE users ADD COLUMN google_family_name VARCHAR(255)"))
+        db.session.commit()
+
+    if "google_picture" not in columns:
+        db.session.execute(text("ALTER TABLE users ADD COLUMN google_picture VARCHAR(1024)"))
+        db.session.commit()
+
+    if "google_linked_at" not in columns:
+        db.session.execute(text("ALTER TABLE users ADD COLUMN google_linked_at DATETIME"))
+        db.session.commit()
+
+    db.session.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_sub ON users (google_sub)"))
+    db.session.commit()
+
 
 def ensure_database_ready():
     db.create_all()
@@ -530,6 +652,7 @@ def create_app(test_config=None):
         JWT_ALGORITHM=os.getenv("JWT_ALGORITHM", "HS256"),
         JWT_EXP_SECONDS=int(os.getenv("JWT_EXP_SECONDS", "86400")),
         ALLOW_REGISTRATION=parse_bool_env("ALLOW_REGISTRATION", default=True),
+        GOOGLE_CLIENT_ID=os.getenv("GOOGLE_CLIENT_ID", ""),
     )
 
     if test_config:
@@ -621,6 +744,38 @@ def create_app(test_config=None):
         user = User.query.filter_by(username=username).first()
         if not user or not user.verify_password(password):
             return jsonify({"error": "invalid credentials"}), 401
+
+        sync_user_subscriptions_for_user(user.id)
+
+        return jsonify(
+            {
+                "token": create_token(user.id),
+                "username": user.username,
+                "is_admin": user.is_admin,
+            }
+        )
+
+    @app.route("/api/auth/google/config", methods=["GET"])
+    def google_auth_config():
+        return jsonify(
+            {
+                "enabled": is_google_auth_enabled(),
+                "clientId": current_app.config.get("GOOGLE_CLIENT_ID") if is_google_auth_enabled() else None,
+            }
+        )
+
+    @app.route("/api/auth/google", methods=["POST"])
+    def google_login():
+        profile = verify_google_credential(get_json_body().get("credential"))
+        user = User.query.filter_by(google_sub=profile["sub"]).first()
+
+        if not user:
+            if not current_app.config["ALLOW_REGISTRATION"]:
+                return jsonify({"error": "registration is disabled"}), 403
+            user = create_google_user(profile)
+        else:
+            apply_google_profile(user, profile)
+            db.session.commit()
 
         sync_user_subscriptions_for_user(user.id)
 
@@ -729,6 +884,39 @@ def create_app(test_config=None):
                 "id": user.id,
                 "is_admin": user.is_admin,
                 "createdAt": serialize_datetime(user.created_at),
+                "googleLinked": bool(user.google_sub),
+                "googleEmail": user.google_email,
+                "googleName": user.google_name,
+                "googleGivenName": user.google_given_name,
+                "googleFamilyName": user.google_family_name,
+                "googlePicture": user.google_picture,
+                "googleLinkedAt": serialize_datetime(user.google_linked_at),
+            }
+        )
+
+    @app.route("/api/profile/google-link", methods=["POST"])
+    @login_required
+    def link_google_account():
+        user = get_current_user()
+        profile = verify_google_credential(get_json_body().get("credential"))
+
+        existing = User.query.filter_by(google_sub=profile["sub"]).first()
+        if existing and existing.id != user.id:
+            return jsonify({"error": "that Google account is already linked to another account"}), 409
+
+        apply_google_profile(user, profile)
+        db.session.commit()
+
+        return jsonify(
+            {
+                "ok": True,
+                "googleLinked": True,
+                "googleEmail": user.google_email,
+                "googleName": user.google_name,
+                "googleGivenName": user.google_given_name,
+                "googleFamilyName": user.google_family_name,
+                "googlePicture": user.google_picture,
+                "googleLinkedAt": serialize_datetime(user.google_linked_at),
             }
         )
 
@@ -837,6 +1025,13 @@ def create_app(test_config=None):
                     "id": user.id,
                     "username": user.username,
                     "is_admin": user.is_admin,
+                    "google_linked": bool(user.google_sub),
+                    "google_email": user.google_email,
+                    "google_name": user.google_name,
+                    "google_given_name": user.google_given_name,
+                    "google_family_name": user.google_family_name,
+                    "google_picture": user.google_picture,
+                    "google_linked_at": serialize_datetime(user.google_linked_at),
                     "created_at": serialize_datetime(user.created_at),
                     "entry_count": entry_count,
                     "total_income": float(total_income),

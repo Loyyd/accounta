@@ -5,6 +5,13 @@ CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
+  google_sub TEXT UNIQUE,
+  google_email TEXT,
+  google_name TEXT,
+  google_given_name TEXT,
+  google_family_name TEXT,
+  google_picture TEXT,
+  google_linked_at DATETIME,
   is_admin BOOLEAN NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

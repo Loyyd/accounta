@@ -14,6 +14,62 @@ function formatNet(user) {
   return `Net ${net.toLocaleString(undefined, {style: 'currency', currency: 'EUR', maximumFractionDigits: 2})}`
 }
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[char])
+}
+
+function googleFullName(user) {
+  return [user.google_given_name, user.google_family_name].filter(Boolean).join(' ') || user.google_name || ''
+}
+
+function avatarMarkup(user) {
+  const fullName = googleFullName(user)
+  const label = fullName || user.username
+  const initials = label
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase() || '?'
+
+  if (user.google_linked && user.google_picture) {
+    return `<img class="admin-avatar" src="${escapeHtml(user.google_picture)}" alt="${escapeHtml(label)} profile picture" loading="lazy" referrerpolicy="no-referrer" />`
+  }
+
+  return `<div class="admin-avatar admin-avatar-fallback" aria-label="${escapeHtml(label)} profile picture">${escapeHtml(initials)}</div>`
+}
+
+function googleDetailsMarkup(user) {
+  if (!user.google_linked) {
+    return '<div class="helper-text">Google not linked</div>'
+  }
+
+  const fullName = googleFullName(user)
+  const details = []
+
+  if (fullName) {
+    details.push(`<div class="admin-google-name">${escapeHtml(fullName)}</div>`)
+  }
+
+  if (user.google_email) {
+    details.push(`<div class="admin-google-email">${escapeHtml(user.google_email)}</div>`)
+  }
+
+  return `
+    <div class="admin-google-details">
+      <span class="google-linked-badge">Google synced</span>
+      ${details.join('')}
+    </div>
+  `
+}
+
 async function resetUserPassword(userId, username) {
   const newPassword = prompt(`Enter the new one-time password for ${username}. This replaces their current password.`)
   if (!newPassword) {
@@ -66,13 +122,19 @@ async function loadUsers() {
 
     userRow.innerHTML = `
       <div id="username-${user.id}" class="table-meta" style="cursor:pointer" title="Click to edit username">
-        <div class="admin-user-heading">
-          <strong>${user.username}</strong>
-          <button class="btn-ghost btn-sm admin-password-btn" type="button" title="Reset password">
-            <img src="assets/icons/header/lock.png" alt="" class="admin-password-icon" />
-          </button>
+        <div class="admin-user-cell">
+          ${avatarMarkup(user)}
+          <div class="admin-user-copy">
+            <div class="admin-user-heading">
+              <strong>${escapeHtml(user.username)}</strong>
+              <button class="btn-ghost btn-sm admin-password-btn" type="button" title="Reset password">
+                <img src="assets/icons/header/lock.png" alt="" class="admin-password-icon" />
+              </button>
+            </div>
+            ${googleDetailsMarkup(user)}
+            <div class="helper-text">${formatDate(user.created_at)}. ${formatNet(user)}</div>
+          </div>
         </div>
-        <div class="helper-text">${formatDate(user.created_at)}. ${formatNet(user)}</div>
       </div>
       <div class="role-badge ${roleClass}">${roleText}</div>
       <div class="muted-copy">${user.entry_count}</div>
