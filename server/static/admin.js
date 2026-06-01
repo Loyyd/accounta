@@ -89,6 +89,31 @@ async function resetUserPassword(userId, username) {
   alert(`Password reset for ${username}. The new password has replaced the old one.`)
 }
 
+async function exportUserData(userId, username) {
+  const response = await apiFetch('GET', `/admin/users/${userId}/export`)
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({error: 'Failed to export user data'}))
+    alert(payload.error || 'Failed to export user data')
+    return
+  }
+
+  const payload = await response.json().catch(() => null)
+  if (!payload) {
+    alert('Failed to export user data')
+    return
+  }
+
+  const fileNameUsername = username.replace(/[^a-zA-Z0-9-_\.]/g, '_') || 'user'
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'})
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `accounta-export-${fileNameUsername}-${new Date().toISOString().split('T')[0]}.json`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(link.href)
+}
+
 async function loadUsers() {
   const response = await apiFetch('GET', '/admin/users')
   if (!response.ok) {
@@ -139,6 +164,9 @@ async function loadUsers() {
       <div class="role-badge ${roleClass}">${roleText}</div>
       <div class="muted-copy">${user.entry_count}</div>
       <div class="table-actions">
+        <button class="btn-ghost btn-sm export-user-btn" title="Export user data">
+          Export
+        </button>
         <button class="btn-ghost btn-sm toggle-admin-btn" title="Toggle admin status">
           ${user.is_admin ? 'Remove admin' : 'Make admin'}
         </button>
@@ -154,6 +182,10 @@ async function loadUsers() {
     userRow.querySelector('.admin-password-btn').addEventListener('click', (event) => {
       event.stopPropagation()
       resetUserPassword(user.id, user.username)
+    })
+    userRow.querySelector('.export-user-btn').addEventListener('click', (event) => {
+      event.stopPropagation()
+      exportUserData(user.id, user.username)
     })
     userRow.querySelector('.toggle-admin-btn').addEventListener('click', () => {
       window.toggleAdmin(user.id)

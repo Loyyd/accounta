@@ -9,41 +9,41 @@
       }
 
       app.state.categories = await response.json()
-
-      if (app.state.categories.expense.length === 0 && app.state.categories.income.length === 0) {
-        const defaults = {
-          expense: [
-            {name: 'Food', color: '#6ee7b7'},
-            {name: 'Housing', color: '#60a5fa'},
-            {name: 'Transport', color: '#fbbf24'},
-            {name: 'Entertainment', color: '#f472b6'},
-            {name: 'Shopping', color: '#a78bfa'},
-            {name: 'Healthcare', color: '#ef4444'},
-            {name: 'Other', color: '#fb923c'},
-          ],
-          income: [
-            {name: 'Salary', color: '#6ee7b7'},
-            {name: 'Freelance', color: '#60a5fa'},
-            {name: 'Investment', color: '#fbbf24'},
-            {name: 'Gift', color: '#f472b6'},
-            {name: 'Other', color: '#fb923c'},
-          ],
-        }
-
-        for (const type of ['expense', 'income']) {
-          for (const category of defaults[type]) {
-            await app.apiFetch('POST', '/categories', {name: category.name, type, color: category.color})
-          }
-        }
-
-        const reload = await app.apiFetch('GET', '/categories')
-        if (reload.ok) {
-          app.state.categories = await reload.json()
-        }
-      }
     } catch (error) {
       console.error('Failed to load categories', error)
       app.state.categories = {expense: [], income: []}
+    }
+  }
+
+  async function ensureDefaultCategories() {
+    // Only create defaults if account is completely new (no categories AND no entries)
+    if (app.state.categories.expense.length === 0 && app.state.categories.income.length === 0 && app.getFilteredEntries().length === 0) {
+      const defaults = {
+        expense: [
+          {name: 'Housing', color: '#60a5fa'},
+          {name: 'Food', color: '#6ee7b7'},
+          {name: 'Transport', color: '#fbbf24'},
+          {name: 'Healthcare', color: '#ef4444'},
+          {name: 'Entertainment', color: '#f472b6'},
+          {name: 'Shopping', color: '#a78bfa'},
+        ],
+        income: [
+          {name: 'Salary', color: '#6ee7b7'},
+          {name: 'Freelance', color: '#60a5fa'},
+          {name: 'Investment', color: '#fbbf24'},
+        ],
+      }
+
+      for (const type of ['expense', 'income']) {
+        for (const category of defaults[type]) {
+          await app.apiFetch('POST', '/categories', {name: category.name, type, color: category.color})
+        }
+      }
+
+      const reload = await app.apiFetch('GET', '/categories')
+      if (reload.ok) {
+        app.state.categories = await reload.json()
+      }
     }
   }
 
@@ -249,6 +249,7 @@
 
   app.loadCategories = loadCategories
   app.addCategory = addCategory
+  app.ensureDefaultCategories = ensureDefaultCategories
   app.updateCategoryName = updateCategoryName
   app.renderCategories = renderCategories
   app.updateCategoryInput = updateCategoryInput

@@ -1096,13 +1096,46 @@ def create_app(test_config=None):
         if not new_password:
             return jsonify({"error": "new password is required"}), 400
 
-        password_error = validate_password(new_password)
-        if password_error:
-            return jsonify({"error": password_error}), 400
-
+        # One-time passwords may contain any characters and may be any length.
         target_user.set_password(new_password)
         db.session.commit()
         return jsonify({"ok": True, "message": "Password reset successfully"})
+
+    @app.route("/api/admin/users/<int:user_id>/export", methods=["GET"])
+    @login_required
+    def admin_export_user_data(user_id):
+        require_admin()
+        target_user = get_user_or_404(user_id)
+
+        entries = Entry.query.filter_by(user_id=target_user.id).order_by(Entry.date.desc(), Entry.id.desc()).all()
+        categories = Category.query.filter_by(user_id=target_user.id).order_by(Category.type.asc(), Category.name.asc()).all()
+        subscriptions = Subscription.query.filter_by(user_id=target_user.id).order_by(Subscription.start_date.desc()).all()
+        pouches = Pouch.query.filter_by(user_id=target_user.id).order_by(Pouch.created_at.asc(), Pouch.id.asc()).all()
+        pouch_transfers = (
+            PouchTransfer.query.filter_by(user_id=target_user.id)
+            .order_by(PouchTransfer.date.desc(), PouchTransfer.id.desc())
+            .all()
+        )
+        transfers_by_pouch = {}
+        for transfer in pouch_transfers:
+            transfers_by_pouch.setdefault(transfer.pouch_id, []).append(transfer)
+
+        return jsonify(
+            {
+                "exportedAt": serialize_datetime(utcnow()),
+                "profile": {
+                    "id": target_user.id,
+                    "username": target_user.username,
+                    "is_admin": target_user.is_admin,
+                    "createdAt": serialize_datetime(target_user.created_at),
+                },
+                "entries": [serialize_entry(entry) for entry in entries],
+                "categories": [serialize_category(category) for category in categories],
+                "subscriptions": [serialize_subscription(subscription) for subscription in subscriptions],
+                "pouches": [serialize_pouch(pouch, transfers_by_pouch.get(pouch.id, [])) for pouch in pouches],
+                "pouchTransfers": [serialize_pouch_transfer(transfer) for transfer in pouch_transfers],
+            }
+        )
 
     @app.route("/api/categories", methods=["GET"])
     @login_required

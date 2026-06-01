@@ -60,6 +60,9 @@
     await app.loadEntries()
     await app.loadPouches?.()
 
+    // Ensure defaults are created only for brand new accounts (no categories AND no entries)
+    await app.ensureDefaultCategories()
+
     app.render()
     app.renderCategories()
     app.renderSubscriptions()

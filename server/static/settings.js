@@ -282,6 +282,47 @@ function wireSettingsUi() {
         return
       }
 
+      // Extract categories from the import file if available
+      const importedCategories = payload.categories || []
+      const categoryMap = {}
+      for (const cat of importedCategories) {
+        if (cat.name && cat.type) {
+          categoryMap[`${cat.name}|${cat.type}`] = {
+            name: cat.name,
+            type: cat.type,
+            color: cat.color || (cat.type === 'income' ? '#60a5fa' : '#6ee7b7')
+          }
+        }
+      }
+
+      // Create any missing categories
+      const createdCategories = new Set()
+      for (const entry of entries) {
+        if (!entry || !entry.type || !entry.category) continue
+
+        const categoryKey = `${entry.category}|${entry.type}`
+        if (!categoryMap[categoryKey]) {
+          // Category not in import file, infer defaults
+          categoryMap[categoryKey] = {
+            name: entry.category,
+            type: entry.type,
+            color: entry.type === 'income' ? '#60a5fa' : '#6ee7b7'
+          }
+        }
+
+        // Create the category if we haven't already in this session
+        if (!createdCategories.has(categoryKey)) {
+          const catInfo = categoryMap[categoryKey]
+          const response = await apiFetch('POST', '/categories', {
+            name: catInfo.name,
+            type: catInfo.type,
+            color: catInfo.color
+          })
+          createdCategories.add(categoryKey)
+          // Continue even if category creation fails (might already exist)
+        }
+      }
+
       let successCount = 0
       let failureCount = 0
 
