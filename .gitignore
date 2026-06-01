@@ -14,10 +14,15 @@ __pycache__/
 node_modules/
 
 instance/*.db
+instance/
 server/*.db
+server/instance/
+*.db
+*.sqlite
 *.sqlite3
 data/
 backups/
+.build/
 
 dist/
 build/
