@@ -131,7 +131,6 @@
     const menu = document.getElementById('userMenuDropdown')
     const name = document.getElementById('userMenuName')
     const avatar = document.getElementById('userMenuAvatar')
-    const home = document.getElementById('userMenuHome')
     const admin = document.getElementById('userMenuAdmin')
     const logout = document.getElementById('userMenuLogout')
 
@@ -143,10 +142,6 @@
       name.textContent = profile?.username || 'Account'
     }
     renderUserAvatar(avatar, profile)
-    if (home) {
-      const onDashboardRoute = location.pathname.endsWith('/index.html') || location.pathname === '/' || location.pathname.endsWith('/index')
-      home.classList.toggle('is-active', onDashboardRoute && location.hash !== '#settings')
-    }
     if (admin) {
       admin.hidden = !profile?.is_admin
       admin.classList.toggle('is-active', location.pathname.endsWith('/admin.html'))

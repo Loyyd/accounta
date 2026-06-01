@@ -65,8 +65,6 @@ async function loadAccountProfile() {
   }
 
   document.getElementById('username').textContent = profile.username
-  document.getElementById('userId').textContent = `#${profile.id}`
-  document.getElementById('accountType').textContent = profile.is_admin ? 'Administrator' : 'Standard'
   document.getElementById('createdAt').textContent = profile.createdAt
     ? new Date(profile.createdAt).toLocaleDateString()
     : 'Unknown'
