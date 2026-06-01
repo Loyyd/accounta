@@ -35,6 +35,25 @@ The simplest safe path is:
 
 This keeps the app container replaceable while storing persistent data in `./data` on the VM host.
 
+## Nomad Deployment With GHCR
+
+Pushes to `main` build and publish the app image to GitHub Container Registry:
+
+```text
+ghcr.io/loyyd/accounta:<git-sha>
+ghcr.io/loyyd/accounta:main
+```
+
+The Nomad deployment should use the immutable short Git SHA tag so Nomad sees
+a real image change on every deploy. From the `private-cloud-federation` repo:
+
+```bash
+./deploy/nomad/scripts/deploy_accounta.sh <git-sha>
+```
+
+If no SHA is provided, that script uses the current `HEAD` of the sibling
+`accounta` repository.
+
 ## Files For Production
 
 - [`compose.prod.yml`](./compose.prod.yml): production deployment
