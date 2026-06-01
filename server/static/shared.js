@@ -96,6 +96,79 @@
     })
   }
 
+  function userInitials(username) {
+    return String(username || 'Account')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('') || 'A'
+  }
+
+  function renderUserAvatar(target, profile) {
+    if (!target) {
+      return
+    }
+
+    target.textContent = ''
+    target.classList.remove('user-menu-avatar-fallback')
+
+    if (profile?.googlePicture) {
+      const image = document.createElement('img')
+      image.src = profile.googlePicture
+      image.alt = ''
+      image.referrerPolicy = 'no-referrer'
+      target.appendChild(image)
+      return
+    }
+
+    target.classList.add('user-menu-avatar-fallback')
+    target.textContent = userInitials(profile?.username)
+  }
+
+  function initUserMenu(profile) {
+    const button = document.getElementById('userMenuBtn')
+    const menu = document.getElementById('userMenuDropdown')
+    const name = document.getElementById('userMenuName')
+    const avatar = document.getElementById('userMenuAvatar')
+    const home = document.getElementById('userMenuHome')
+    const admin = document.getElementById('userMenuAdmin')
+    const logout = document.getElementById('userMenuLogout')
+
+    if (!button || !menu) {
+      return
+    }
+
+    if (name) {
+      name.textContent = profile?.username || 'Account'
+    }
+    renderUserAvatar(avatar, profile)
+    if (home) {
+      const onDashboardRoute = location.pathname.endsWith('/index.html') || location.pathname === '/' || location.pathname.endsWith('/index')
+      home.classList.toggle('is-active', onDashboardRoute && location.hash !== '#settings')
+    }
+    if (admin) {
+      admin.hidden = !profile?.is_admin
+      admin.classList.toggle('is-active', location.pathname.endsWith('/admin.html'))
+    }
+    wireSignOut(logout)
+
+    button.addEventListener('click', (event) => {
+      event.stopPropagation()
+      const isOpen = menu.classList.toggle('show')
+      button.setAttribute('aria-expanded', String(isOpen))
+    })
+
+    menu.addEventListener('click', (event) => {
+      event.stopPropagation()
+    })
+
+    document.addEventListener('click', () => {
+      menu.classList.remove('show')
+      button.setAttribute('aria-expanded', 'false')
+    })
+  }
+
   function fmtCurrency(value) {
     return Number(value || 0).toLocaleString(undefined, {
       style: 'currency',
@@ -111,6 +184,7 @@
     clearToken,
     fmtCurrency,
     getToken,
+    initUserMenu,
     isLoggedIn,
     loadProfile,
     redirectToLogin,

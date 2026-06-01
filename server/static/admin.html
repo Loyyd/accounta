@@ -20,18 +20,26 @@
           </div>
           <div id="authArea" class="auth-area">
             <div id="userActions" class="auth-actions" style="display:none;">
-              <a href="index.html" class="header-icon-btn" aria-label="Dashboard" title="Dashboard">
-                <img src="assets/icons/header/home.png" alt="" class="header-icon-img" />
-              </a>
-              <button id="settingsLink" type="button" class="header-icon-btn" aria-label="Settings" title="Settings">
-                <img src="assets/icons/header/setting-wheel.png" alt="" class="header-icon-img" />
-              </button>
-              <a href="admin.html" class="header-icon-btn is-active" aria-label="Admin Dashboard" title="Admin Dashboard">
-                <img src="assets/icons/header/admin-console.png" alt="" class="header-icon-img header-icon-img-admin" />
-              </a>
-              <button id="signOutBtn" type="button" class="header-icon-btn" aria-label="Logout" title="Logout">
-                <img src="assets/icons/header/logout.png" alt="" class="header-icon-img" />
-              </button>
+              <div class="user-menu">
+                <button id="userMenuBtn" type="button" class="user-menu-trigger" aria-haspopup="menu" aria-expanded="false">
+                  <span id="userMenuAvatar" class="user-menu-avatar"></span>
+                  <span id="userMenuName" class="user-menu-name">Account</span>
+                </button>
+                <div id="userMenuDropdown" class="user-menu-dropdown" role="menu">
+                  <a id="userMenuHome" href="index.html" class="user-menu-item" role="menuitem">
+                    <img src="assets/icons/header/home.png" alt="" class="user-menu-item-icon" />
+                    <span>Home</span>
+                  </a>
+                  <a id="userMenuAdmin" href="admin.html" class="user-menu-item is-active" role="menuitem" hidden>
+                    <img src="assets/icons/header/admin-console.png" alt="" class="user-menu-item-icon user-menu-item-icon-admin" />
+                    <span>Admin Dashboard</span>
+                  </a>
+                  <button id="userMenuLogout" type="button" class="user-menu-item" role="menuitem">
+                    <img src="assets/icons/header/logout.png" alt="" class="user-menu-item-icon" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

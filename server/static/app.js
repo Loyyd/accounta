@@ -5,9 +5,6 @@
     try {
       const loginLink = document.getElementById('loginLink')
       const userActions = document.getElementById('userActions')
-      const signOutBtn = document.getElementById('signOutBtn')
-      const settingsLink = document.getElementById('settingsLink')
-      const adminLink = document.getElementById('adminLink')
       const footer = document.querySelector('.footer')
 
       if (app.isLoggedIn()) {
@@ -19,14 +16,12 @@
         }
 
         try {
-            const response = await app.apiFetch('GET', '/profile')
-            if (response.ok) {
-              const profile = await response.json()
+          const response = await app.apiFetch('GET', '/profile')
+          if (response.ok) {
+            const profile = await response.json()
+            window.AccountaCommon?.initUserMenu?.(profile)
             if (footer) {
               footer.textContent = 'Saved to your account (server)'
-            }
-            if (profile.is_admin && adminLink) {
-              adminLink.style.display = 'grid'
             }
           }
         } catch (error) {
@@ -37,22 +32,6 @@
         return
       }
 
-      if (settingsLink) {
-        settingsLink.addEventListener('click', (event) => {
-          event.preventDefault()
-          location.href = 'settings.html'
-        })
-      }
-
-      if (window.AccountaCommon?.wireSignOut) {
-        window.AccountaCommon.wireSignOut(signOutBtn)
-      } else if (signOutBtn) {
-        signOutBtn.addEventListener('click', (event) => {
-          event.preventDefault()
-          localStorage.removeItem('finance-tracker.token')
-          location.href = 'login.html'
-        })
-      }
     } catch (error) {
       // Ignore missing auth shell elements on partial renders.
     }
@@ -73,21 +52,17 @@
 
     app.setupEntryInteractions()
     app.setupSubscriptionForm()
-    app.setupBudgetForm()
     app.setupCategoryForm()
     app.setupPouchInteractions?.()
 
     await app.loadCategories()
     await app.loadSubscriptions()
-    await app.loadBudgets()
     await app.loadEntries()
     await app.loadPouches?.()
 
     app.render()
     app.renderCategories()
     app.renderSubscriptions()
-    app.renderBudgets()
-    app.renderBudgetOverview()
     app.renderPouches?.()
 
     await setupAuthUI()

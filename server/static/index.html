@@ -21,18 +21,26 @@
           <div id="authArea" class="auth-area">
             <a href="login.html" id="loginLink" class="btn-ghost login-link">Login / Register</a>
             <div id="userActions" class="auth-actions" style="display:none;">
-              <a href="index.html" class="header-icon-btn is-active" aria-label="Dashboard" title="Dashboard">
-                <img src="assets/icons/header/home.png" alt="" class="header-icon-img" />
-              </a>
-              <button id="settingsLink" type="button" class="header-icon-btn" aria-label="Settings" title="Settings">
-                <img src="assets/icons/header/setting-wheel.png" alt="" class="header-icon-img" />
-              </button>
-              <a href="admin.html" id="adminLink" class="header-icon-btn" style="display:none;" aria-label="Admin Dashboard" title="Admin Dashboard">
-                <img src="assets/icons/header/admin-console.png" alt="" class="header-icon-img header-icon-img-admin" />
-              </a>
-              <button id="signOutBtn" type="button" class="header-icon-btn" aria-label="Logout" title="Logout">
-                <img src="assets/icons/header/logout.png" alt="" class="header-icon-img" />
-              </button>
+              <div class="user-menu">
+                <button id="userMenuBtn" type="button" class="user-menu-trigger" aria-haspopup="menu" aria-expanded="false">
+                  <span id="userMenuAvatar" class="user-menu-avatar"></span>
+                  <span id="userMenuName" class="user-menu-name">Account</span>
+                </button>
+                <div id="userMenuDropdown" class="user-menu-dropdown" role="menu">
+                  <a id="userMenuHome" href="index.html" class="user-menu-item is-active" role="menuitem">
+                    <img src="assets/icons/header/home.png" alt="" class="user-menu-item-icon" />
+                    <span>Home</span>
+                  </a>
+                  <a id="userMenuAdmin" href="admin.html" class="user-menu-item" role="menuitem" hidden>
+                    <img src="assets/icons/header/admin-console.png" alt="" class="user-menu-item-icon user-menu-item-icon-admin" />
+                    <span>Admin Dashboard</span>
+                  </a>
+                  <button id="userMenuLogout" type="button" class="user-menu-item" role="menuitem">
+                    <img src="assets/icons/header/logout.png" alt="" class="user-menu-item-icon" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -42,10 +50,13 @@
         <button class="tab-btn active" data-tab="overview">Overview</button>
         <button class="tab-btn" data-tab="add-transaction">Add Transaction</button>
         <button class="tab-btn" data-tab="subscriptions">Subscriptions</button>
-        <button class="tab-btn" data-tab="budgeting">Budgeting</button>
         <button class="tab-btn" data-tab="categories">Categories</button>
         <button id="addPouchTabBtn" class="tab-btn tab-btn-add" type="button" aria-label="Add pouch" title="Add pouch">+</button>
         <div id="pouchTabs" class="tab-dynamic-group"></div>
+        <button class="tab-btn tab-link tab-btn-settings" data-tab="settings" type="button" aria-label="Settings">
+          <img src="assets/icons/header/setting-wheel.png" alt="" class="tab-icon-img" />
+          <span>Settings</span>
+        </button>
       </nav>
 
       <div id="overview-view" class="tab-view active">
@@ -281,45 +292,6 @@
         </section>
       </div>
 
-      <div id="budgeting-view" class="tab-view">
-        <section class="card" id="budgetOverviewCard">
-          <div class="header-title-row section-header-lg">
-            <h3 class="section-title">Budget Overview</h3>
-            <select id="budgetMonthSelector" class="surface-select">
-            </select>
-          </div>
-          <div id="budgetProgressList" class="budget-stack"></div>
-        </section>
-
-        <div class="split-grid">
-          <section class="card input-card">
-            <h3 class="panel-title">Set Budget</h3>
-            <form id="budgetForm">
-              <div class="row">
-                <label>Category</label>
-                <select id="budgetCategory" required>
-                  <option value="">Select a category</option>
-                </select>
-              </div>
-
-              <div class="row">
-                <label>Monthly Limit (€)</label>
-                <input id="budgetAmount" type="number" step="0.01" placeholder="0.00" required />
-              </div>
-
-              <div class="row actions actions-stretch">
-                <button type="submit" class="btn-primary">Set Budget</button>
-              </div>
-            </form>
-          </section>
-
-          <section class="card">
-            <h3 class="panel-title">Your Budgets</h3>
-            <div id="budgetsList" class="budget-list"></div>
-          </section>
-        </div>
-      </div>
-
       <div id="categories-view" class="tab-view">
         <section class="card">
           <h3>Manage Categories</h3>
@@ -356,6 +328,103 @@
         </section>
       </div>
 
+      <div id="settings-view" class="tab-view">
+        <div class="settings-shell">
+          <div class="settings-container">
+            <div id="successMessage" class="flash-message success-message"></div>
+            <div id="errorMessage" class="flash-message error-message"></div>
+
+            <div class="settings-grid">
+              <section class="card settings-section">
+                <h4 class="settings-heading">Profile</h4>
+                <div class="settings-row">
+                  <span class="settings-label">Username</span>
+                  <span class="settings-value" id="username">Loading...</span>
+                </div>
+                <div class="settings-row">
+                  <span class="settings-label">Account ID</span>
+                  <span class="settings-value" id="userId">-</span>
+                </div>
+                <div class="settings-row">
+                  <span class="settings-label">Account Type</span>
+                  <span class="settings-value" id="accountType">Standard</span>
+                </div>
+                <div class="settings-row">
+                  <span class="settings-label">Created</span>
+                  <span class="settings-value" id="createdAt">-</span>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <span class="settings-label">Google</span>
+                    <p class="helper-text" id="googleStatus">Checking Google connection...</p>
+                  </div>
+                  <button class="btn-secondary" id="googleLinkBtn" style="display:none;">Google Sync</button>
+                </div>
+              </section>
+
+              <section class="card settings-section">
+                <h4 class="settings-heading">Account Statistics</h4>
+                <div class="stats-grid">
+                  <div class="stat-box">
+                    <div class="value" id="totalTransactions">0</div>
+                    <div class="label">Transactions</div>
+                  </div>
+                  <div class="stat-box income">
+                    <div class="value" id="settingsTotalIncome">EUR0</div>
+                    <div class="label">Total Income</div>
+                  </div>
+                  <div class="stat-box expense">
+                    <div class="value" id="settingsTotalExpense">EUR0</div>
+                    <div class="label">Total Expenses</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="card settings-section">
+                <h4 class="settings-heading">Data Management</h4>
+                <div class="settings-row">
+                  <div>
+                    <span class="settings-label">Export All Data</span>
+                    <p class="helper-text">Download your profile, transactions, categories, subscriptions, and pouches as JSON</p>
+                  </div>
+                  <button class="btn-secondary" id="exportBtn">Export Data</button>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <span class="settings-label">Import Transactions</span>
+                    <p class="helper-text">Import transactions from a raw array or a full account export file</p>
+                  </div>
+                  <div>
+                    <input type="file" id="importFileInput" accept=".json" style="display:none" />
+                    <button class="btn-secondary" id="importBtn">Import Data</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="card settings-section">
+                <h4 class="settings-heading danger-copy">Danger Zone</h4>
+                <div class="danger-zone">
+                  <div class="settings-row">
+                    <div>
+                      <span class="settings-label">Change Password</span>
+                      <p class="helper-text">Update your login password after confirming the current one.</p>
+                    </div>
+                    <button class="btn-secondary" id="openPasswordModalBtn">Change Password</button>
+                  </div>
+                  <div class="settings-row">
+                    <div>
+                      <span class="settings-label danger-copy">Delete Account</span>
+                      <p class="helper-text">Permanently remove your account and all associated data.</p>
+                    </div>
+                    <button class="btn-danger" id="openDeleteModalBtn">Delete My Account</button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="pouchViews"></div>
 
       <footer class="footer">Your data is saved securely to your account.</footer>
@@ -382,15 +451,61 @@
       </section>
     </div>
 
+    <div id="passwordModal" class="modal-shell" hidden>
+      <div class="modal-backdrop" data-close-modal="passwordModal"></div>
+      <section class="card modal-card settings-modal" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
+        <div class="header-title-row section-header-lg">
+          <h3 class="section-title" id="passwordModalTitle">Change Password</h3>
+          <button class="btn-ghost btn-sm" type="button" data-close-modal="passwordModal">Cancel</button>
+        </div>
+        <form id="passwordForm">
+          <div class="form-group">
+            <label for="currentPassword">Current Password</label>
+            <input type="password" id="currentPassword" required />
+          </div>
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <input type="password" id="newPassword" required minlength="8" />
+            <p class="helper-text">Use at least 8 characters and include both letters and numbers.</p>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirm New Password</label>
+            <input type="password" id="confirmPassword" required minlength="8" />
+          </div>
+          <div class="settings-modal-actions">
+            <button type="submit" class="btn-primary">Update Password</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div id="deleteAccountModal" class="modal-shell" hidden>
+      <div class="modal-backdrop" data-close-modal="deleteAccountModal"></div>
+      <section class="card modal-card settings-modal" role="dialog" aria-modal="true" aria-labelledby="deleteAccountModalTitle">
+        <div class="header-title-row section-header-lg">
+          <h3 class="section-title danger-copy" id="deleteAccountModalTitle">Delete Account</h3>
+          <button class="btn-ghost btn-sm" type="button" data-close-modal="deleteAccountModal">Cancel</button>
+        </div>
+        <p class="helper-text">This permanently deletes your account and all associated data. Type your username to confirm.</p>
+        <div class="form-group">
+          <label for="deleteConfirmInput">Confirm username</label>
+          <input type="text" id="deleteConfirmInput" placeholder="Your username" />
+        </div>
+        <div class="settings-modal-actions">
+          <button class="btn-danger" id="deleteAccountBtn" type="button">Delete My Account</button>
+        </div>
+      </section>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="shared.js"></script>
     <script src="app-core.js"></script>
     <script src="app-subscriptions.js"></script>
-    <script src="app-budgets.js"></script>
     <script src="app-categories.js"></script>
     <script src="app-entries.js"></script>
     <script src="app-pouches.js"></script>
     <script src="app-charts.js"></script>
+    <script src="settings.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

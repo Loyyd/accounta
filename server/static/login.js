@@ -100,7 +100,7 @@ async function initGoogleLogin() {
   document.getElementById('googleLoginRow').style.display = 'flex'
   document.getElementById('authDivider').style.display = 'flex'
   window.google.accounts.id.renderButton(document.getElementById('googleLoginButton'), {
-    theme: 'outline',
+    theme: 'filled_black',
     size: 'large',
     width: 320,
     text: 'continue_with',

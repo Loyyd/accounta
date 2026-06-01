@@ -10,7 +10,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import app as app_module
-from app import Budget, Category, Entry, Pouch, PouchTransfer, Subscription, User, create_app, db
+from app import Category, Entry, Pouch, PouchTransfer, Subscription, User, create_app, db
 
 
 @pytest.fixture()
@@ -341,7 +341,6 @@ def test_account_deletion_removes_related_records(app, client):
                     start_date=dt.date(2026, 1, 1),
                     active=True,
                 ),
-                Budget(user_id=user.id, category="Food", amount=100),
                 Pouch(user_id=user.id, name="Savings"),
             ]
         )
@@ -373,7 +372,6 @@ def test_account_deletion_removes_related_records(app, client):
         assert Entry.query.count() == 0
         assert Category.query.count() == 0
         assert Subscription.query.count() == 0
-        assert Budget.query.count() == 0
         assert Pouch.query.count() == 0
         assert PouchTransfer.query.count() == 0
 

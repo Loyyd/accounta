@@ -197,7 +197,6 @@
     renderCategoryList(app.$('#incomeCategoriesList'), 'income')
     updateCategoryInput()
     app.refreshSubscriptionCategoryInput?.()
-    app.refreshBudgetCategoryInput?.()
   }
 
   function editCategoryName(element, oldName, type) {

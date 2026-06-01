@@ -173,18 +173,6 @@ class Subscription(db.Model):
     active = db.Column(db.Boolean, default=True, nullable=False)
 
 
-class Budget(db.Model):
-    __tablename__ = "budgets"
-    __table_args__ = (
-        db.UniqueConstraint("user_id", "category", name="uq_budget_user_category"),
-    )
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    category = db.Column(db.String(80), nullable=False)
-    amount = db.Column(db.Numeric(12, 2), nullable=False)
-
-
 class Pouch(db.Model):
     __tablename__ = "pouches"
     __table_args__ = (
@@ -302,10 +290,6 @@ def serialize_subscription(subscription):
         "startDate": subscription.start_date.isoformat(),
         "active": subscription.active,
     }
-
-
-def serialize_budget(budget):
-    return {"category": budget.category, "amount": float(budget.amount)}
 
 
 def serialize_pouch_transfer(transfer):
@@ -583,7 +567,6 @@ def sync_user_subscriptions_for_user(user_id, today=None):
 def delete_user_related_data(user):
     PouchTransfer.query.filter_by(user_id=user.id).delete(synchronize_session=False)
     Pouch.query.filter_by(user_id=user.id).delete(synchronize_session=False)
-    Budget.query.filter_by(user_id=user.id).delete(synchronize_session=False)
     Subscription.query.filter_by(user_id=user.id).delete(synchronize_session=False)
     Category.query.filter_by(user_id=user.id).delete(synchronize_session=False)
     Entry.query.filter_by(user_id=user.id).delete(synchronize_session=False)
@@ -969,7 +952,6 @@ def create_app(test_config=None):
         entries = Entry.query.filter_by(user_id=user.id).order_by(Entry.date.desc(), Entry.id.desc()).all()
         categories = Category.query.filter_by(user_id=user.id).order_by(Category.type.asc(), Category.name.asc()).all()
         subscriptions = Subscription.query.filter_by(user_id=user.id).order_by(Subscription.start_date.desc()).all()
-        budgets = Budget.query.filter_by(user_id=user.id).order_by(Budget.category.asc()).all()
         pouches = Pouch.query.filter_by(user_id=user.id).order_by(Pouch.created_at.asc(), Pouch.id.asc()).all()
         pouch_transfers = (
             PouchTransfer.query.filter_by(user_id=user.id)
@@ -992,7 +974,6 @@ def create_app(test_config=None):
                 "entries": [serialize_entry(entry) for entry in entries],
                 "categories": [serialize_category(category) for category in categories],
                 "subscriptions": [serialize_subscription(subscription) for subscription in subscriptions],
-                "budgets": [serialize_budget(budget) for budget in budgets],
                 "pouches": [serialize_pouch(pouch, transfers_by_pouch.get(pouch.id, [])) for pouch in pouches],
                 "pouchTransfers": [serialize_pouch_transfer(transfer) for transfer in pouch_transfers],
             }
@@ -1209,10 +1190,6 @@ def create_app(test_config=None):
                     category=old_name or category.name,
                     type=category_type,
                 ).update({"category": name})
-                if category_type == "expense":
-                    Budget.query.filter_by(user_id=g.user_id, category=old_name or category.name).update(
-                        {"category": name}
-                    )
                 category.name = name
 
         if "color" in data:
@@ -1324,45 +1301,6 @@ def create_app(test_config=None):
         if subscription.active:
             sync_user_subscriptions_for_user(g.user_id)
         return jsonify({"ok": True, "active": subscription.active})
-
-    @app.route("/api/budgets", methods=["GET"])
-    @login_required
-    def get_budgets():
-        budgets = Budget.query.filter_by(user_id=g.user_id).order_by(Budget.category.asc()).all()
-        return jsonify([serialize_budget(budget) for budget in budgets])
-
-    @app.route("/api/budgets", methods=["POST"])
-    @login_required
-    def set_budget():
-        data = get_json_body()
-        category = (data.get("category") or "").strip()
-        if not category:
-            return jsonify({"error": "category is required"}), 400
-
-        try:
-            amount = parse_amount(data.get("amount"))
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-
-        budget = Budget.query.filter_by(user_id=g.user_id, category=category).first()
-        if budget:
-            budget.amount = amount
-        else:
-            budget = Budget(user_id=g.user_id, category=category, amount=amount)
-            db.session.add(budget)
-
-        db.session.commit()
-        return jsonify({"ok": True})
-
-    @app.route("/api/budgets/<string:category>", methods=["DELETE"])
-    @login_required
-    def delete_budget(category):
-        budget = Budget.query.filter_by(user_id=g.user_id, category=category).first()
-        if not budget:
-            return jsonify({"error": "not found"}), 404
-        db.session.delete(budget)
-        db.session.commit()
-        return jsonify({"ok": True})
 
     @app.route("/api/pouches", methods=["GET"])
     @login_required

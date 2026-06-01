@@ -256,20 +256,11 @@ async function init() {
   }
 
   const userActions = $('#userActions')
-  const settingsLink = $('#settingsLink')
-  const signOutBtn = $('#signOutBtn')
 
   if (userActions) {
     userActions.style.display = 'flex'
   }
-
-  if (settingsLink) {
-    settingsLink.addEventListener('click', (event) => {
-      event.preventDefault()
-      location.href = 'settings.html'
-    })
-  }
-  wireSignOut(signOutBtn)
+  window.AccountaCommon?.initUserMenu?.(profile)
 
   await loadUsers()
 }

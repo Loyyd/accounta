@@ -40,7 +40,6 @@
     trendTimeframeSelector: $('#trendTimeframe'),
     showIncomeTrendCheckbox: $('#showIncomeTrend'),
     showExpenseTrendCheckbox: $('#showExpenseTrend'),
-    budgetMonthSelector: $('#budgetMonthSelector'),
     pouchTabsEl: $('#pouchTabs'),
     pouchViewsEl: $('#pouchViews'),
     addPouchBtn: $('#addPouchTabBtn'),
@@ -62,14 +61,12 @@
       pouchTransfers: [],
       categories: {expense: [], income: []},
       subscriptions: [],
-      budgets: [],
       currentTimeline: 'all',
       customStart: null,
       customEnd: null,
       trendTimeframeMonths: 6,
       showIncomeTrend: true,
       showExpenseTrend: true,
-      budgetViewMonth: null,
       breakdownType: 'expense',
     },
     charts: {
@@ -108,7 +105,15 @@
         }
 
         app.switchTab(button.dataset.tab)
+        if (history.replaceState) {
+          history.replaceState(null, '', `#${button.dataset.tab}`)
+        }
       })
+
+      const initialTab = location.hash.replace('#', '')
+      if (initialTab && document.getElementById(`${initialTab}-view`)) {
+        app.switchTab(initialTab)
+      }
     },
     populateMonthOptions() {
       const now = new Date()
@@ -233,9 +238,6 @@
 
       if (app.renderCharts) {
         app.renderCharts()
-      }
-      if (app.renderBudgetOverview) {
-        app.renderBudgetOverview()
       }
       if (app.renderPouches) {
         app.renderPouches()

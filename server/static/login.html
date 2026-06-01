@@ -20,24 +20,31 @@
       <section class="card input-card login-card">
         <div id="messages"></div>
         <div id="googleLoginRow" class="google-auth-row" style="display:none;">
+          <div class="google-login-surface" aria-hidden="true">
+            <img src="google-logo.webp" alt="" class="google-mark" />
+            <span>Continue with Google</span>
+          </div>
           <div id="googleLoginButton"></div>
         </div>
         <div id="authDivider" class="auth-divider" style="display:none;"><span>or</span></div>
-        <form id="authForm">
-          <div class="row">
-            <label>Username</label>
-            <input id="username" type="text" placeholder="Enter your username" required />
-          </div>
-          <div class="row">
-            <label>Password</label>
-            <input id="password" type="password" placeholder="Enter your password" required />
-            <p class="helper-text">New passwords must be at least 8 characters and include letters and numbers.</p>
-          </div>
-          <div class="row actions">
-            <button id="loginBtn" type="button" class="btn-primary">Login</button>
-            <button id="regBtn" type="button" class="btn-ghost">Register</button>
-          </div>
-        </form>
+        <details class="manual-login">
+          <summary>Manual login</summary>
+          <form id="authForm">
+            <div class="row">
+              <label>Username</label>
+              <input id="username" type="text" placeholder="Enter your username" required />
+            </div>
+            <div class="row">
+              <label>Password</label>
+              <input id="password" type="password" placeholder="Enter your password" required />
+              <p class="helper-text">New passwords must be at least 8 characters and include letters and numbers.</p>
+            </div>
+            <div class="row actions">
+              <button id="loginBtn" type="button" class="btn-primary">Login</button>
+              <button id="regBtn" type="button" class="btn-ghost">Register</button>
+            </div>
+          </form>
+        </details>
       </section>
 
     </main>
