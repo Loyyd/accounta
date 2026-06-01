@@ -74,13 +74,30 @@
       return
     }
 
+    function closeMenu() {
+      menu.classList.remove('show')
+      button.setAttribute('aria-expanded', 'false')
+    }
+
     button.addEventListener('click', (event) => {
       event.stopPropagation()
-      menu.classList.toggle('show')
+      const willOpen = !menu.classList.contains('show')
+      menu.classList.toggle('show', willOpen)
+      button.setAttribute('aria-expanded', String(willOpen))
+    })
+
+    menu.addEventListener('click', (event) => {
+      event.stopPropagation()
     })
 
     document.addEventListener('click', () => {
-      menu.classList.remove('show')
+      closeMenu()
+    })
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeMenu()
+      }
     })
   }
 
@@ -131,7 +148,6 @@
     const menu = document.getElementById('userMenuDropdown')
     const name = document.getElementById('userMenuName')
     const avatar = document.getElementById('userMenuAvatar')
-    const admin = document.getElementById('userMenuAdmin')
     const logout = document.getElementById('userMenuLogout')
 
     if (!button || !menu) {
@@ -142,10 +158,6 @@
       name.textContent = profile?.username || 'Account'
     }
     renderUserAvatar(avatar, profile)
-    if (admin) {
-      admin.hidden = !profile?.is_admin
-      admin.classList.toggle('is-active', location.pathname.endsWith('/admin.html'))
-    }
     wireSignOut(logout)
 
     button.addEventListener('click', (event) => {
