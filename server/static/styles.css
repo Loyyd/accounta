@@ -768,11 +768,15 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
 .tab-btn.active{color:var(--accent);background:linear-gradient(180deg,rgba(110,231,183,0.1),rgba(110,231,183,0.05))}
 .tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--accent);border-radius:2px}
 .tab-link{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.tab-btn[hidden]{display:none !important}
 .tab-dynamic-group{display:flex;gap:8px;flex-wrap:wrap}
 .tab-btn-add{padding:12px 16px;font-size:18px;line-height:1;font-weight:700}
 .tab-btn-pouch{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tab-btn-settings{margin-left:auto}
+.tab-btn-admin{margin-left:auto}
+.tab-btn-admin[hidden] + .tab-btn-settings{margin-left:auto}
+.tab-btn-settings{margin-left:0}
 .tab-icon-img{width:16px;height:16px;object-fit:contain;display:block;filter:brightness(0) saturate(100%) invert(72%) sepia(8%) saturate(258%) hue-rotate(176deg) brightness(92%) contrast(88%)}
+.tab-icon-img-admin{width:18px;height:18px}
 .tab-btn:hover .tab-icon-img,
 .tab-btn.active .tab-icon-img{filter:brightness(0) saturate(100%) invert(79%) sepia(23%) saturate(575%) hue-rotate(103deg) brightness(97%) contrast(92%)}
 .tab-view{display:none}

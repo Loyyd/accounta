@@ -148,6 +148,7 @@
     const menu = document.getElementById('userMenuDropdown')
     const name = document.getElementById('userMenuName')
     const avatar = document.getElementById('userMenuAvatar')
+    const adminNav = document.getElementById('adminNavLink')
     const logout = document.getElementById('userMenuLogout')
 
     if (!button || !menu) {
@@ -158,6 +159,9 @@
       name.textContent = profile?.username || 'Account'
     }
     renderUserAvatar(avatar, profile)
+    if (adminNav) {
+      adminNav.hidden = !profile?.is_admin
+    }
     wireSignOut(logout)
 
     button.addEventListener('click', (event) => {

@@ -27,10 +27,6 @@
                   <span id="userMenuName" class="user-menu-name">Account</span>
                 </button>
                 <div id="userMenuDropdown" class="user-menu-dropdown" role="menu">
-                  <a id="userMenuAdmin" href="admin.html" class="user-menu-item" role="menuitem" hidden>
-                    <img src="assets/icons/header/admin-console.png" alt="" class="user-menu-item-icon user-menu-item-icon-admin" />
-                    <span>Admin Dashboard</span>
-                  </a>
                   <button id="userMenuLogout" type="button" class="user-menu-item" role="menuitem">
                     <img src="assets/icons/header/logout.png" alt="" class="user-menu-item-icon" />
                     <span>Logout</span>
@@ -49,6 +45,10 @@
         <button class="tab-btn" data-tab="categories">Categories</button>
         <button id="addPouchTabBtn" class="tab-btn tab-btn-add" type="button" aria-label="Add pouch" title="Add pouch">+</button>
         <div id="pouchTabs" class="tab-dynamic-group"></div>
+        <a id="adminNavLink" href="admin.html" class="tab-btn tab-link tab-btn-admin" hidden>
+          <img src="assets/icons/header/admin-console.png" alt="" class="tab-icon-img tab-icon-img-admin" />
+          <span>Admin Dashboard</span>
+        </a>
         <button class="tab-btn tab-link tab-btn-settings" data-tab="settings" type="button" aria-label="Settings">
           <img src="assets/icons/header/setting-wheel.png" alt="" class="tab-icon-img" />
           <span>Settings</span>
