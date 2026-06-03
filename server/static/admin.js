@@ -1,8 +1,10 @@
-const {apiFetch} = window.AccountaCommon
+(function () {
+const {apiFetch, loadProfile} = window.AccountaCommon
 
 const $ = (selector) => document.querySelector(selector)
 let profile = null
-let hasLoadedUsers = false
+let isLoadingUsers = false
+let queuedLoadTimer = null
 
 function formatDate(value) {
   if (!value) {
@@ -102,81 +104,91 @@ async function loadUsers() {
     return
   }
 
+  if (isLoadingUsers) {
+    return
+  }
+
+  isLoadingUsers = true
   usersList.innerHTML = '<div class="muted empty-state">Loading users...</div>'
 
-  const response = await apiFetch('GET', '/admin/users')
-  if (!response.ok) {
-    if (response.status === 403) {
-      usersList.innerHTML = '<div class="muted empty-state">Admin access required</div>'
+  try {
+    const response = await apiFetch('GET', '/admin/users')
+    if (!response.ok) {
+      if (response.status === 403) {
+        usersList.innerHTML = '<div class="muted empty-state">Admin access required</div>'
+        return
+      }
+
+      usersList.innerHTML = '<div class="muted empty-state">Failed to load users</div>'
       return
     }
 
-    usersList.innerHTML = '<div class="muted empty-state">Failed to load users</div>'
-    return
-  }
+    const payload = await response.json()
+    const users = payload.users || []
+    totalUsers.textContent = users.length
 
-  const payload = await response.json()
-  const users = payload.users || []
-  totalUsers.textContent = users.length
+    usersList.innerHTML = ''
 
-  usersList.innerHTML = ''
-  hasLoadedUsers = true
+    if (!users.length) {
+      usersList.innerHTML = '<div class="muted empty-state">No users found</div>'
+      return
+    }
 
-  if (!users.length) {
-    usersList.innerHTML = '<div class="muted empty-state">No users found</div>'
-    return
-  }
+    users.forEach((user) => {
+      const userRow = document.createElement('div')
+      userRow.className = 'table-row'
+      const roleText = user.is_admin ? 'Admin' : 'User'
+      const roleClass = user.is_admin ? 'admin' : 'user'
 
-  users.forEach((user) => {
-    const userRow = document.createElement('div')
-    userRow.className = 'table-row'
-    const roleText = user.is_admin ? 'Admin' : 'User'
-    const roleClass = user.is_admin ? 'admin' : 'user'
-
-    userRow.innerHTML = `
-      <div id="username-${user.id}" class="table-meta" style="cursor:pointer" title="Click to edit username">
-        <div class="admin-user-cell">
-          ${avatarMarkup(user)}
-          <div class="admin-user-copy">
-            <div class="admin-user-heading">
-              <strong>${escapeHtml(user.username)}</strong>
-              <button class="btn-ghost btn-sm admin-password-btn" type="button" title="Reset password">
-                <img src="assets/icons/header/lock.png" alt="" class="admin-password-icon" />
-              </button>
+      userRow.innerHTML = `
+        <div id="username-${user.id}" class="table-meta" style="cursor:pointer" title="Click to edit username">
+          <div class="admin-user-cell">
+            ${avatarMarkup(user)}
+            <div class="admin-user-copy">
+              <div class="admin-user-heading">
+                <strong>${escapeHtml(user.username)}</strong>
+                <button class="btn-ghost btn-sm admin-password-btn" type="button" title="Reset password">
+                  <img src="assets/icons/header/lock.png" alt="" class="admin-password-icon" />
+                </button>
+              </div>
+              ${googleDetailsMarkup(user)}
+              <div class="helper-text">${formatDate(user.created_at)}. ${formatNet(user)}</div>
             </div>
-            ${googleDetailsMarkup(user)}
-            <div class="helper-text">${formatDate(user.created_at)}. ${formatNet(user)}</div>
           </div>
         </div>
-      </div>
-      <div class="role-badge ${roleClass}">${roleText}</div>
-      <div class="muted-copy">${user.entry_count}</div>
-      <div class="table-actions">
-        <button class="btn-ghost btn-sm toggle-admin-btn" title="Toggle admin status">
-          ${user.is_admin ? 'Remove admin' : 'Make admin'}
-        </button>
-        <button class="btn-ghost btn-sm delete-user-btn danger-copy" title="Delete user">
-          Delete
-        </button>
-      </div>
-    `
+        <div class="role-badge ${roleClass}">${roleText}</div>
+        <div class="muted-copy">${user.entry_count}</div>
+        <div class="table-actions">
+          <button class="btn-ghost btn-sm toggle-admin-btn" title="Toggle admin status">
+            ${user.is_admin ? 'Remove admin' : 'Make admin'}
+          </button>
+          <button class="btn-ghost btn-sm delete-user-btn danger-copy" title="Delete user">
+            Delete
+          </button>
+        </div>
+      `
 
-    userRow.querySelector(`#username-${user.id}`).addEventListener('click', () => {
-      window.editUsername(user.id, user.username)
-    })
-    userRow.querySelector('.admin-password-btn').addEventListener('click', (event) => {
-      event.stopPropagation()
-      resetUserPassword(user.id, user.username)
-    })
-    userRow.querySelector('.toggle-admin-btn').addEventListener('click', () => {
-      window.toggleAdmin(user.id)
-    })
-    userRow.querySelector('.delete-user-btn').addEventListener('click', () => {
-      window.deleteUser(user.id, user.username)
-    })
+      userRow.querySelector(`#username-${user.id}`).addEventListener('click', () => {
+        window.editUsername(user.id, user.username)
+      })
+      userRow.querySelector('.admin-password-btn').addEventListener('click', (event) => {
+        event.stopPropagation()
+        resetUserPassword(user.id, user.username)
+      })
+      userRow.querySelector('.toggle-admin-btn').addEventListener('click', () => {
+        window.toggleAdmin(user.id)
+      })
+      userRow.querySelector('.delete-user-btn').addEventListener('click', () => {
+        window.deleteUser(user.id, user.username)
+      })
 
-    usersList.appendChild(userRow)
-  })
+      usersList.appendChild(userRow)
+    })
+  } catch (error) {
+    usersList.innerHTML = '<div class="muted empty-state">Failed to load users</div>'
+  } finally {
+    isLoadingUsers = false
+  }
 }
 
 window.deleteUser = async function deleteUser(userId, username) {
@@ -252,19 +264,47 @@ window.editUsername = async function editUsername(userId, currentUsername) {
 }
 
 async function init() {
+  if (!profile) {
+    profile = await loadProfile().catch(() => null)
+  }
+
   if (!profile?.is_admin) {
+    const usersList = $('#usersList')
+    if (usersList) {
+      usersList.innerHTML = '<div class="muted empty-state">Admin access required</div>'
+    }
     return
   }
 
   await loadUsers()
 }
 
+function queueAdminLoad() {
+  clearTimeout(queuedLoadTimer)
+  queuedLoadTimer = setTimeout(() => {
+    window.AccountaAdmin?.ensureLoaded?.()
+  }, 0)
+}
+
+function wireAdminTabLoader() {
+  const adminNav = document.getElementById('adminNavLink')
+  if (adminNav) {
+    adminNav.addEventListener('click', queueAdminLoad)
+  }
+
+  window.addEventListener('hashchange', () => {
+    if (location.hash === '#admin') {
+      queueAdminLoad()
+    }
+  })
+
+  if (location.hash === '#admin' || document.getElementById('admin-view')?.classList.contains('active')) {
+    queueAdminLoad()
+  }
+}
+
 window.AccountaAdmin = {
   async ensureLoaded() {
-    if (!profile?.is_admin || hasLoadedUsers) {
-      return
-    }
-
     await init()
   },
   async refresh() {
@@ -277,7 +317,6 @@ window.AccountaAdmin = {
   setProfile(nextProfile) {
     profile = nextProfile
     if (!profile?.is_admin) {
-      hasLoadedUsers = false
       const usersList = $('#usersList')
       const totalUsers = $('#totalUsers')
       if (usersList) {
@@ -289,8 +328,9 @@ window.AccountaAdmin = {
       return
     }
 
-    if (location.hash === '#admin') {
-      this.ensureLoaded()
-    }
+    this.ensureLoaded()
   },
 }
+
+wireAdminTabLoader()
+})()
