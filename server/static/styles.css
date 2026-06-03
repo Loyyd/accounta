@@ -367,19 +367,54 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
 .profile-items-grid{
   display:grid;
   grid-template-columns:repeat(3,1fr);
-  gap:20px;
+  gap:12px;
   margin-bottom:0;
 }
 .profile-items-grid .settings-row{
-  padding:0;
+  padding:12px;
   border-bottom:none;
+  border:1px solid var(--line-soft);
+  border-radius:var(--radius-sm);
+  background:rgba(255,255,255,0.02);
   flex-direction:column;
   align-items:flex-start;
   justify-content:flex-start;
   gap:6px;
+  min-height:82px;
 }
 .profile-items-grid .settings-row:last-child{
   border-bottom:none;
+}
+.settings-google-status{margin:0}
+.google-sync-btn{
+  margin-top:auto;
+  min-height:38px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:8px 12px;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:8px;
+  background:rgba(255,255,255,0.06);
+  color:var(--text);
+  cursor:pointer;
+  font-size:13px;
+  font-weight:600;
+  box-shadow:0 8px 20px rgba(0,0,0,0.14);
+  transition:all 0.2s ease;
+}
+.google-sync-btn:hover{
+  border-color:rgba(110,231,183,0.26);
+  background:rgba(255,255,255,0.08);
+  color:var(--accent);
+}
+.google-sync-mark{
+  width:20px;
+  height:20px;
+  display:block;
+  border-radius:50%;
+  object-fit:contain;
 }
 .form-group{margin-bottom:16px}
 .stats-grid{

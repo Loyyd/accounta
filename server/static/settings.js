@@ -1,6 +1,7 @@
 const {apiFetch, clearToken, fmtCurrency, loadProfile, requireLogin} = window.AccountaCommon
 
 let googleClientId = ''
+let currentUsername = ''
 
 function hasSettingsView() {
   return !!document.getElementById('settings-view')
@@ -64,7 +65,7 @@ async function loadAccountProfile() {
     return null
   }
 
-  document.getElementById('username').textContent = profile.username
+  currentUsername = profile.username
   document.getElementById('createdAt').textContent = profile.createdAt
     ? new Date(profile.createdAt).toLocaleDateString()
     : 'Unknown'
@@ -90,7 +91,7 @@ function updateGoogleStatus(profile) {
     return
   }
 
-  status.textContent = googleClientId ? 'Not linked yet' : 'Google login is not configured'
+  status.textContent = googleClientId ? 'Not synced yet' : 'Google login is not configured'
   button.style.display = googleClientId ? 'inline-flex' : 'none'
 }
 
@@ -366,7 +367,7 @@ function wireSettingsUi() {
   })
 
   document.getElementById('deleteAccountBtn')?.addEventListener('click', async () => {
-    const username = document.getElementById('username').textContent.trim()
+    const username = currentUsername
     const confirmation = document.getElementById('deleteConfirmInput').value.trim()
 
     if (confirmation !== username) {

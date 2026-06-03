@@ -361,28 +361,23 @@
             <div class="settings-grid">
               <section class="card settings-section">
                 <h4 class="settings-heading">Profile</h4>
-                <div class="settings-row">
-                  <span class="settings-label">Username</span>
-                  <span class="settings-value" id="username">Loading...</span>
-                </div>
-                <div class="settings-row">
-                  <span class="settings-label">Account ID</span>
-                  <span class="settings-value" id="userId">-</span>
-                </div>
-                <div class="settings-row">
-                  <span class="settings-label">Account Type</span>
-                  <span class="settings-value" id="accountType">Standard</span>
-                </div>
-                <div class="settings-row">
-                  <span class="settings-label">Created</span>
-                  <span class="settings-value" id="createdAt">-</span>
-                </div>
-                <div class="settings-row">
-                  <div>
-                    <span class="settings-label">Google</span>
-                    <p class="helper-text" id="googleStatus">Checking Google connection...</p>
+                <div class="profile-items-grid">
+                  <div class="settings-row">
+                    <span class="settings-label">Account Type</span>
+                    <span class="settings-value" id="accountType">Standard</span>
                   </div>
-                  <button class="btn-secondary" id="googleLinkBtn" style="display:none;">Google Sync</button>
+                  <div class="settings-row">
+                    <span class="settings-label">Created</span>
+                    <span class="settings-value" id="createdAt">-</span>
+                  </div>
+                  <div class="settings-row settings-google-row">
+                    <span class="settings-label">Google</span>
+                    <p class="helper-text settings-google-status" id="googleStatus">Checking Google connection...</p>
+                    <button class="google-sync-btn" id="googleLinkBtn" type="button" style="display:none;">
+                      <img src="google-logo.webp" alt="" class="google-sync-mark" />
+                      <span>Sync with Google</span>
+                    </button>
+                  </div>
                 </div>
               </section>
 
