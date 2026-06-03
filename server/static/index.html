@@ -45,10 +45,10 @@
         <button class="tab-btn" data-tab="categories">Categories</button>
         <button id="addPouchTabBtn" class="tab-btn tab-btn-add" type="button" aria-label="Add pouch" title="Add pouch">+</button>
         <div id="pouchTabs" class="tab-dynamic-group"></div>
-        <a id="adminNavLink" href="admin.html" class="tab-btn tab-link tab-btn-admin" hidden>
+        <button id="adminNavLink" class="tab-btn tab-link tab-btn-admin" data-tab="admin" type="button" hidden>
           <img src="assets/icons/header/admin-console.png" alt="" class="tab-icon-img tab-icon-img-admin" />
-          <span>Admin Dashboard</span>
-        </a>
+          <span>Admin</span>
+        </button>
         <button class="tab-btn tab-link tab-btn-settings" data-tab="settings" type="button" aria-label="Settings">
           <img src="assets/icons/header/setting-wheel.png" alt="" class="tab-icon-img" />
           <span>Settings</span>
@@ -324,6 +324,32 @@
         </section>
       </div>
 
+      <div id="admin-view" class="tab-view">
+        <div class="admin-shell">
+          <section class="card">
+            <div class="header-title-row section-header-lg">
+              <div>
+                <h3 class="section-title">User Accounts</h3>
+                <p class="helper-text">Manage account access, roles, and recovery for accounta users.</p>
+              </div>
+              <div class="muted-copy">
+                Total Users: <span id="totalUsers" class="accent-copy"><strong>0</strong></span>
+              </div>
+            </div>
+
+            <div id="usersTable">
+              <div class="table-header">
+                <div>User</div>
+                <div>Role</div>
+                <div>Entries</div>
+                <div>Actions</div>
+              </div>
+              <div id="usersList"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
       <div id="settings-view" class="tab-view">
         <div class="settings-shell">
           <div class="settings-container">
@@ -502,6 +528,7 @@
     <script src="app-pouches.js"></script>
     <script src="app-charts.js"></script>
     <script src="settings.js"></script>
+    <script src="admin.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

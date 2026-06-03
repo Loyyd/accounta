@@ -3,64 +3,14 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Admin Dashboard - accounta</title>
+    <meta http-equiv="refresh" content="0; url=index.html#admin" />
+    <title>Admin - accounta</title>
     <link rel="icon" type="image/png" href="accounta.png" />
-    <link rel="stylesheet" href="styles.css" />
+    <script>
+      location.replace('index.html#admin')
+    </script>
   </head>
   <body>
-    <main class="app">
-      <header class="header page-header">
-        <div class="page-header-top">
-          <div class="brand-row">
-            <a href="index.html" class="brand-link"><img src="accounta.png" alt="accounta" class="brand-logo" /></a>
-            <div class="brand-block">
-              <h1 class="page-title">Admin Dashboard</h1>
-              <p class="lead">Manage users and account access across accounta.</p>
-            </div>
-          </div>
-          <div id="authArea" class="auth-area">
-            <div id="userActions" class="auth-actions" style="display:none;">
-              <div class="user-menu">
-                <button id="userMenuBtn" type="button" class="user-menu-trigger" aria-haspopup="menu" aria-expanded="false">
-                  <span id="userMenuAvatar" class="user-menu-avatar"></span>
-                  <span id="userMenuName" class="user-menu-name">Account</span>
-                </button>
-                <div id="userMenuDropdown" class="user-menu-dropdown" role="menu">
-                  <button id="userMenuLogout" type="button" class="user-menu-item" role="menuitem">
-                    <img src="assets/icons/header/logout.png" alt="" class="user-menu-item-icon" />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div class="admin-shell">
-        <section class="card">
-          <div class="header-title-row section-header-lg">
-            <h3 class="section-title">User Accounts</h3>
-            <div class="muted-copy">
-              Total Users: <span id="totalUsers" class="accent-copy"><strong>0</strong></span>
-            </div>
-          </div>
-
-          <div id="usersTable">
-            <div class="table-header">
-              <div>User</div>
-              <div>Role</div>
-              <div>Entries</div>
-              <div>Actions</div>
-            </div>
-            <div id="usersList"></div>
-          </div>
-        </section>
-      </div>
-
-      <footer class="footer">Admin Dashboard - Manage users with care</footer>
-    </main>
-    <script src="shared.js"></script>
-    <script src="admin.js"></script>
+    <p>Opening the admin tab...</p>
   </body>
 </html>

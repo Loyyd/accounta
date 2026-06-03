@@ -92,6 +92,10 @@
       app.$all('.tab-view').forEach((view) => {
         view.classList.toggle('active', view.id === `${tabName}-view`)
       })
+
+      if (tabName === 'admin') {
+        window.AccountaAdmin?.ensureLoaded?.()
+      }
     },
     initTabs() {
       if (!app.dom.tabBar) {

@@ -1,6 +1,8 @@
-const {apiFetch, isLoggedIn, loadProfile, wireSignOut} = window.AccountaCommon
+const {apiFetch} = window.AccountaCommon
 
 const $ = (selector) => document.querySelector(selector)
+let profile = null
+let hasLoadedUsers = false
 
 function formatDate(value) {
   if (!value) {
@@ -90,24 +92,35 @@ async function resetUserPassword(userId, username) {
 }
 
 async function loadUsers() {
+  if (!document.getElementById('admin-view')) {
+    return
+  }
+
+  const usersList = $('#usersList')
+  const totalUsers = $('#totalUsers')
+  if (!usersList || !totalUsers) {
+    return
+  }
+
+  usersList.innerHTML = '<div class="muted empty-state">Loading users...</div>'
+
   const response = await apiFetch('GET', '/admin/users')
   if (!response.ok) {
     if (response.status === 403) {
-      alert('Admin access required')
-      location.href = 'index.html'
+      usersList.innerHTML = '<div class="muted empty-state">Admin access required</div>'
       return
     }
 
-    alert('Failed to load users')
+    usersList.innerHTML = '<div class="muted empty-state">Failed to load users</div>'
     return
   }
 
   const payload = await response.json()
   const users = payload.users || []
-  $('#totalUsers').textContent = users.length
+  totalUsers.textContent = users.length
 
-  const usersList = $('#usersList')
   usersList.innerHTML = ''
+  hasLoadedUsers = true
 
   if (!users.length) {
     usersList.innerHTML = '<div class="muted empty-state">No users found</div>'
@@ -239,30 +252,45 @@ window.editUsername = async function editUsername(userId, currentUsername) {
 }
 
 async function init() {
-  if (!isLoggedIn()) {
-    location.href = 'login.html'
+  if (!profile?.is_admin) {
     return
   }
-
-  const profile = await loadProfile()
-  if (!profile) {
-    return
-  }
-
-  if (!profile.is_admin) {
-    alert('Admin access required')
-    location.href = 'index.html'
-    return
-  }
-
-  const userActions = $('#userActions')
-
-  if (userActions) {
-    userActions.style.display = 'flex'
-  }
-  window.AccountaCommon?.initUserMenu?.(profile)
 
   await loadUsers()
 }
 
-init()
+window.AccountaAdmin = {
+  async ensureLoaded() {
+    if (!profile?.is_admin || hasLoadedUsers) {
+      return
+    }
+
+    await init()
+  },
+  async refresh() {
+    if (!profile?.is_admin) {
+      return
+    }
+
+    await loadUsers()
+  },
+  setProfile(nextProfile) {
+    profile = nextProfile
+    if (!profile?.is_admin) {
+      hasLoadedUsers = false
+      const usersList = $('#usersList')
+      const totalUsers = $('#totalUsers')
+      if (usersList) {
+        usersList.innerHTML = ''
+      }
+      if (totalUsers) {
+        totalUsers.textContent = '0'
+      }
+      return
+    }
+
+    if (location.hash === '#admin') {
+      this.ensureLoaded()
+    }
+  },
+}

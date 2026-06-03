@@ -20,6 +20,13 @@
           if (response.ok) {
             const profile = await response.json()
             window.AccountaCommon?.initUserMenu?.(profile)
+            window.AccountaAdmin?.setProfile?.(profile)
+            if (!profile.is_admin && location.hash === '#admin') {
+              app.switchTab('overview')
+              if (history.replaceState) {
+                history.replaceState(null, '', '#overview')
+              }
+            }
             if (footer) {
               footer.textContent = 'Saved to your account (server)'
             }
