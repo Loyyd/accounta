@@ -81,7 +81,7 @@ jobs:
       packages: read
 
     env:
-      NOMAD_ADDR: https://100.64.0.5:4646
+      NOMAD_ADDR: http://100.64.0.5:4646
       NOMAD_SKIP_VERIFY: "true"
       NOMAD_TOKEN: ${{ secrets.NOMAD_TOKEN }}
 
