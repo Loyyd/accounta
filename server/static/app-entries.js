@@ -499,17 +499,29 @@
       const description = document.createElement('div')
       const entryDate = new Date(entry.date)
       const dateLabel = entryDate.toLocaleDateString('en-US', {month: 'short', year: 'numeric'})
-      description.innerHTML = `<div style="cursor: ${isPouchTransfer ? 'default' : 'pointer'};">${entry.description}</div><div class="muted" style="font-size:12px; cursor: ${isPouchTransfer ? 'default' : 'pointer'};" ${isPouchTransfer ? '' : 'title="Click to edit month"'}>${dateLabel}</div>`
+      const descriptionText = document.createElement('div')
+      descriptionText.style.cursor = isPouchTransfer ? 'default' : 'pointer'
+      descriptionText.textContent = entry.description
+      const dateText = document.createElement('div')
+      dateText.className = 'muted'
+      dateText.style.fontSize = '12px'
+      dateText.style.cursor = isPouchTransfer ? 'default' : 'pointer'
+      if (!isPouchTransfer) {
+        dateText.title = 'Click to edit month'
+      }
+      dateText.textContent = dateLabel
+      description.appendChild(descriptionText)
+      description.appendChild(dateText)
 
       if (!isPouchTransfer) {
-        description.querySelector('div:first-child').onclick = (event) => {
+        descriptionText.onclick = (event) => {
           event.stopPropagation()
           editTransactionField(entry, 'description', description)
         }
 
-        description.querySelector('div.muted').onclick = (event) => {
+        dateText.onclick = (event) => {
           event.stopPropagation()
-          editTransactionField(entry, 'date', description.querySelector('div.muted'))
+          editTransactionField(entry, 'date', dateText)
         }
       }
 

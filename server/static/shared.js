@@ -14,6 +14,21 @@
     localStorage.removeItem(TOKEN_KEY)
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    })[char])
+  }
+
+  function safeHexColor(value, fallback = '#9aa5b1') {
+    const color = String(value || '').trim()
+    return /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback
+  }
+
   function isLoggedIn() {
     return !!getToken()
   }
@@ -193,6 +208,7 @@
     TOKEN_KEY,
     apiFetch,
     clearToken,
+    escapeHtml,
     fmtCurrency,
     getToken,
     initUserMenu,
@@ -200,6 +216,7 @@
     loadProfile,
     redirectToLogin,
     requireLogin,
+    safeHexColor,
     setToken,
     setupDropdown,
     wireSignOut,

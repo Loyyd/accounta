@@ -158,7 +158,10 @@
     listElement.innerHTML = ''
 
     if (app.state.categories[type].length === 0) {
-      listElement.innerHTML = `<li class="muted">No ${type} categories</li>`
+      const empty = document.createElement('li')
+      empty.className = 'muted'
+      empty.textContent = `No ${type} categories`
+      listElement.appendChild(empty)
       return
     }
 
@@ -170,24 +173,76 @@
       item.style.padding = '8px 0'
       item.style.borderBottom = '1px dashed rgba(255,255,255,0.02)'
 
-      const colorId = `color-${type}-${category.name.replace(/\s/g, '-')}`
-      const escapedName = category.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')
+      const categoryColor = app.safeHexColor(category.color)
+      const colorId = `color-${type}-${category.id || category.name.replace(/\W/g, '-')}`
+      const content = document.createElement('span')
+      content.style.fontWeight = '600'
+      content.style.flex = '1'
+      content.style.display = 'flex'
+      content.style.alignItems = 'center'
+      content.style.gap = '12px'
 
-      item.innerHTML = `
-        <span style="font-weight: 600; flex: 1; display: flex; align-items: center; gap: 12px;">
-          <label for="${colorId}" style="position: relative; cursor: pointer; display: inline-block;">
-            <div style="width: 24px; height: 24px; background: ${category.color}; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.2s;"
-                 onmouseover="this.style.transform='scale(1.1)'"
-                 onmouseout="this.style.transform='scale(1)'"></div>
-            <input type="color" id="${colorId}" value="${category.color}"
-                   onchange="updateCategoryColor('${category.name}', '${type}', this.value)"
-                   style="position: absolute; opacity: 0; width: 0; height: 0;"
-                   title="Change color" />
-          </label>
-          <span style="color: ${category.color}; cursor: pointer;" onclick="editCategoryName(this, '${escapedName}', '${type}')" title="Click to edit name">${category.name}</span>
-        </span>
-        <button class="btn-ghost" style="padding:4px 8px;font-size:12px" onclick="removeCategory('${category.name}', '${type}')">Delete</button>
-      `
+      const label = document.createElement('label')
+      label.htmlFor = colorId
+      label.style.position = 'relative'
+      label.style.cursor = 'pointer'
+      label.style.display = 'inline-block'
+
+      const swatch = document.createElement('div')
+      swatch.style.width = '24px'
+      swatch.style.height = '24px'
+      swatch.style.background = categoryColor
+      swatch.style.borderRadius = '50%'
+      swatch.style.border = '2px solid rgba(255,255,255,0.2)'
+      swatch.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)'
+      swatch.style.transition = 'transform 0.2s'
+      swatch.addEventListener('mouseover', () => {
+        swatch.style.transform = 'scale(1.1)'
+      })
+      swatch.addEventListener('mouseout', () => {
+        swatch.style.transform = 'scale(1)'
+      })
+
+      const colorInput = document.createElement('input')
+      colorInput.type = 'color'
+      colorInput.id = colorId
+      colorInput.value = categoryColor
+      colorInput.title = 'Change color'
+      colorInput.style.position = 'absolute'
+      colorInput.style.opacity = '0'
+      colorInput.style.width = '0'
+      colorInput.style.height = '0'
+      colorInput.addEventListener('change', () => {
+        updateCategoryColor(category.name, type, colorInput.value)
+      })
+
+      label.appendChild(swatch)
+      label.appendChild(colorInput)
+
+      const name = document.createElement('span')
+      name.style.color = categoryColor
+      name.style.cursor = 'pointer'
+      name.title = 'Click to edit name'
+      name.textContent = category.name
+      name.addEventListener('click', () => {
+        editCategoryName(name, category.name, type)
+      })
+
+      content.appendChild(label)
+      content.appendChild(name)
+
+      const deleteButton = document.createElement('button')
+      deleteButton.type = 'button'
+      deleteButton.className = 'btn-ghost'
+      deleteButton.style.padding = '4px 8px'
+      deleteButton.style.fontSize = '12px'
+      deleteButton.textContent = 'Delete'
+      deleteButton.addEventListener('click', () => {
+        removeCategory(category.name, type)
+      })
+
+      item.appendChild(content)
+      item.appendChild(deleteButton)
       listElement.appendChild(item)
     })
   }

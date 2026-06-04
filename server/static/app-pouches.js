@@ -184,13 +184,14 @@
       const directionClass = transfer.direction === 'to_pouch' ? 'income' : 'expense'
       const directionPrefix = transfer.direction === 'to_pouch' ? '+' : '-'
       const transferDate = new Date(transfer.date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})
+      const description = app.escapeHtml(transfer.description)
 
       return `
         <div class="entry">
           <div class="left">
             <div class="chip pouch-transfer-chip ${directionClass}">${formatTransferDirection(transfer.direction)}</div>
             <div>
-              <div>${transfer.description}</div>
+              <div>${description}</div>
               <div class="muted" style="font-size:12px">${transferDate}</div>
             </div>
           </div>
@@ -203,13 +204,14 @@
   function renderPouchView(pouch) {
     const transfers = getPouchTransfers(pouch.id)
     const currentBalanceClass = pouch.balance >= 0 ? 'income' : 'expense'
+    const pouchName = app.escapeHtml(pouch.name)
 
     return `
       <div id="pouch-${pouch.id}-view" class="tab-view">
         <section class="card">
           <div class="header-title-row">
             <div>
-              <h3 class="section-title">${pouch.name}</h3>
+              <h3 class="section-title">${pouchName}</h3>
               <p class="lead">A separate pouch balance.</p>
             </div>
             <button type="button" class="btn-danger btn-sm" data-delete-pouch="${pouch.id}">Delete Pouch</button>
@@ -240,8 +242,8 @@
               <div class="row">
                 <label>Direction</label>
                 <select name="direction" required>
-                  <option value="to_pouch">Main Account -> ${pouch.name}</option>
-                  <option value="from_pouch">${pouch.name} -> Main Account</option>
+                  <option value="to_pouch">Main Account -> ${pouchName}</option>
+                  <option value="from_pouch">${pouchName} -> Main Account</option>
                 </select>
               </div>
 

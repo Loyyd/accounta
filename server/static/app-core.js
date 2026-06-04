@@ -54,7 +54,9 @@
     $,
     $all,
     dom,
+    escapeHtml: common.escapeHtml,
     fmt,
+    safeHexColor: common.safeHexColor,
     state: {
       entries: [],
       pouches: [],

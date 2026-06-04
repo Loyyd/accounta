@@ -76,10 +76,13 @@
         const percent = ((value / categoryTotal) * 100).toFixed(1)
         const item = document.createElement('div')
         item.className = 'chart-legend-item'
-        item.innerHTML = `
-          <div class="chart-legend-color" style="background: ${colors[index]}"></div>
-          <span>${category}: ${app.fmt(value)} (${percent}%)</span>
-        `
+        const swatch = document.createElement('div')
+        swatch.className = 'chart-legend-color'
+        swatch.style.background = app.safeHexColor(colors[index])
+        const label = document.createElement('span')
+        label.textContent = `${category}: ${app.fmt(value)} (${percent}%)`
+        item.appendChild(swatch)
+        item.appendChild(label)
         legend.appendChild(item)
       })
     }

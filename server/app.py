@@ -1,6 +1,7 @@
 import calendar
 import datetime as dt
 import os
+import re
 import secrets
 import time
 from functools import wraps
@@ -26,6 +27,7 @@ db = SQLAlchemy()
 VALID_ENTRY_TYPES = {"income", "expense"}
 VALID_SUBSCRIPTION_FREQUENCIES = {"weekly", "monthly", "yearly"}
 VALID_TRANSFER_DIRECTIONS = {"to_pouch", "from_pouch"}
+HEX_COLOR_PATTERN = re.compile(r"^#[0-9a-fA-F]{6}$")
 DEFAULT_DEV_CORS_ORIGINS = (
     "http://localhost:5000",
     "http://127.0.0.1:5000",
@@ -353,6 +355,13 @@ def validate_password(password):
     if password.isalpha() or password.isdigit():
         return "password must include both letters and numbers"
     return None
+
+
+def normalize_category_color(value):
+    color = (value or "#6ee7b7").strip()
+    if not HEX_COLOR_PATTERN.fullmatch(color):
+        raise ValueError("color must be a 6-digit hex value")
+    return color.lower()
 
 
 def get_rate_limit_config(scope):
@@ -1256,7 +1265,10 @@ def create_app(test_config=None):
         data = get_json_body()
         name = (data.get("name") or "").strip()
         category_type = data.get("type")
-        color = (data.get("color") or "#6ee7b7").strip()
+        try:
+            color = normalize_category_color(data.get("color"))
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
 
         if not name or category_type not in VALID_ENTRY_TYPES:
             return jsonify({"error": "name and type are required"}), 400
@@ -1330,7 +1342,10 @@ def create_app(test_config=None):
                 category.name = name
 
         if "color" in data:
-            category.color = (data.get("color") or category.color).strip() or category.color
+            try:
+                category.color = normalize_category_color(data.get("color") or category.color)
+            except ValueError as exc:
+                return jsonify({"error": str(exc)}), 400
 
         db.session.commit()
         return jsonify({"ok": True})

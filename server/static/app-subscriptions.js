@@ -138,7 +138,7 @@
     const categoryType = subscription.type || 'expense'
     const categoryList = app.state.categories[categoryType] || []
     const categoryOptions = categoryList.map((category) =>
-      `<option value="${category.name}" ${category.name === subscription.category ? 'selected' : ''}>${category.name}</option>`
+      `<option value="${app.escapeHtml(category.name)}" ${category.name === subscription.category ? 'selected' : ''}>${app.escapeHtml(category.name)}</option>`
     ).join('')
 
     const selectedDate = subscription.startDate.split('T')[0]
@@ -158,7 +158,7 @@
         <div class="subscription-modal-grid">
           <div class="subscription-modal-row">
             <label>Amount</label>
-            <input id="editSubAmount" type="number" step="0.01" value="${subscription.amount}" required />
+            <input id="editSubAmount" type="number" step="0.01" required />
           </div>
           <div class="subscription-modal-row">
             <label>Category</label>
@@ -169,7 +169,7 @@
         </div>
         <div class="subscription-modal-row">
           <label>Description</label>
-          <input id="editSubDescription" type="text" value="${subscription.description}" required />
+          <input id="editSubDescription" type="text" required />
         </div>
         <div class="subscription-modal-grid">
           <div class="subscription-modal-row">
@@ -207,15 +207,24 @@
 
     const typeSelect = modal.querySelector('#editSubType')
     const categorySelect = modal.querySelector('#editSubCategory')
+    const amountInput = modal.querySelector('#editSubAmount')
+    const descriptionInput = modal.querySelector('#editSubDescription')
     const editDaySelect = modal.querySelector('#editSubStartDay')
     const editMonthSelect = modal.querySelector('#editSubStartMonth')
     const editYearSelect = modal.querySelector('#editSubStartYear')
 
+    amountInput.value = subscription.amount
+    descriptionInput.value = subscription.description
+
     typeSelect.addEventListener('change', () => {
       const nextCategories = app.state.categories[typeSelect.value] || []
-      categorySelect.innerHTML = nextCategories.map((category) =>
-        `<option value="${category.name}">${category.name}</option>`
-      ).join('')
+      categorySelect.innerHTML = ''
+      nextCategories.forEach((category) => {
+        const option = document.createElement('option')
+        option.value = category.name
+        option.textContent = category.name
+        categorySelect.appendChild(option)
+      })
     })
 
     ;[editMonthSelect, editYearSelect].forEach((select) => {
@@ -276,25 +285,60 @@
 
       const typeColor = subscription.type === 'income' ? 'var(--accent)' : 'var(--danger)'
       const frequencyLabel = subscription.frequency.charAt(0).toUpperCase() + subscription.frequency.slice(1)
+      const meta = `${subscription.category} - ${frequencyLabel} - Since ${new Date(subscription.startDate).toLocaleDateString()}`
 
-      card.innerHTML = `
-        <div class="subscription-main">
-          <div class="subscription-title">${subscription.description}</div>
-          <div class="subscription-meta">${subscription.category} • ${frequencyLabel} • Since ${new Date(subscription.startDate).toLocaleDateString()}</div>
-        </div>
-        <div class="subscription-amount" style="color:${typeColor}">${app.fmt(subscription.amount)}</div>
-        <div class="subscription-actions">
-          <button onclick="editSubscription(${subscription.id})" class="btn-ghost btn-sm" title="Edit">
-            Edit
-          </button>
-          <button onclick="toggleSubscription(${subscription.id})" class="btn-ghost btn-sm" title="${subscription.active ? 'Pause' : 'Activate'}">
-            ${subscription.active ? 'Pause' : 'Activate'}
-          </button>
-          <button onclick="deleteSubscription(${subscription.id})" class="btn-ghost btn-sm danger-copy" title="Delete">
-            Remove
-          </button>
-        </div>
-      `
+      const main = document.createElement('div')
+      main.className = 'subscription-main'
+      const title = document.createElement('div')
+      title.className = 'subscription-title'
+      title.textContent = subscription.description
+      const metaEl = document.createElement('div')
+      metaEl.className = 'subscription-meta'
+      metaEl.textContent = meta
+      main.appendChild(title)
+      main.appendChild(metaEl)
+
+      const amount = document.createElement('div')
+      amount.className = 'subscription-amount'
+      amount.style.color = typeColor
+      amount.textContent = app.fmt(subscription.amount)
+
+      const actions = document.createElement('div')
+      actions.className = 'subscription-actions'
+
+      const editButton = document.createElement('button')
+      editButton.type = 'button'
+      editButton.className = 'btn-ghost btn-sm'
+      editButton.title = 'Edit'
+      editButton.textContent = 'Edit'
+      editButton.addEventListener('click', () => {
+        window.editSubscription(subscription.id)
+      })
+
+      const toggleButton = document.createElement('button')
+      toggleButton.type = 'button'
+      toggleButton.className = 'btn-ghost btn-sm'
+      toggleButton.title = subscription.active ? 'Pause' : 'Activate'
+      toggleButton.textContent = subscription.active ? 'Pause' : 'Activate'
+      toggleButton.addEventListener('click', () => {
+        toggleSubscription(subscription.id)
+      })
+
+      const deleteButton = document.createElement('button')
+      deleteButton.type = 'button'
+      deleteButton.className = 'btn-ghost btn-sm danger-copy'
+      deleteButton.title = 'Delete'
+      deleteButton.textContent = 'Remove'
+      deleteButton.addEventListener('click', () => {
+        deleteSubscription(subscription.id)
+      })
+
+      actions.appendChild(editButton)
+      actions.appendChild(toggleButton)
+      actions.appendChild(deleteButton)
+      card.appendChild(main)
+      card.appendChild(amount)
+      card.appendChild(actions)
 
       list.appendChild(card)
     })

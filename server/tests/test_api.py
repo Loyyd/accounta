@@ -268,6 +268,20 @@ def test_entries_export_and_date_serialization(client):
     assert export_payload["profile"]["username"] == "alice"
 
 
+def test_category_color_must_be_hex(client):
+    _, payload = register_user(client)
+    token = payload["token"]
+
+    response = client.post(
+        "/api/categories",
+        headers=auth_headers(token),
+        json={"name": "Unsafe", "type": "expense", "color": "red;background:url(javascript:alert(1))"},
+    )
+
+    assert response.status_code == 400
+    assert "hex" in response.get_json()["error"]
+
+
 def test_legacy_bcrypt_hash_can_still_login(app, client):
     with app.app_context():
         user = User(username="legacy", is_admin=False)
