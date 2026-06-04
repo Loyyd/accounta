@@ -188,6 +188,57 @@ def test_register_rejects_weak_password(client):
     assert "password" in response.get_json()["error"]
 
 
+def test_login_rate_limit_blocks_repeated_bad_passwords(app, client):
+    app.config["LOGIN_RATE_LIMIT_ATTEMPTS"] = 2
+    app.config["LOGIN_RATE_LIMIT_WINDOW_SECONDS"] = 60
+    register_user(client)
+
+    first_response, _ = login_user(client, "alice", "WrongPass123")
+    second_response, _ = login_user(client, "alice", "WrongPass123")
+    blocked_response, blocked_payload = login_user(client, "alice", "WrongPass123")
+
+    assert first_response.status_code == 401
+    assert second_response.status_code == 401
+    assert blocked_response.status_code == 429
+    assert "too many attempts" in blocked_payload["error"].lower()
+
+
+def test_login_success_clears_rate_limit_failures(app, client):
+    app.config["LOGIN_RATE_LIMIT_ATTEMPTS"] = 2
+    app.config["LOGIN_RATE_LIMIT_WINDOW_SECONDS"] = 60
+    register_user(client)
+
+    bad_response, _ = login_user(client, "alice", "WrongPass123")
+    good_response, _ = login_user(client, "alice", "Password123")
+    second_bad_response, _ = login_user(client, "alice", "WrongPass123")
+
+    assert bad_response.status_code == 401
+    assert good_response.status_code == 200
+    assert second_bad_response.status_code == 401
+
+
+def test_api_responses_include_security_headers(client):
+    response = client.get("/api/ping")
+
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["Referrer-Policy"] == "same-origin"
+    assert response.headers["Cache-Control"] == "no-store"
+
+
+def test_version_endpoint_exposes_build_info(app, client, monkeypatch):
+    monkeypatch.setenv("ACCOUNTA_REVISION", "abcdef123456")
+    monkeypatch.setenv("ACCOUNTA_CREATED", "2026-06-03T20:00:00Z")
+
+    response = client.get("/api/version")
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["revision"] == "abcdef123456"
+    assert payload["created"] == "2026-06-03T20:00:00Z"
+    assert payload["source"] == "https://github.com/Loyyd/accounta"
+
+
 def test_entries_export_and_date_serialization(client):
     _, payload = register_user(client)
     token = payload["token"]
@@ -280,6 +331,29 @@ def test_admin_can_reset_user_password(app, client):
     assert old_login_response.status_code == 401
     assert new_login_response.status_code == 200
     assert new_login_payload["username"] == "member"
+
+
+def test_admin_reset_rejects_weak_password(app, client):
+    member_id = None
+
+    with app.app_context():
+        admin = User(username="admin", is_admin=True)
+        admin.set_password("AdminPass123")
+        member = User(username="member", is_admin=False)
+        member.set_password("MemberPass123")
+        db.session.add_all([admin, member])
+        db.session.commit()
+        member_id = member.id
+
+    _, admin_payload = login_user(client, "admin", "AdminPass123")
+    reset_response = client.post(
+        f"/api/admin/users/{member_id}/reset-password",
+        headers=auth_headers(admin_payload["token"]),
+        json={"newPassword": "short"},
+    )
+
+    assert reset_response.status_code == 400
+    assert "password" in reset_response.get_json()["error"]
 
 
 def test_admin_users_includes_google_profile_details(app, client):

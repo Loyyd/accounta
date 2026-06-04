@@ -51,8 +51,19 @@ a real image change on every deploy. From the `private-cloud-federation` repo:
 ./deploy/nomad/scripts/deploy_accounta.sh <git-sha>
 ```
 
-If no SHA is provided, that script uses the current `HEAD` of the sibling
-`accounta` repository.
+If no SHA is provided, that script fetches the sibling `accounta` repository
+and uses its `origin/main` revision.
+
+From this repo, use the wrapper:
+
+```bash
+./scripts/deploy-nomad.sh
+```
+
+Do not use the Nomad UI "Restart" action as a deploy mechanism. Restarting an
+allocation only restarts the image reference already stored in the Nomad job.
+The deploy script updates the job to the new GHCR SHA tag and pinned digest,
+then verifies `/api/version`.
 
 ## Files For Production
 

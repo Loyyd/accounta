@@ -2,6 +2,7 @@ import calendar
 import datetime as dt
 import os
 import secrets
+import time
 from functools import wraps
 from pathlib import Path
 
@@ -31,6 +32,12 @@ DEFAULT_DEV_CORS_ORIGINS = (
     "http://localhost:5001",
     "http://127.0.0.1:5001",
 )
+DEFAULT_AUTH_RATE_LIMITS = {
+    "login": (5, 300),
+    "register": (5, 3600),
+    "google": (10, 300),
+    "password": (5, 300),
+}
 
 
 def utcnow():
@@ -98,6 +105,14 @@ def resolve_secret_key():
     if configured_secret:
         return configured_secret
     return secrets.token_urlsafe(32)
+
+
+def build_info():
+    return {
+        "revision": os.getenv("ACCOUNTA_REVISION", "unknown"),
+        "created": os.getenv("ACCOUNTA_CREATED", "unknown"),
+        "source": os.getenv("ACCOUNTA_SOURCE", "https://github.com/Loyyd/accounta"),
+    }
 
 
 def is_development_mode(app):
@@ -338,6 +353,57 @@ def validate_password(password):
     if password.isalpha() or password.isdigit():
         return "password must include both letters and numbers"
     return None
+
+
+def get_rate_limit_config(scope):
+    attempts, window_seconds = DEFAULT_AUTH_RATE_LIMITS[scope]
+    configured_attempts = current_app.config.get(f"{scope.upper()}_RATE_LIMIT_ATTEMPTS", attempts)
+    configured_window = current_app.config.get(f"{scope.upper()}_RATE_LIMIT_WINDOW_SECONDS", window_seconds)
+    return int(configured_attempts), int(configured_window)
+
+
+def rate_limit_identity(*parts):
+    remote_addr = request.remote_addr or "unknown"
+    normalized_parts = [str(part or "").strip().lower() for part in parts if str(part or "").strip()]
+    return "|".join([remote_addr, *normalized_parts])
+
+
+def auth_rate_limit_key(scope, identity):
+    return f"{scope}:{identity}"
+
+
+def get_auth_rate_limit_store():
+    return current_app.extensions.setdefault("accounta_auth_rate_limits", {})
+
+
+def check_auth_rate_limit(scope, identity):
+    attempts, window_seconds = get_rate_limit_config(scope)
+    if attempts <= 0 or window_seconds <= 0:
+        return
+
+    store = get_auth_rate_limit_store()
+    key = auth_rate_limit_key(scope, identity)
+    now = time.monotonic()
+    recent_attempts = [timestamp for timestamp in store.get(key, []) if now - timestamp < window_seconds]
+    store[key] = recent_attempts
+
+    if len(recent_attempts) >= attempts:
+        abort(429, description="Too many attempts, please try again later")
+
+
+def record_auth_rate_limit_attempt(scope, identity):
+    attempts, window_seconds = get_rate_limit_config(scope)
+    if attempts <= 0 or window_seconds <= 0:
+        return
+
+    store = get_auth_rate_limit_store()
+    key = auth_rate_limit_key(scope, identity)
+    now = time.monotonic()
+    store[key] = [timestamp for timestamp in store.get(key, []) if now - timestamp < window_seconds] + [now]
+
+
+def clear_auth_rate_limit(scope, identity):
+    get_auth_rate_limit_store().pop(auth_rate_limit_key(scope, identity), None)
 
 
 def is_google_auth_enabled():
@@ -679,6 +745,17 @@ def create_app(test_config=None):
             return jsonify({"error": "internal server error"}), 500
         raise error
 
+    @app.after_request
+    def add_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "same-origin")
+        if request.is_secure:
+            response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        if request.path.endswith("login.html") or request.path.startswith("/api/"):
+            response.headers.setdefault("Cache-Control", "no-store")
+        return response
+
     @app.route("/api/register", methods=["POST"])
     def register():
         if not current_app.config["ALLOW_REGISTRATION"]:
@@ -687,6 +764,9 @@ def create_app(test_config=None):
         data = get_json_body()
         username = normalize_username(data.get("username"))
         password = data.get("password", "")
+        rate_identity = rate_limit_identity("register")
+        check_auth_rate_limit("register", rate_identity)
+        record_auth_rate_limit_attempt("register", rate_identity)
 
         if not username or not password:
             return jsonify({"error": "username and password are required"}), 400
@@ -720,14 +800,19 @@ def create_app(test_config=None):
         data = get_json_body()
         username = normalize_username(data.get("username"))
         password = data.get("password", "")
+        rate_identity = rate_limit_identity("login", username)
+        check_auth_rate_limit("login", rate_identity)
 
         if not username or not password:
+            record_auth_rate_limit_attempt("login", rate_identity)
             return jsonify({"error": "username and password are required"}), 400
 
         user = User.query.filter_by(username=username).first()
         if not user or not user.verify_password(password):
+            record_auth_rate_limit_attempt("login", rate_identity)
             return jsonify({"error": "invalid credentials"}), 401
 
+        clear_auth_rate_limit("login", rate_identity)
         sync_user_subscriptions_for_user(user.id)
 
         return jsonify(
@@ -749,7 +834,14 @@ def create_app(test_config=None):
 
     @app.route("/api/auth/google", methods=["POST"])
     def google_login():
-        profile = verify_google_credential(get_json_body().get("credential"))
+        rate_identity = rate_limit_identity("google")
+        check_auth_rate_limit("google", rate_identity)
+        try:
+            profile = verify_google_credential(get_json_body().get("credential"))
+        except HTTPException:
+            record_auth_rate_limit_attempt("google", rate_identity)
+            raise
+
         user = User.query.filter_by(google_sub=profile["sub"]).first()
 
         if not user:
@@ -761,6 +853,7 @@ def create_app(test_config=None):
             db.session.commit()
 
         sync_user_subscriptions_for_user(user.id)
+        clear_auth_rate_limit("google", rate_identity)
 
         return jsonify(
             {
@@ -857,6 +950,10 @@ def create_app(test_config=None):
     def ping():
         return jsonify({"ok": True})
 
+    @app.route("/api/version")
+    def version():
+        return jsonify(build_info())
+
     @app.route("/api/profile", methods=["GET"])
     @login_required
     def profile():
@@ -910,11 +1007,14 @@ def create_app(test_config=None):
         data = get_json_body()
         current_password = data.get("currentPassword", "")
         new_password = data.get("newPassword", "")
+        rate_identity = rate_limit_identity("password", user.id)
+        check_auth_rate_limit("password", rate_identity)
 
         if not current_password or not new_password:
             return jsonify({"error": "current password and new password are required"}), 400
 
         if not user.verify_password(current_password):
+            record_auth_rate_limit_attempt("password", rate_identity)
             return jsonify({"error": "current password is incorrect"}), 401
 
         if current_password == new_password:
@@ -926,6 +1026,7 @@ def create_app(test_config=None):
 
         user.set_password(new_password)
         db.session.commit()
+        clear_auth_rate_limit("password", rate_identity)
         return jsonify({"ok": True, "message": "Password updated successfully"})
 
     @app.route("/api/profile", methods=["DELETE"])
@@ -1096,7 +1197,10 @@ def create_app(test_config=None):
         if not new_password:
             return jsonify({"error": "new password is required"}), 400
 
-        # One-time passwords may contain any characters and may be any length.
+        password_error = validate_password(new_password)
+        if password_error:
+            return jsonify({"error": password_error}), 400
+
         target_user.set_password(new_password)
         db.session.commit()
         return jsonify({"ok": True, "message": "Password reset successfully"})

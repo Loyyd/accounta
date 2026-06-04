@@ -2,12 +2,19 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+ARG ACCOUNTA_REVISION=unknown
+ARG ACCOUNTA_CREATED=unknown
+ARG ACCOUNTA_SOURCE=https://github.com/Loyyd/accounta
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    ACCOUNTA_REVISION=$ACCOUNTA_REVISION \
+    ACCOUNTA_CREATED=$ACCOUNTA_CREATED \
+    ACCOUNTA_SOURCE=$ACCOUNTA_SOURCE
 
 COPY server/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
