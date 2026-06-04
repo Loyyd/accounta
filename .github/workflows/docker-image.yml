@@ -81,7 +81,7 @@ jobs:
       packages: read
 
     env:
-      NOMAD_ADDR: https://nomad.bcgen.ie
+      NOMAD_ADDR: https://100.64.0.5:4646
       NOMAD_SKIP_VERIFY: "true"
       NOMAD_TOKEN: ${{ secrets.NOMAD_TOKEN }}
 
@@ -136,6 +136,7 @@ jobs:
         shell: bash
         run: |
           docker run --rm \
+            --network host \
             -e "NOMAD_ADDR=${NOMAD_ADDR}" \
             -e "NOMAD_SKIP_VERIFY=${NOMAD_SKIP_VERIFY}" \
             -e "NOMAD_TOKEN=${NOMAD_TOKEN}" \
@@ -150,6 +151,7 @@ jobs:
         shell: bash
         run: |
           docker run --rm \
+            --network host \
             -e "NOMAD_ADDR=${NOMAD_ADDR}" \
             -e "NOMAD_SKIP_VERIFY=${NOMAD_SKIP_VERIFY}" \
             -e "NOMAD_TOKEN=${NOMAD_TOKEN}" \
