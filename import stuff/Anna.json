@@ -1,0 +1,223 @@
+{
+  "budgets": [
+    {
+      "amount": 150,
+      "category": "Food"
+    },
+    {
+      "amount": 100,
+      "category": "Clothing"
+    },
+    {
+      "amount": 80,
+      "category": "Entertainment"
+    },
+    {
+      "amount": 40,
+      "category": "Transport"
+    }
+  ],
+  "categories": [
+    {
+      "color": "#ffd500",
+      "id": 1,
+      "name": "Food",
+      "type": "expense"
+    },
+    {
+      "color": "#00bfff",
+      "id": 59,
+      "name": "Clothing",
+      "type": "expense"
+    },
+    {
+      "color": "#6ee7b7",
+      "id": 56,
+      "name": "Entertainment",
+      "type": "expense"
+    },
+    {
+      "color": "#00ff11",
+      "id": 3,
+      "name": "Transport",
+      "type": "expense"
+    },
+    {
+      "color": "#ffb3b3",
+      "id": 57,
+      "name": "Online-Services",
+      "type": "expense"
+    },
+    {
+      "color": "#243dff",
+      "id": 53,
+      "name": "Education",
+      "type": "expense"
+    },
+    {
+      "color": "#60a5fa",
+      "id": 9,
+      "name": "Part-Time Job",
+      "type": "income"
+    },
+    {
+      "color": "#f472b6",
+      "id": 11,
+      "name": "Pocket Money",
+      "type": "income"
+    }
+  ],
+  "entries": [
+    {
+      "amount": 450.00,
+      "category": "Part-Time Job",
+      "date": "2026-05-31T00:00:00Z",
+      "description": "Cafe Shift Pay",
+      "id": 515,
+      "type": "income"
+    },
+    {
+      "amount": 59.99,
+      "category": "Clothing",
+      "date": "2026-05-25T00:00:00Z",
+      "description": "Zara Summer Dress",
+      "id": 514,
+      "type": "expense"
+    },
+    {
+      "amount": 14.50,
+      "category": "Food",
+      "date": "2026-05-18T00:00:00Z",
+      "description": "Burgers with friends",
+      "id": 513,
+      "type": "expense"
+    },
+    {
+      "amount": 35.00,
+      "category": "Entertainment",
+      "date": "2026-05-10T00:00:00Z",
+      "description": "Concert Ticket",
+      "id": 512,
+      "type": "expense"
+    },
+    {
+      "amount": 5.80,
+      "category": "Food",
+      "date": "2026-05-03T00:00:00Z",
+      "description": "Iced Matcha Latte",
+      "id": 511,
+      "type": "expense"
+    },
+    {
+      "amount": 450.00,
+      "category": "Part-Time Job",
+      "date": "2026-04-30T00:00:00Z",
+      "description": "Cafe Shift Pay",
+      "id": 510,
+      "type": "income"
+    },
+    {
+      "amount": 50.00,
+      "category": "Pocket Money",
+      "date": "2026-04-15T00:00:00Z",
+      "description": "Allowance Parents",
+      "id": 509,
+      "type": "income"
+    },
+    {
+      "amount": 28.00,
+      "category": "Entertainment",
+      "date": "2026-04-12T00:00:00Z",
+      "description": "Cinema & Snacks",
+      "id": 508,
+      "type": "expense"
+    },
+    {
+      "amount": 45.00,
+      "category": "Clothing",
+      "date": "2026-04-08T00:00:00Z",
+      "description": "Thrift Store Haul",
+      "id": 507,
+      "type": "expense"
+    },
+    {
+      "amount": 32.00,
+      "category": "Transport",
+      "date": "2026-04-01T00:00:00Z",
+      "description": "Monthly Student Bus Ticket",
+      "id": 506,
+      "type": "expense"
+    },
+    {
+      "amount": 420.00,
+      "category": "Part-Time Job",
+      "date": "2026-03-31T00:00:00Z",
+      "description": "Cafe Shift Pay",
+      "id": 505,
+      "type": "income"
+    },
+    {
+      "amount": 18.50,
+      "category": "Education",
+      "date": "2026-03-20T00:00:00Z",
+      "description": "Notebooks & Pens",
+      "id": 504,
+      "type": "expense"
+    },
+    {
+      "amount": 12.00,
+      "category": "Food",
+      "date": "2026-03-15T00:00:00Z",
+      "description": "Bubble Tea & Waffles",
+      "id": 503,
+      "type": "expense"
+    },
+    {
+      "amount": 85.00,
+      "category": "Clothing",
+      "date": "2026-03-10T00:00:00Z",
+      "description": "New Sneakers",
+      "id": 502,
+      "type": "expense"
+    },
+    {
+      "amount": 32.00,
+      "category": "Transport",
+      "date": "2026-03-01T00:00:00Z",
+      "description": "Monthly Student Bus Ticket",
+      "id": 501,
+      "type": "expense"
+    }
+  ],
+  "exportedAt": "2026-06-01T21:10:15Z",
+  "pouchTransfers": [],
+  "pouches": [],
+  "profile": {
+    "createdAt": "2025-01-10T16:45:00Z",
+    "id": 23,
+    "is_admin": false,
+    "username": "anna_vibe"
+  },
+  "subscriptions": [
+    {
+      "active": true,
+      "amount": 5.99,
+      "category": "Online-Services",
+      "description": "Spotify Student",
+      "frequency": "monthly",
+      "id": 31,
+      "startDate": "2026-03-01",
+      "type": "expense"
+    },
+    {
+      "active": true,
+      "amount": 0.99,
+      "category": "Online-Services",
+      "description": "Apple iCloud",
+      "frequency": "monthly",
+      "id": 32,
+      "startDate": "2026-03-01",
+      "type": "expense"
+    }
+  ]
+}

@@ -1,0 +1,823 @@
+{
+  "budgets": [
+    {
+      "amount": 800,
+      "category": "Food"
+    },
+    {
+      "amount": 1500,
+      "category": "Housing"
+    },
+    {
+      "amount": 250,
+      "category": "Gas"
+    },
+    {
+      "amount": 400,
+      "category": "Kids"
+    },
+    {
+      "amount": 150,
+      "category": "Work Gear"
+    }
+  ],
+  "categories": [
+    {
+      "color": "#ffd500",
+      "id": 1,
+      "name": "Food",
+      "type": "expense"
+    },
+    {
+      "color": "#eb7d00",
+      "id": 2,
+      "name": "Housing",
+      "type": "expense"
+    },
+    {
+      "color": "#00ff11",
+      "id": 3,
+      "name": "Transport",
+      "type": "expense"
+    },
+    {
+      "color": "#ff0000",
+      "id": 63,
+      "name": "Gas",
+      "type": "expense"
+    },
+    {
+      "color": "#6ee7b7",
+      "id": 56,
+      "name": "Entertainment",
+      "type": "expense"
+    },
+    {
+      "color": "#243dff",
+      "id": 70,
+      "name": "Utilities",
+      "type": "expense"
+    },
+    {
+      "color": "#e100ff",
+      "id": 71,
+      "name": "Kids",
+      "type": "expense"
+    },
+    {
+      "color": "#737373",
+      "id": 72,
+      "name": "Work Gear",
+      "type": "expense"
+    },
+    {
+      "color": "#009dff",
+      "id": 100,
+      "name": "Salary",
+      "type": "income"
+    },
+    {
+      "color": "#60a5fa",
+      "id": 101,
+      "name": "Child Benefit",
+      "type": "income"
+    }
+  ],
+  "entries": [
+    {
+      "amount": 145.0,
+      "category": "Transport",
+      "date": "2026-05-30T00:00:00Z",
+      "description": "Truck Service Deposit",
+      "id": 799,
+      "type": "expense"
+    },
+    {
+      "amount": 195.0,
+      "category": "Food",
+      "date": "2026-05-28T00:00:00Z",
+      "description": "Weekly Groceries",
+      "id": 798,
+      "type": "expense"
+    },
+    {
+      "amount": 92.0,
+      "category": "Entertainment",
+      "date": "2026-05-24T00:00:00Z",
+      "description": "Family Cinema Night",
+      "id": 797,
+      "type": "expense"
+    },
+    {
+      "amount": 120.0,
+      "category": "Kids",
+      "date": "2026-05-22T00:00:00Z",
+      "description": "Son's Birthday Present",
+      "id": 796,
+      "type": "expense"
+    },
+    {
+      "amount": 68.0,
+      "category": "Gas",
+      "date": "2026-05-18T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 795,
+      "type": "expense"
+    },
+    {
+      "amount": 190.0,
+      "category": "Utilities",
+      "date": "2026-05-15T00:00:00Z",
+      "description": "Electric & Water",
+      "id": 794,
+      "type": "expense"
+    },
+    {
+      "amount": 118.75,
+      "category": "Food",
+      "date": "2026-05-12T00:00:00Z",
+      "description": "Midweek Groceries",
+      "id": 793,
+      "type": "expense"
+    },
+    {
+      "amount": 85.5,
+      "category": "Work Gear",
+      "date": "2026-05-10T00:00:00Z",
+      "description": "Replacement Tools",
+      "id": 792,
+      "type": "expense"
+    },
+    {
+      "amount": 74.3,
+      "category": "Gas",
+      "date": "2026-05-07T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 791,
+      "type": "expense"
+    },
+    {
+      "amount": 500.0,
+      "category": "Child Benefit",
+      "date": "2026-05-05T00:00:00Z",
+      "description": "State Child Benefit",
+      "id": 790,
+      "type": "income"
+    },
+    {
+      "amount": 232.4,
+      "category": "Food",
+      "date": "2026-05-03T00:00:00Z",
+      "description": "Big Grocery Stock-Up",
+      "id": 789,
+      "type": "expense"
+    },
+    {
+      "amount": 4650.0,
+      "category": "Salary",
+      "date": "2026-05-01T00:00:00Z",
+      "description": "Construction Payroll - Overtime Month",
+      "id": 788,
+      "type": "income"
+    },
+    {
+      "amount": 1500.0,
+      "category": "Housing",
+      "date": "2026-05-01T00:00:00Z",
+      "description": "Mortgage Payment",
+      "id": 787,
+      "type": "expense"
+    },
+    {
+      "amount": 325.0,
+      "category": "Salary",
+      "date": "2026-04-30T00:00:00Z",
+      "description": "Weekend Side Job",
+      "id": 786,
+      "type": "income"
+    },
+    {
+      "amount": 40.0,
+      "category": "Kids",
+      "date": "2026-04-28T00:00:00Z",
+      "description": "School Field Trip",
+      "id": 785,
+      "type": "expense"
+    },
+    {
+      "amount": 175.4,
+      "category": "Food",
+      "date": "2026-04-25T00:00:00Z",
+      "description": "Weekly Groceries",
+      "id": 784,
+      "type": "expense"
+    },
+    {
+      "amount": 60.0,
+      "category": "Gas",
+      "date": "2026-04-20T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 783,
+      "type": "expense"
+    },
+    {
+      "amount": 132.65,
+      "category": "Food",
+      "date": "2026-04-18T00:00:00Z",
+      "description": "Weekend Groceries",
+      "id": 782,
+      "type": "expense"
+    },
+    {
+      "amount": 210.0,
+      "category": "Utilities",
+      "date": "2026-04-15T00:00:00Z",
+      "description": "Electric & Water",
+      "id": 781,
+      "type": "expense"
+    },
+    {
+      "amount": 145.0,
+      "category": "Work Gear",
+      "date": "2026-04-12T00:00:00Z",
+      "description": "New Steel-Toe Boots",
+      "id": 780,
+      "type": "expense"
+    },
+    {
+      "amount": 57.2,
+      "category": "Gas",
+      "date": "2026-04-08T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 779,
+      "type": "expense"
+    },
+    {
+      "amount": 500.0,
+      "category": "Child Benefit",
+      "date": "2026-04-05T00:00:00Z",
+      "description": "State Child Benefit",
+      "id": 778,
+      "type": "income"
+    },
+    {
+      "amount": 205.1,
+      "category": "Food",
+      "date": "2026-04-04T00:00:00Z",
+      "description": "Weekly Groceries",
+      "id": 777,
+      "type": "expense"
+    },
+    {
+      "amount": 4200.0,
+      "category": "Salary",
+      "date": "2026-04-01T00:00:00Z",
+      "description": "Construction Payroll",
+      "id": 776,
+      "type": "income"
+    },
+    {
+      "amount": 1500.0,
+      "category": "Housing",
+      "date": "2026-04-01T00:00:00Z",
+      "description": "Mortgage Payment",
+      "id": 775,
+      "type": "expense"
+    },
+    {
+      "amount": 155.0,
+      "category": "Kids",
+      "date": "2026-03-29T00:00:00Z",
+      "description": "Spring Sports Registration",
+      "id": 774,
+      "type": "expense"
+    },
+    {
+      "amount": 82.4,
+      "category": "Gas",
+      "date": "2026-03-27T00:00:00Z",
+      "description": "Out-of-Town Site Fuel",
+      "id": 773,
+      "type": "expense"
+    },
+    {
+      "amount": 190.2,
+      "category": "Food",
+      "date": "2026-03-24T00:00:00Z",
+      "description": "Weekly Groceries",
+      "id": 772,
+      "type": "expense"
+    },
+    {
+      "amount": 310.0,
+      "category": "Work Gear",
+      "date": "2026-03-20T00:00:00Z",
+      "description": "Laser Level Replacement",
+      "id": 771,
+      "type": "expense"
+    },
+    {
+      "amount": 80.0,
+      "category": "Kids",
+      "date": "2026-03-18T00:00:00Z",
+      "description": "New Shoes for Kids",
+      "id": 770,
+      "type": "expense"
+    },
+    {
+      "amount": 210.0,
+      "category": "Utilities",
+      "date": "2026-03-15T00:00:00Z",
+      "description": "Electric & Water",
+      "id": 769,
+      "type": "expense"
+    },
+    {
+      "amount": 65.0,
+      "category": "Gas",
+      "date": "2026-03-10T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 768,
+      "type": "expense"
+    },
+    {
+      "amount": 64.99,
+      "category": "Entertainment",
+      "date": "2026-03-06T00:00:00Z",
+      "description": "Streaming and Pizza Night",
+      "id": 767,
+      "type": "expense"
+    },
+    {
+      "amount": 500.0,
+      "category": "Child Benefit",
+      "date": "2026-03-05T00:00:00Z",
+      "description": "State Child Benefit",
+      "id": 766,
+      "type": "income"
+    },
+    {
+      "amount": 185.5,
+      "category": "Food",
+      "date": "2026-03-03T00:00:00Z",
+      "description": "Weekly Groceries",
+      "id": 765,
+      "type": "expense"
+    },
+    {
+      "amount": 4200.0,
+      "category": "Salary",
+      "date": "2026-03-01T00:00:00Z",
+      "description": "Construction Payroll",
+      "id": 764,
+      "type": "income"
+    },
+    {
+      "amount": 1500.0,
+      "category": "Housing",
+      "date": "2026-03-01T00:00:00Z",
+      "description": "Mortgage Payment",
+      "id": 763,
+      "type": "expense"
+    },
+    {
+      "amount": 58.0,
+      "category": "Work Gear",
+      "date": "2026-02-26T00:00:00Z",
+      "description": "Gloves and Safety Glasses",
+      "id": 762,
+      "type": "expense"
+    },
+    {
+      "amount": 220.45,
+      "category": "Food",
+      "date": "2026-02-24T00:00:00Z",
+      "description": "Bulk Groceries",
+      "id": 761,
+      "type": "expense"
+    },
+    {
+      "amount": 64.8,
+      "category": "Gas",
+      "date": "2026-02-20T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 760,
+      "type": "expense"
+    },
+    {
+      "amount": 210.0,
+      "category": "Kids",
+      "date": "2026-02-17T00:00:00Z",
+      "description": "School Supplies and Clothes",
+      "id": 759,
+      "type": "expense"
+    },
+    {
+      "amount": 285.0,
+      "category": "Utilities",
+      "date": "2026-02-15T00:00:00Z",
+      "description": "Winter Heating Bill",
+      "id": 758,
+      "type": "expense"
+    },
+    {
+      "amount": 135.0,
+      "category": "Entertainment",
+      "date": "2026-02-14T00:00:00Z",
+      "description": "Valentine Dinner",
+      "id": 757,
+      "type": "expense"
+    },
+    {
+      "amount": 96.2,
+      "category": "Food",
+      "date": "2026-02-12T00:00:00Z",
+      "description": "Top-Up Shop",
+      "id": 756,
+      "type": "expense"
+    },
+    {
+      "amount": 70.1,
+      "category": "Gas",
+      "date": "2026-02-08T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 755,
+      "type": "expense"
+    },
+    {
+      "amount": 500.0,
+      "category": "Child Benefit",
+      "date": "2026-02-05T00:00:00Z",
+      "description": "State Child Benefit",
+      "id": 754,
+      "type": "income"
+    },
+    {
+      "amount": 176.3,
+      "category": "Food",
+      "date": "2026-02-04T00:00:00Z",
+      "description": "Weekly Groceries",
+      "id": 753,
+      "type": "expense"
+    },
+    {
+      "amount": 3980.0,
+      "category": "Salary",
+      "date": "2026-02-01T00:00:00Z",
+      "description": "Construction Payroll - Short Month",
+      "id": 752,
+      "type": "income"
+    },
+    {
+      "amount": 1500.0,
+      "category": "Housing",
+      "date": "2026-02-01T00:00:00Z",
+      "description": "Mortgage Payment",
+      "id": 751,
+      "type": "expense"
+    },
+    {
+      "amount": 275.0,
+      "category": "Salary",
+      "date": "2026-01-30T00:00:00Z",
+      "description": "Cash Job - Fence Repair",
+      "id": 750,
+      "type": "income"
+    },
+    {
+      "amount": 79.6,
+      "category": "Gas",
+      "date": "2026-01-28T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 749,
+      "type": "expense"
+    },
+    {
+      "amount": 48.0,
+      "category": "Entertainment",
+      "date": "2026-01-24T00:00:00Z",
+      "description": "Bowling with Kids",
+      "id": 748,
+      "type": "expense"
+    },
+    {
+      "amount": 188.55,
+      "category": "Food",
+      "date": "2026-01-21T00:00:00Z",
+      "description": "Weekly Groceries",
+      "id": 747,
+      "type": "expense"
+    },
+    {
+      "amount": 420.0,
+      "category": "Transport",
+      "date": "2026-01-18T00:00:00Z",
+      "description": "Truck Brake Repair",
+      "id": 746,
+      "type": "expense"
+    },
+    {
+      "amount": 310.0,
+      "category": "Utilities",
+      "date": "2026-01-15T00:00:00Z",
+      "description": "Electric, Water & Heating",
+      "id": 745,
+      "type": "expense"
+    },
+    {
+      "amount": 142.1,
+      "category": "Food",
+      "date": "2026-01-14T00:00:00Z",
+      "description": "Weekly Groceries",
+      "id": 744,
+      "type": "expense"
+    },
+    {
+      "amount": 175.0,
+      "category": "Kids",
+      "date": "2026-01-10T00:00:00Z",
+      "description": "Winter Coats",
+      "id": 743,
+      "type": "expense"
+    },
+    {
+      "amount": 88.25,
+      "category": "Gas",
+      "date": "2026-01-07T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 742,
+      "type": "expense"
+    },
+    {
+      "amount": 500.0,
+      "category": "Child Benefit",
+      "date": "2026-01-05T00:00:00Z",
+      "description": "State Child Benefit",
+      "id": 741,
+      "type": "income"
+    },
+    {
+      "amount": 248.9,
+      "category": "Food",
+      "date": "2026-01-03T00:00:00Z",
+      "description": "New Year Grocery Restock",
+      "id": 740,
+      "type": "expense"
+    },
+    {
+      "amount": 5050.0,
+      "category": "Salary",
+      "date": "2026-01-01T00:00:00Z",
+      "description": "Construction Payroll - Holiday Overtime",
+      "id": 739,
+      "type": "income"
+    },
+    {
+      "amount": 1500.0,
+      "category": "Housing",
+      "date": "2026-01-01T00:00:00Z",
+      "description": "Mortgage Payment",
+      "id": 738,
+      "type": "expense"
+    },
+    {
+      "amount": 650.0,
+      "category": "Salary",
+      "date": "2025-12-30T00:00:00Z",
+      "description": "Year-End Job Bonus",
+      "id": 737,
+      "type": "income"
+    },
+    {
+      "amount": 95.0,
+      "category": "Gas",
+      "date": "2025-12-27T00:00:00Z",
+      "description": "Holiday Travel Fuel",
+      "id": 736,
+      "type": "expense"
+    },
+    {
+      "amount": 295.2,
+      "category": "Food",
+      "date": "2025-12-23T00:00:00Z",
+      "description": "Christmas Groceries",
+      "id": 735,
+      "type": "expense"
+    },
+    {
+      "amount": 185.0,
+      "category": "Entertainment",
+      "date": "2025-12-21T00:00:00Z",
+      "description": "Family Holiday Outing",
+      "id": 734,
+      "type": "expense"
+    },
+    {
+      "amount": 240.0,
+      "category": "Work Gear",
+      "date": "2025-12-18T00:00:00Z",
+      "description": "Cold Weather Site Gear",
+      "id": 733,
+      "type": "expense"
+    },
+    {
+      "amount": 265.0,
+      "category": "Utilities",
+      "date": "2025-12-15T00:00:00Z",
+      "description": "Electric, Water & Heating",
+      "id": 732,
+      "type": "expense"
+    },
+    {
+      "amount": 164.35,
+      "category": "Food",
+      "date": "2025-12-12T00:00:00Z",
+      "description": "Holiday Meal Supplies",
+      "id": 731,
+      "type": "expense"
+    },
+    {
+      "amount": 72.8,
+      "category": "Gas",
+      "date": "2025-12-09T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 730,
+      "type": "expense"
+    },
+    {
+      "amount": 320.0,
+      "category": "Kids",
+      "date": "2025-12-06T00:00:00Z",
+      "description": "Holiday Gifts for Kids",
+      "id": 729,
+      "type": "expense"
+    },
+    {
+      "amount": 500.0,
+      "category": "Child Benefit",
+      "date": "2025-12-05T00:00:00Z",
+      "description": "State Child Benefit",
+      "id": 728,
+      "type": "income"
+    },
+    {
+      "amount": 215.7,
+      "category": "Food",
+      "date": "2025-12-03T00:00:00Z",
+      "description": "Weekly Groceries",
+      "id": 727,
+      "type": "expense"
+    },
+    {
+      "amount": 4350.0,
+      "category": "Salary",
+      "date": "2025-12-01T00:00:00Z",
+      "description": "Construction Payroll",
+      "id": 726,
+      "type": "income"
+    },
+    {
+      "amount": 1500.0,
+      "category": "Housing",
+      "date": "2025-12-01T00:00:00Z",
+      "description": "Mortgage Payment",
+      "id": 725,
+      "type": "expense"
+    },
+    {
+      "amount": 76.0,
+      "category": "Entertainment",
+      "date": "2025-11-29T00:00:00Z",
+      "description": "Kids Arcade Afternoon",
+      "id": 724,
+      "type": "expense"
+    },
+    {
+      "amount": 260.8,
+      "category": "Food",
+      "date": "2025-11-27T00:00:00Z",
+      "description": "Thanksgiving Groceries",
+      "id": 723,
+      "type": "expense"
+    },
+    {
+      "amount": 69.2,
+      "category": "Gas",
+      "date": "2025-11-25T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 722,
+      "type": "expense"
+    },
+    {
+      "amount": 180.0,
+      "category": "Transport",
+      "date": "2025-11-22T00:00:00Z",
+      "description": "Truck Tires Deposit",
+      "id": 721,
+      "type": "expense"
+    },
+    {
+      "amount": 95.0,
+      "category": "Kids",
+      "date": "2025-11-20T00:00:00Z",
+      "description": "After-School Club Fees",
+      "id": 720,
+      "type": "expense"
+    },
+    {
+      "amount": 201.6,
+      "category": "Food",
+      "date": "2025-11-17T00:00:00Z",
+      "description": "Weekly Groceries",
+      "id": 719,
+      "type": "expense"
+    },
+    {
+      "amount": 225.0,
+      "category": "Utilities",
+      "date": "2025-11-15T00:00:00Z",
+      "description": "Electric & Water",
+      "id": 718,
+      "type": "expense"
+    },
+    {
+      "amount": 125.0,
+      "category": "Work Gear",
+      "date": "2025-11-11T00:00:00Z",
+      "description": "Tool Belt Replacement",
+      "id": 717,
+      "type": "expense"
+    },
+    {
+      "amount": 63.4,
+      "category": "Gas",
+      "date": "2025-11-08T00:00:00Z",
+      "description": "Truck Fuel",
+      "id": 716,
+      "type": "expense"
+    },
+    {
+      "amount": 500.0,
+      "category": "Child Benefit",
+      "date": "2025-11-05T00:00:00Z",
+      "description": "State Child Benefit",
+      "id": 715,
+      "type": "income"
+    },
+    {
+      "amount": 168.95,
+      "category": "Food",
+      "date": "2025-11-04T00:00:00Z",
+      "description": "Weekly Groceries",
+      "id": 714,
+      "type": "expense"
+    },
+    {
+      "amount": 4100.0,
+      "category": "Salary",
+      "date": "2025-11-01T00:00:00Z",
+      "description": "Construction Payroll",
+      "id": 713,
+      "type": "income"
+    },
+    {
+      "amount": 1500.0,
+      "category": "Housing",
+      "date": "2025-11-01T00:00:00Z",
+      "description": "Mortgage Payment",
+      "id": 712,
+      "type": "expense"
+    }
+  ],
+  "exportedAt": "2026-06-01T20:54:42Z",
+  "pouchTransfers": [],
+  "pouches": [],
+  "profile": {
+    "createdAt": "2023-08-15T09:12:30Z",
+    "id": 14,
+    "is_admin": false,
+    "username": "steve_builder"
+  },
+  "subscriptions": [
+    {
+      "active": true,
+      "amount": 15.99,
+      "category": "Entertainment",
+      "description": "Netflix Family",
+      "frequency": "monthly",
+      "id": 20,
+      "startDate": "2026-03-01",
+      "type": "expense"
+    },
+    {
+      "active": true,
+      "amount": 35.0,
+      "category": "Work Gear",
+      "description": "Union Dues",
+      "frequency": "monthly",
+      "id": 21,
+      "startDate": "2026-03-01",
+      "type": "expense"
+    }
+  ]
+}
