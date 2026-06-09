@@ -104,6 +104,32 @@
         return
       }
 
+      const mobileNavToggle = document.getElementById('mobileNavToggle')
+      const mobileNavBackdrop = document.getElementById('mobileNavBackdrop')
+
+      function setMobileNavOpen(isOpen) {
+        document.body.classList.toggle('mobile-nav-open', isOpen)
+        mobileNavToggle?.setAttribute('aria-expanded', String(isOpen))
+        mobileNavToggle?.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation')
+        if (mobileNavBackdrop) {
+          mobileNavBackdrop.hidden = !isOpen
+        }
+      }
+
+      mobileNavToggle?.addEventListener('click', () => {
+        setMobileNavOpen(!document.body.classList.contains('mobile-nav-open'))
+      })
+
+      mobileNavBackdrop?.addEventListener('click', () => {
+        setMobileNavOpen(false)
+      })
+
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          setMobileNavOpen(false)
+        }
+      })
+
       app.dom.tabBar.addEventListener('click', (event) => {
         const button = event.target.closest('.tab-btn[data-tab]')
         if (!button) {
@@ -114,6 +140,7 @@
         if (history.replaceState) {
           history.replaceState(null, '', `#${button.dataset.tab}`)
         }
+        setMobileNavOpen(false)
       })
 
       const initialTab = location.hash.replace('#', '')
