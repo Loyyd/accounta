@@ -31,6 +31,9 @@ def register():
     if not current_app.config["ALLOW_REGISTRATION"]:
         return jsonify({"error": "registration is disabled"}), 403
 
+    if not current_app.config.get("ALLOW_PASSWORD_AUTH", True):
+        return jsonify({"error": "password registration is disabled"}), 403
+
     if not is_password_auth_allowed():
         return jsonify({"error": "password registration is only allowed from the private network"}), 403
 
@@ -71,6 +74,9 @@ def register():
 
 @bp.route("/api/login", methods=["POST"])
 def login():
+    if not current_app.config.get("ALLOW_PASSWORD_AUTH", True):
+        return jsonify({"error": "password login is disabled"}), 403
+
     if not is_password_auth_allowed():
         return jsonify({"error": "password login is only allowed from the private network"}), 403
 
