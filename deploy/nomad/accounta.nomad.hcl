@@ -32,7 +32,7 @@ job "accounta" {
   type        = "service"
 
   constraint {
-
+    attribute = "${attr.unique.hostname}"
     value     = "nomad-worker-fireland-f4ssd-1"
   }
 
@@ -71,6 +71,8 @@ job "accounta" {
       env {
         APP_ENV             = "production"
         PORT                = "5000"
+        ALLOW_PASSWORD_AUTH = "true"
+        TRUST_PROXY_COUNT   = "1"
       }
 
       template {

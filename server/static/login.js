@@ -76,6 +76,10 @@ async function initGoogleLogin() {
   }
 
   googleClientId = config.clientId
+  if (config.passwordAuthAllowed) {
+    document.getElementById('manualLoginRow').style.display = 'block'
+  }
+
   await loadGoogleScript()
 
   window.google.accounts.id.initialize({
@@ -94,4 +98,49 @@ async function initGoogleLogin() {
 
 initGoogleLogin().catch((error) => {
   console.error('Failed to initialize Google login', error)
+})
+
+$('#loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const username = $('#username').value
+  const password = $('#password').value
+
+  if (!username || !password) {
+    showMessage('Username and password are required', true)
+    return
+  }
+
+  const response = await apiFetch('POST', '/login', {username, password}, {
+    redirectOnUnauthorized: false,
+  })
+  const payload = await response.json().catch(() => ({error: 'Login failed'}))
+
+  if (!response.ok) {
+    showMessage(payload.error || 'Login failed', true)
+    return
+  }
+
+  finishLogin(payload, 'Login successful, redirecting...')
+})
+
+$('#registerBtn').addEventListener('click', async () => {
+  const username = $('#username').value
+  const password = $('#password').value
+
+  if (!username || !password) {
+    showMessage('Enter a username and password to register', true)
+    return
+  }
+
+  const response = await apiFetch('POST', '/register', {username, password}, {
+    redirectOnUnauthorized: false,
+  })
+  const payload = await response.json().catch(() => ({error: 'Registration failed'}))
+
+  if (!response.ok) {
+    showMessage(payload.error || 'Registration failed', true)
+    return
+  }
+
+  finishLogin(payload, 'Registration successful, redirecting...')
 })

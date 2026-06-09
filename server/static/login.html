@@ -27,6 +27,27 @@
           <div id="googleLoginButton"></div>
         </div>
         <div id="googleDisabledMessage" class="helper-text" style="display:none;"></div>
+
+        <div id="manualLoginRow" style="display:none;">
+          <div class="auth-divider">or</div>
+          <details class="manual-login">
+            <summary>Use username & password</summary>
+            <form id="loginForm">
+              <div class="row">
+                <label for="username">Username</label>
+                <input type="text" id="username" autocomplete="username" />
+              </div>
+              <div class="row">
+                <label for="password">Password</label>
+                <input type="password" id="password" autocomplete="current-password" />
+              </div>
+              <div class="row actions">
+                <button type="submit" class="btn-primary">Login</button>
+                <button type="button" id="registerBtn" class="btn-ghost">Register</button>
+              </div>
+            </form>
+          </details>
+        </div>
       </section>
 
     </main>

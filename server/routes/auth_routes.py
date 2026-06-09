@@ -11,7 +11,7 @@ from rate_limits import (
     rate_limit_identity,
     record_auth_rate_limit_attempt,
 )
-from request_utils import get_json_body
+from request_utils import get_json_body, is_tailscale_request
 from subscriptions import sync_user_subscriptions_for_user
 from validators import normalize_username, validate_password, validate_username
 
@@ -19,13 +19,20 @@ from validators import normalize_username, validate_password, validate_username
 bp = Blueprint("auth", __name__)
 
 
+def is_password_auth_allowed():
+    if not current_app.config.get("ALLOW_PASSWORD_AUTH", True):
+        return False
+    # Only allow password auth if on Tailscale or in development mode
+    return is_tailscale_request() or current_app.debug
+
+
 @bp.route("/api/register", methods=["POST"])
 def register():
     if not current_app.config["ALLOW_REGISTRATION"]:
         return jsonify({"error": "registration is disabled"}), 403
 
-    if not current_app.config["ALLOW_PASSWORD_AUTH"]:
-        return jsonify({"error": "password registration is disabled"}), 403
+    if not is_password_auth_allowed():
+        return jsonify({"error": "password registration is only allowed from the private network"}), 403
 
     data = get_json_body()
     username = normalize_username(data.get("username"))
@@ -64,8 +71,8 @@ def register():
 
 @bp.route("/api/login", methods=["POST"])
 def login():
-    if not current_app.config["ALLOW_PASSWORD_AUTH"]:
-        return jsonify({"error": "password login is disabled"}), 403
+    if not is_password_auth_allowed():
+        return jsonify({"error": "password login is only allowed from the private network"}), 403
 
     data = get_json_body()
     username = normalize_username(data.get("username"))
@@ -100,6 +107,7 @@ def google_auth_config():
         {
             "enabled": is_google_auth_enabled(),
             "clientId": current_app.config.get("GOOGLE_CLIENT_ID") if is_google_auth_enabled() else None,
+            "passwordAuthAllowed": is_password_auth_allowed(),
         }
     )
 
