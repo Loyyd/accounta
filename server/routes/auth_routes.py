@@ -24,6 +24,9 @@ def register():
     if not current_app.config["ALLOW_REGISTRATION"]:
         return jsonify({"error": "registration is disabled"}), 403
 
+    if not current_app.config["ALLOW_PASSWORD_AUTH"]:
+        return jsonify({"error": "password registration is disabled"}), 403
+
     data = get_json_body()
     username = normalize_username(data.get("username"))
     password = data.get("password", "")
@@ -61,6 +64,9 @@ def register():
 
 @bp.route("/api/login", methods=["POST"])
 def login():
+    if not current_app.config["ALLOW_PASSWORD_AUTH"]:
+        return jsonify({"error": "password login is disabled"}), 403
+
     data = get_json_body()
     username = normalize_username(data.get("username"))
     password = data.get("password", "")

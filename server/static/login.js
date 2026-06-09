@@ -2,11 +2,17 @@ const {apiFetch, setToken} = window.AccountaCommon
 
 const $ = (selector) => document.querySelector(selector)
 const messages = $('#messages')
+const googleDisabledMessage = $('#googleDisabledMessage')
 let googleClientId = ''
 
 function showMessage(message, isError = false) {
   messages.textContent = message
   messages.style.color = isError ? '#ff6b6b' : 'var(--muted)'
+}
+
+function showGoogleDisabled(message) {
+  googleDisabledMessage.textContent = message
+  googleDisabledMessage.style.display = 'block'
 }
 
 function finishLogin(payload, successMessage) {
@@ -15,28 +21,6 @@ function finishLogin(payload, successMessage) {
   setTimeout(() => {
     location.href = 'index.html'
   }, 700)
-}
-
-async function submitAuth(endpoint, successMessage) {
-  const username = $('#username').value.trim()
-  const password = $('#password').value
-
-  if (!username || !password) {
-    showMessage('username and password are required', true)
-    return
-  }
-
-  const response = await apiFetch('POST', endpoint, {username, password}, {
-    redirectOnUnauthorized: false,
-  })
-  const payload = await response.json().catch(() => ({error: 'Request failed'}))
-
-  if (!response.ok) {
-    showMessage(payload.error || 'Request failed', true)
-    return
-  }
-
-  finishLogin(payload, successMessage)
 }
 
 function loadGoogleScript() {
@@ -81,11 +65,13 @@ async function initGoogleLogin() {
   })
 
   if (!configResponse.ok) {
+    showGoogleDisabled('Google login is not available right now.')
     return
   }
 
   const config = await configResponse.json()
   if (!config.enabled || !config.clientId) {
+    showGoogleDisabled('Google login is not configured for this site.')
     return
   }
 
@@ -98,7 +84,6 @@ async function initGoogleLogin() {
   })
 
   document.getElementById('googleLoginRow').style.display = 'flex'
-  document.getElementById('authDivider').style.display = 'flex'
   window.google.accounts.id.renderButton(document.getElementById('googleLoginButton'), {
     theme: 'filled_black',
     size: 'large',
@@ -106,21 +91,6 @@ async function initGoogleLogin() {
     text: 'continue_with',
   })
 }
-
-document.getElementById('loginBtn').addEventListener('click', () => {
-  submitAuth('/login', 'Login successful, redirecting...')
-})
-
-document.getElementById('regBtn').addEventListener('click', () => {
-  submitAuth('/register', 'Account created, signing you in...')
-})
-
-document.getElementById('authForm').addEventListener('keypress', (event) => {
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    document.getElementById('loginBtn').click()
-  }
-})
 
 initGoogleLogin().catch((error) => {
   console.error('Failed to initialize Google login', error)

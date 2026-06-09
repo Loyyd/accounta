@@ -23,6 +23,6 @@ server/instance/
 data/
 backups/
 .build/
-
+AGENTS.md
 dist/
 build/

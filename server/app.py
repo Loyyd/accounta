@@ -85,6 +85,7 @@ def create_app(test_config=None):
         JWT_ALGORITHM=os.getenv("JWT_ALGORITHM", "HS256"),
         JWT_EXP_SECONDS=int(os.getenv("JWT_EXP_SECONDS", "86400")),
         ALLOW_REGISTRATION=parse_bool_env("ALLOW_REGISTRATION", default=True),
+        ALLOW_PASSWORD_AUTH=parse_bool_env("ALLOW_PASSWORD_AUTH", default=True),
         GOOGLE_CLIENT_ID=os.getenv("GOOGLE_CLIENT_ID", ""),
     )
 

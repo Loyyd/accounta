@@ -32,13 +32,7 @@ job "accounta" {
   type        = "service"
 
   constraint {
-    attribute = "${meta.public_edge}"
-    operator  = "!="
-    value     = "true"
-  }
 
-  constraint {
-    attribute = "${attr.unique.hostname}"
     value     = "nomad-worker-fireland-f4ssd-1"
   }
 

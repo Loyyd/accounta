@@ -73,6 +73,22 @@ def test_register_login_and_profile_flow(client):
     assert profile_payload["googleLinked"] is False
 
 
+def test_password_auth_disabled_blocks_manual_login_and_registration(app, client):
+    response, payload = register_user(client)
+    assert response.status_code == 200
+    assert payload["username"] == "alice"
+
+    app.config["ALLOW_PASSWORD_AUTH"] = False
+
+    login_response = client.post("/api/login", json={"username": "alice", "password": "Password123"})
+    assert login_response.status_code == 403
+    assert login_response.get_json()["error"] == "password login is disabled"
+
+    register_response = client.post("/api/register", json={"username": "bob", "password": "Password123"})
+    assert register_response.status_code == 403
+    assert register_response.get_json()["error"] == "password registration is disabled"
+
+
 def test_google_login_creates_user_and_can_login_again(app, client, monkeypatch):
     google_profile = {
         "sub": "google-user-123",

@@ -94,6 +94,7 @@ Set:
 - `CORS_ORIGINS=https://your-domain.example`
 - `TRUST_PROXY_COUNT=1`
 - `GOOGLE_CLIENT_ID=your-google-oauth-web-client-id.apps.googleusercontent.com` to enable Google login and Google account linking
+- `ALLOW_PASSWORD_AUTH=false` to disable username/password login and registration while keeping Google auth available
 
 For local Google login, the OAuth client in Google Cloud Console must be a **Web application** client and include the exact local URL you use under **Authorized JavaScript origins**:
 
