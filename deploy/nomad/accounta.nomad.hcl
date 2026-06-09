@@ -71,7 +71,7 @@ job "accounta" {
       env {
         APP_ENV             = "production"
         PORT                = "5000"
-        ALLOW_PASSWORD_AUTH = "true"
+        ALLOW_PASSWORD_AUTH = "false"
         TRUST_PROXY_COUNT   = "1"
       }
 
