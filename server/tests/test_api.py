@@ -418,6 +418,76 @@ def test_admin_users_includes_google_profile_details(app, client):
     assert member_payload["is_admin"] is False
 
 
+def test_admin_can_import_transactions_for_user(app, client):
+    with app.app_context():
+        admin = User(username="admin", is_admin=True)
+        admin.set_password("AdminPass123")
+        member = User(username="member", is_admin=False)
+        member.set_password("MemberPass123")
+        db.session.add_all([admin, member])
+        db.session.commit()
+        member_id = member.id
+
+    _, admin_payload = login_user(client, "admin", "AdminPass123")
+    response = client.post(
+        f"/api/admin/users/{member_id}/import",
+        headers=auth_headers(admin_payload["token"]),
+        json={
+            "categories": [
+                {"name": "Salary", "type": "income", "color": "#60a5fa"},
+                {"name": "Food", "type": "expense", "color": "#6ee7b7"},
+            ],
+            "entries": [
+                {
+                    "type": "income",
+                    "description": "June salary",
+                    "amount": 2500,
+                    "category": "Salary",
+                    "date": "2026-06-01",
+                },
+                {
+                    "type": "expense",
+                    "description": "Lunch",
+                    "amount": 12.5,
+                    "category": "Food",
+                    "date": "2026-06-02",
+                },
+                {"type": "expense", "amount": "bad", "category": "Food", "date": "2026-06-03"},
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["imported"] == 2
+    assert response.get_json()["skipped"] == 1
+
+    with app.app_context():
+        member = User.query.filter_by(username="member").first()
+        assert Entry.query.filter_by(user_id=member.id).count() == 2
+        assert Category.query.filter_by(user_id=member.id).count() == 2
+        assert Entry.query.filter_by(user_id=member.id, description="June salary").first()
+
+
+def test_non_admin_cannot_import_for_user(app, client):
+    with app.app_context():
+        member = User(username="member", is_admin=False)
+        member.set_password("MemberPass123")
+        other = User(username="other", is_admin=False)
+        other.set_password("OtherPass123")
+        db.session.add_all([member, other])
+        db.session.commit()
+        other_id = other.id
+
+    _, member_payload = login_user(client, "member", "MemberPass123")
+    response = client.post(
+        f"/api/admin/users/{other_id}/import",
+        headers=auth_headers(member_payload["token"]),
+        json={"entries": []},
+    )
+
+    assert response.status_code == 403
+
+
 def test_account_deletion_removes_related_records(app, client):
     _, payload = register_user(client, username="cleanup")
     token = payload["token"]

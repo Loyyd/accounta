@@ -93,6 +93,46 @@ async function resetUserPassword(userId, username) {
   alert(`Password reset for ${username}. The new password has replaced the old one.`)
 }
 
+async function importUserData(userId, username) {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.json,application/json'
+
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0]
+    if (!file) {
+      return
+    }
+
+    try {
+      const text = await file.text()
+      const payload = JSON.parse(text)
+      const response = await apiFetch('POST', `/admin/users/${userId}/import`, payload)
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({error: 'Failed to import data'}))
+        alert(errorPayload.error || 'Failed to import data')
+        return
+      }
+
+      const result = await response.json()
+      if (result.imported > 0) {
+        alert(
+          `Imported ${result.imported} transaction${result.imported === 1 ? '' : 's'} for ${username}${result.skipped ? `, ${result.skipped} skipped` : ''}.`
+        )
+      } else {
+        alert('No transactions were imported')
+      }
+      await loadUsers()
+    } catch (error) {
+      console.error('Failed to import admin data', error)
+      alert('Failed to parse the selected JSON file')
+    }
+  }, {once: true})
+
+  input.click()
+}
+
 async function loadUsers() {
   if (!document.getElementById('admin-view')) {
     return
@@ -162,6 +202,9 @@ async function loadUsers() {
           <button class="btn-ghost btn-sm toggle-admin-btn" title="Toggle admin status">
             ${user.is_admin ? 'Remove admin' : 'Make admin'}
           </button>
+          <button class="btn-ghost btn-sm import-user-btn" title="Import data">
+            Import data
+          </button>
           <button class="btn-ghost btn-sm delete-user-btn danger-copy" title="Delete user">
             Delete
           </button>
@@ -177,6 +220,9 @@ async function loadUsers() {
       })
       userRow.querySelector('.toggle-admin-btn').addEventListener('click', () => {
         window.toggleAdmin(user.id)
+      })
+      userRow.querySelector('.import-user-btn').addEventListener('click', () => {
+        importUserData(user.id, user.username)
       })
       userRow.querySelector('.delete-user-btn').addEventListener('click', () => {
         window.deleteUser(user.id, user.username)

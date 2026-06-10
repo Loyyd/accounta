@@ -14,7 +14,15 @@ from serializers import (
     serialize_subscription,
 )
 from services import count_admin_users, delete_user_related_data
-from validators import normalize_username, validate_password, validate_username
+from validators import (
+    VALID_ENTRY_TYPES,
+    normalize_category_color,
+    normalize_username,
+    parse_amount,
+    parse_entry_date,
+    validate_password,
+    validate_username,
+)
 
 
 bp = Blueprint("admin", __name__)
@@ -148,6 +156,111 @@ def admin_reset_user_password(user_id):
     target_user.set_password(new_password)
     db.session.commit()
     return jsonify({"ok": True, "message": "Password reset successfully"})
+
+
+@bp.route("/api/admin/users/<int:user_id>/import", methods=["POST"])
+@login_required
+def admin_import_user_data(user_id):
+    require_admin()
+    target_user = get_user_or_404(user_id)
+    payload = get_json_body()
+
+    if not isinstance(payload, (dict, list)):
+        return jsonify({"error": "invalid import file"}), 400
+
+    entries = payload if isinstance(payload, list) else payload.get("entries")
+
+    if not isinstance(entries, list):
+        return jsonify({"error": "invalid import file"}), 400
+
+    category_map = {}
+    imported_categories = [] if isinstance(payload, list) else payload.get("categories", [])
+    if isinstance(imported_categories, list):
+        for category in imported_categories:
+            if not isinstance(category, dict):
+                continue
+            category_type = category.get("type")
+            name = (category.get("name") or "").strip()
+            if category_type not in VALID_ENTRY_TYPES or not name:
+                continue
+            try:
+                color = normalize_category_color(
+                    category.get("color") or ("#60a5fa" if category_type == "income" else "#6ee7b7")
+                )
+            except ValueError:
+                color = "#60a5fa" if category_type == "income" else "#6ee7b7"
+            category_map[(name, category_type)] = color
+
+    categories_seen = set()
+    categories_created = 0
+    success_count = 0
+    failure_count = 0
+
+    for entry_data in entries:
+        if not isinstance(entry_data, dict):
+            failure_count += 1
+            continue
+
+        entry_type = entry_data.get("type")
+        category_name = (entry_data.get("category") or "").strip()
+        if entry_type not in VALID_ENTRY_TYPES or not category_name:
+            failure_count += 1
+            continue
+
+        category_key = (category_name, entry_type)
+        if category_key not in category_map:
+            category_map[category_key] = "#60a5fa" if entry_type == "income" else "#6ee7b7"
+
+        if category_key not in categories_seen:
+            categories_seen.add(category_key)
+            existing_category = Category.query.filter_by(
+                user_id=target_user.id,
+                type=entry_type,
+                name=category_name,
+            ).first()
+            if not existing_category:
+                db.session.add(
+                    Category(
+                        user_id=target_user.id,
+                        type=entry_type,
+                        name=category_name,
+                        color=category_map[category_key],
+                    )
+                )
+                categories_created += 1
+
+        if entry_data.get("amount") is None or not entry_data.get("date"):
+            failure_count += 1
+            continue
+
+        try:
+            amount = parse_amount(entry_data.get("amount"))
+            entry_date = parse_entry_date(entry_data.get("date"))
+        except ValueError:
+            failure_count += 1
+            continue
+
+        db.session.add(
+            Entry(
+                user_id=target_user.id,
+                type=entry_type,
+                description=(entry_data.get("description") or "").strip() or entry_type.capitalize(),
+                amount=amount,
+                category=category_name,
+                date=entry_date,
+            )
+        )
+        success_count += 1
+
+    db.session.commit()
+    return jsonify(
+        {
+            "ok": True,
+            "imported": success_count,
+            "skipped": failure_count,
+            "categoriesCreated": categories_created,
+        }
+    )
 
 
 @bp.route("/api/admin/users/<int:user_id>/export", methods=["GET"])
