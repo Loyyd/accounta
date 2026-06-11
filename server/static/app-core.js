@@ -119,22 +119,28 @@
         mobileHeaderOrderStyles.textContent = `
           @media (max-width: 720px) {
             .page-header-top {
-              justify-content: flex-start;
+              display: grid;
+              grid-template-columns: 48px minmax(0, 1fr) 48px;
+              align-items: center;
+              gap: 8px;
             }
 
             .page-header-top .brand-row {
-              justify-content: flex-end;
-              margin-left: auto;
-              order: 3;
+              grid-column: 2;
+              justify-content: center;
+              justify-self: center;
+              margin: 0;
             }
 
             .auth-area {
-              order: 2;
+              grid-column: 3;
+              justify-self: end;
             }
 
             .mobile-nav-toggle {
+              grid-column: 1;
               flex: 0 0 42px;
-              order: 1;
+              justify-self: start;
             }
           }
         `
