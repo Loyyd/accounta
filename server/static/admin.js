@@ -74,25 +74,6 @@ function googleDetailsMarkup(user) {
   `
 }
 
-async function resetUserPassword(userId, username) {
-  const newPassword = prompt(`Enter the new one-time password for ${username}. This replaces their current password.`)
-  if (!newPassword) {
-    return
-  }
-
-  const response = await apiFetch('POST', `/admin/users/${userId}/reset-password`, {
-    newPassword,
-  })
-
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({error: 'Failed to reset password'}))
-    alert(payload.error || 'Failed to reset password')
-    return
-  }
-
-  alert(`Password reset for ${username}. The new password has replaced the old one.`)
-}
-
 async function importUserData(userId, username) {
   const input = document.createElement('input')
   input.type = 'file'
@@ -187,9 +168,6 @@ async function loadUsers() {
             <div class="admin-user-copy">
               <div class="admin-user-heading">
                 <strong>${escapeHtml(user.username)}</strong>
-                <button class="btn-ghost btn-sm admin-password-btn" type="button" title="Reset password">
-                  <img src="assets/icons/header/lock.png" alt="" class="admin-password-icon" />
-                </button>
               </div>
               ${googleDetailsMarkup(user)}
               <div class="helper-text">${formatDate(user.created_at)}. ${formatNet(user)}</div>
@@ -213,10 +191,6 @@ async function loadUsers() {
 
       userRow.querySelector(`#username-${user.id}`).addEventListener('click', () => {
         window.editUsername(user.id, user.username)
-      })
-      userRow.querySelector('.admin-password-btn').addEventListener('click', (event) => {
-        event.stopPropagation()
-        resetUserPassword(user.id, user.username)
       })
       userRow.querySelector('.toggle-admin-btn').addEventListener('click', () => {
         window.toggleAdmin(user.id)
