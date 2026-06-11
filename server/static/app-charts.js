@@ -219,12 +219,16 @@
       })
     }
 
-    trendDatasets.push(...categoryDatasets.filter((dataset) => {
-      const categoryType = categoryTrends[dataset.label]?.type || 'expense'
-      return categoryType === 'income' ? app.state.showIncomeTrend : app.state.showExpenseTrend
-    }))
-
     const trendContext = document.getElementById('trendChart')
+    const compactTrend = window.matchMedia?.('(max-width: 720px)').matches || false
+
+    if (!compactTrend) {
+      trendDatasets.push(...categoryDatasets.filter((dataset) => {
+        const categoryType = categoryTrends[dataset.label]?.type || 'expense'
+        return categoryType === 'income' ? app.state.showIncomeTrend : app.state.showExpenseTrend
+      }))
+    }
+
     app.charts.trend = new Chart(trendContext, {
       type: 'line',
       data: {
@@ -233,14 +237,19 @@
       },
       options: {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             display: true,
+            position: compactTrend ? 'bottom' : 'top',
             labels: {
               color: '#e6eef6',
               usePointStyle: true,
-              padding: 10,
+              padding: compactTrend ? 8 : 10,
+              boxWidth: compactTrend ? 8 : 12,
+              font: {
+                size: compactTrend ? 11 : 12,
+              },
             },
             onClick(event, legendItem, legend) {
               const index = legendItem.datasetIndex
@@ -359,11 +368,17 @@
                 return '$' + value.toLocaleString()
               },
               color: '#9aa5b1',
+              maxTicksLimit: compactTrend ? 4 : 6,
             },
             grid: {color: 'rgba(255,255,255,0.05)'},
           },
           x: {
-            ticks: {color: '#9aa5b1'},
+            ticks: {
+              color: '#9aa5b1',
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: compactTrend ? 4 : 6,
+            },
             grid: {color: 'rgba(255,255,255,0.05)'},
           },
         },
