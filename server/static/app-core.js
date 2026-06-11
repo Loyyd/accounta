@@ -106,6 +106,40 @@
 
       const mobileNavToggle = document.getElementById('mobileNavToggle')
       const mobileNavBackdrop = document.getElementById('mobileNavBackdrop')
+      const pageHeaderTop = document.querySelector('.page-header-top')
+      const brandRow = pageHeaderTop?.querySelector('.brand-row')
+
+      if (mobileNavToggle && pageHeaderTop && brandRow && mobileNavToggle.parentElement !== pageHeaderTop) {
+        pageHeaderTop.insertBefore(mobileNavToggle, brandRow)
+      }
+
+      if (!document.getElementById('mobileHeaderOrderStyles')) {
+        const mobileHeaderOrderStyles = document.createElement('style')
+        mobileHeaderOrderStyles.id = 'mobileHeaderOrderStyles'
+        mobileHeaderOrderStyles.textContent = `
+          @media (max-width: 720px) {
+            .page-header-top {
+              justify-content: flex-start;
+            }
+
+            .page-header-top .brand-row {
+              justify-content: flex-end;
+              margin-left: auto;
+              order: 3;
+            }
+
+            .auth-area {
+              order: 2;
+            }
+
+            .mobile-nav-toggle {
+              flex: 0 0 42px;
+              order: 1;
+            }
+          }
+        `
+        document.head.appendChild(mobileHeaderOrderStyles)
+      }
 
       function setMobileNavOpen(isOpen) {
         document.body.classList.toggle('mobile-nav-open', isOpen)
