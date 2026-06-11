@@ -113,12 +113,27 @@
         pageHeaderTop.insertBefore(mobileNavToggle, brandRow)
       }
 
-      const trendChart = document.getElementById('trendChart')
-      const trendCard = trendChart?.closest('.card')
-      const trendControls = document.getElementById('trendTimeframe')?.closest('.inline-stack')
-      trendCard?.classList.add('spending-trend-card')
-      trendCard?.querySelector('.header-title-row')?.classList.add('trend-header')
-      trendControls?.classList.add('trend-controls')
+      if (brandRow && !brandRow.dataset.overviewLinkWired) {
+        brandRow.dataset.overviewLinkWired = 'true'
+        brandRow.setAttribute('role', 'button')
+        brandRow.tabIndex = 0
+
+        const goToOverview = () => {
+          app.switchTab('overview')
+          if (window.history?.replaceState) {
+            window.history.replaceState(null, '', '#overview')
+          }
+        }
+
+        brandRow.addEventListener('click', goToOverview)
+        brandRow.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            goToOverview()
+          }
+        })
+      }
+
       document.getElementById('importBtn')?.parentElement?.classList.add('settings-action-cell')
       document.getElementById('openPasswordModalBtn')?.closest('.settings-row')?.remove()
       document.getElementById('passwordModal')?.remove()
@@ -129,6 +144,16 @@
         mobileHeaderOrderStyles.textContent = `
           .stat p {
             margin: 0;
+          }
+
+          .page-header-top .brand-row {
+            cursor: pointer;
+          }
+
+          .page-header-top .brand-row:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 4px;
+            border-radius: var(--radius-sm);
           }
 
           @media (max-width: 720px) {
@@ -167,40 +192,6 @@
             .stat h3 {
               order: 2;
               margin: 0;
-            }
-
-            .spending-trend-card {
-              padding: 14px;
-            }
-
-            .trend-header {
-              align-items: stretch;
-              gap: 12px;
-            }
-
-            .trend-controls {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 8px;
-              width: 100%;
-            }
-
-            .trend-controls label {
-              justify-content: center;
-              min-height: 38px;
-              padding: 8px 10px;
-              border: 1px solid var(--line-soft);
-              border-radius: var(--radius-sm);
-              background: rgba(255,255,255,0.03);
-            }
-
-            .trend-controls select {
-              grid-column: 1 / -1;
-            }
-
-            .spending-trend-card .chart-canvas-sm {
-              min-height: 250px;
-              max-height: none;
             }
 
             .settings-row #exportBtn,
