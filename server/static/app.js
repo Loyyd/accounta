@@ -7,40 +7,40 @@
       const userActions = document.getElementById('userActions')
       const footer = document.querySelector('.footer')
 
-      if (app.isLoggedIn()) {
-        if (loginLink) {
-          loginLink.style.display = 'none'
-        }
-        if (userActions) {
-          userActions.style.display = 'flex'
-        }
-
-        try {
-          const response = await app.apiFetch('GET', '/profile')
-          if (response.ok) {
-            const profile = await response.json()
-            window.AccountaCommon?.initUserMenu?.(profile)
-            window.AccountaAdmin?.setProfile?.(profile)
-            if (!profile.is_admin && location.hash === '#admin') {
-              app.switchTab('overview')
-              if (history.replaceState) {
-                history.replaceState(null, '', '#overview')
-              }
-            }
-            if (footer) {
-              footer.textContent = 'Saved to your account (server)'
-            }
-          }
-        } catch (error) {
-          // Keep the rest of the page usable if profile loading fails.
-        }
-      } else {
+      if (!app.isLoggedIn()) {
         location.href = 'login.html'
-        return
+        return null
       }
 
+      if (loginLink) {
+        loginLink.style.display = 'none'
+      }
+      if (userActions) {
+        userActions.style.display = 'flex'
+      }
+
+      const response = await app.apiFetch('GET', '/profile')
+      if (!response.ok) {
+        return null
+      }
+
+      const profile = await response.json()
+      window.AccountaCommon?.initUserMenu?.(profile)
+      window.AccountaAdmin?.setProfile?.(profile)
+      if (!profile.is_admin && location.hash === '#admin') {
+        app.switchTab('overview')
+        if (history.replaceState) {
+          history.replaceState(null, '', '#overview')
+        }
+      }
+      if (footer) {
+        footer.textContent = 'Saved to your account (server)'
+      }
+
+      return profile
     } catch (error) {
-      // Ignore missing auth shell elements on partial renders.
+      console.error('Failed to load profile', error)
+      return null
     }
   }
 
@@ -62,17 +62,28 @@
     app.setupCategoryForm()
     app.setupPouchInteractions?.()
 
-    await app.loadCategories()
-    await app.loadSubscriptions()
-    await app.loadEntries()
-    await app.loadPouches?.()
+    const profile = await setupAuthUI()
+    if (!profile) {
+      return
+    }
+
+    await Promise.all([
+      app.loadCategories(),
+      app.loadSubscriptions(),
+      app.loadEntries(),
+      app.loadPouches?.() || Promise.resolve(),
+    ])
+
+    try {
+      await app.ensureTabAssets?.(app.getActiveTab?.() || 'overview')
+    } catch (error) {
+      console.error('Failed to load initial tab assets', error)
+    }
 
     app.render()
     app.renderCategories()
     app.renderSubscriptions()
     app.renderPouches?.()
-
-    await setupAuthUI()
   }
 
   app.init = init

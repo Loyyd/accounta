@@ -7,6 +7,7 @@
 
   const $ = (selector) => document.querySelector(selector)
   const $all = (selector) => document.querySelectorAll(selector)
+  const loadedScripts = new Map()
   const fmt = common.fmtCurrency
     ? common.fmtCurrency
     : (value) => Number(value || 0).toLocaleString(undefined, {
@@ -14,6 +15,27 @@
         currency: 'EUR',
         maximumFractionDigits: 2,
       })
+
+  function loadScript(src) {
+    if (loadedScripts.has(src)) {
+      return loadedScripts.get(src)
+    }
+
+    const promise = new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = src
+      script.async = true
+      script.onload = resolve
+      script.onerror = () => {
+        loadedScripts.delete(src)
+        reject(new Error(`Failed to load ${src}`))
+      }
+      document.head.appendChild(script)
+    })
+
+    loadedScripts.set(src, promise)
+    return promise
+  }
 
   const dom = {
     tabBar: $('.tab-bar'),
@@ -86,6 +108,28 @@
     async apiFetch(method, path, body) {
       return common.apiFetch(method, path, body)
     },
+    getActiveTab() {
+      return document.querySelector('.tab-btn.active[data-tab]')?.dataset.tab || 'overview'
+    },
+    async ensureTabAssets(tabName) {
+      if (tabName === 'overview') {
+        if (!window.Chart) {
+          await loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js')
+        }
+        await loadScript('app-charts.js')
+        return
+      }
+
+      if (tabName === 'settings') {
+        await loadScript('settings.js')
+        return
+      }
+
+      if (tabName === 'admin') {
+        await loadScript('admin.js?v=admin-tab-loader-4')
+        await window.AccountaAdmin?.ensureLoaded?.()
+      }
+    },
     switchTab(tabName) {
       app.$all('.tab-btn').forEach((button) => {
         button.classList.toggle('active', button.dataset.tab === tabName)
@@ -95,9 +139,15 @@
         view.classList.toggle('active', view.id === `${tabName}-view`)
       })
 
-      if (tabName === 'admin') {
-        window.AccountaAdmin?.ensureLoaded?.()
-      }
+      app.ensureTabAssets(tabName)
+        .then(() => {
+          if (tabName === 'overview' && app.renderCharts) {
+            app.renderCharts()
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load tab assets', error)
+        })
     },
     initTabs() {
       if (!app.dom.tabBar) {

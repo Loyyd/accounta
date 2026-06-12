@@ -1,4 +1,4 @@
-<img src="./server/static/accounta.png" alt="accounta logo" width="200"/>
+<img src="./server/static/accounta.svg" alt="accounta logo" width="200"/>
 
 # Accounta
 
