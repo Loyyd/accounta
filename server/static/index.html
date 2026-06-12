@@ -11,13 +11,13 @@
     <main class="app">
       <header class="header page-header">
         <div class="page-header-top">
-          <div class="brand-row">
+          <a href="#overview" class="brand-row" aria-label="Show accounta overview" style="color:inherit;text-decoration:none">
             <img src="accounta.svg" alt="accounta" class="brand-logo" />
             <div class="brand-block">
               <h1 class="page-title">accounta</h1>
               <p class="lead">Track your money flow with ease.</p>
             </div>
-          </div>
+          </a>
           <div id="authArea" class="auth-area">
             <button id="mobileNavToggle" class="mobile-nav-toggle" type="button" aria-label="Open navigation" aria-controls="mainTabNav" aria-expanded="false">
               <span></span>
@@ -522,12 +522,16 @@
       </section>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="shared.js"></script>
     <script src="app-core.js"></script>
     <script src="app-subscriptions.js"></script>
     <script src="app-categories.js"></script>
     <script src="app-entries.js"></script>
     <script src="app-pouches.js"></script>
+    <script src="app-charts.js"></script>
+    <script src="settings.js"></script>
+    <script src="admin.js?v=admin-tab-loader-3"></script>
     <script src="app.js"></script>
   </body>
 </html>
