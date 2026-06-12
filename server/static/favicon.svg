@@ -1,5 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#f8fafc"/>
-  <path fill="#0f172a" d="M18 47 30 15h7l12 32h-8l-3-8H27l-3 8h-6Zm12-14h6l-3-10-3 10Z"/>
-  <path fill="#14b8a6" d="M16 50h32v6H16z"/>
+  <defs>
+    <linearGradient id="accountaMark" x1="8" y1="9" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7dd3fc"/>
+      <stop offset="0.48" stop-color="#0ea5e9"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="9" fill="#020617"/>
+  <path d="M5 60V4h54v56" fill="none" stroke="url(#accountaMark)" stroke-width="6"/>
+  <path fill="url(#accountaMark)" d="M4 60 20 17h9l17 43H35l-3-9H17l-3 9H4Zm17-18h8l-4-13h-1l-3 13Z"/>
+  <path fill="url(#accountaMark)" d="M35 60 49 17h9l16 43H63l-3-9H47l-3 9h-9Zm15-18h7l-4-13h-1l-2 13Z"/>
 </svg>
