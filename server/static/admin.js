@@ -174,8 +174,8 @@ async function loadUsers() {
             </div>
           </div>
         </div>
-        <div class="role-badge ${roleClass}">${roleText}</div>
-        <div class="muted-copy">${user.entry_count}</div>
+        <div class="role-badge admin-row-role ${roleClass}">${roleText}</div>
+        <div class="muted-copy admin-entry-count">${user.entry_count}</div>
         <div class="table-actions">
           <button class="btn-ghost btn-sm toggle-admin-btn" title="Toggle admin status">
             ${user.is_admin ? 'Remove admin' : 'Make admin'}
