@@ -571,7 +571,10 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
 .mobile-nav-toggle{
   width:42px;
   height:42px;
-  place-items:center;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:2px;
   border:1px solid var(--line);
   border-radius:var(--radius-sm);
   background:linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025));
@@ -587,10 +590,10 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
   background:currentColor;
   transition:transform 0.2s ease, opacity 0.2s ease;
 }
-.mobile-nav-toggle span + span{margin-top:4px}
-.mobile-nav-open .mobile-nav-toggle span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.mobile-nav-toggle span + span{margin-top:0}
+.mobile-nav-open .mobile-nav-toggle span:nth-child(1){transform:translateY(4px) rotate(45deg)}
 .mobile-nav-open .mobile-nav-toggle span:nth-child(2){opacity:0}
-.mobile-nav-open .mobile-nav-toggle span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+.mobile-nav-open .mobile-nav-toggle span:nth-child(3){transform:translateY(-4px) rotate(-45deg)}
 .user-menu{
   position:relative;
 }
@@ -1239,7 +1242,7 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
   }
 
   .mobile-nav-toggle {
-    display: grid;
+    display: flex;
   }
 
   .user-menu-trigger {
