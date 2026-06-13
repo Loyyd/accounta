@@ -1300,14 +1300,17 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:foc
   }
 
   .tab-bar::before {
-    content: "Menu";
-    display: block;
-    padding: 4px 8px 12px;
+    content: "Navigation";
+    display: inline-block;
+    align-self: flex-start;
+    margin: 2px 4px 10px;
+    padding: 0;
     color: var(--muted);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0;
-    text-transform: uppercase;
+    line-height: 1;
+    pointer-events: none;
   }
 
   .tab-btn,
