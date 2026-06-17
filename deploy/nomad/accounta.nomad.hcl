@@ -5,12 +5,14 @@
 //
 //   nomad job run \
 //     -var="accounta_image=ghcr.io/loyyd/accounta:<git-sha>" \
-//     deploy/nomad/jobs/accounta.nomad.hcl
+//     deploy/nomad/accounta.nomad.hcl
 //
 // The :main tag is only a fallback for manual testing. Persistent data lives
 // in the restored accounta-state host volume on nomad-worker-fireland-f4ssd-1.
 //
 // Runtime secrets are rendered from the restored accounta-state .env file.
+// Non-secret production paths are declared here so a stale restored .env cannot
+// point the app back at container-local storage.
 
 variable "accounta_image" {
   type    = string
@@ -66,13 +68,32 @@ job "accounta" {
         image      = var.accounta_image
         force_pull = true
         ports      = ["http"]
+        command    = "sh"
+        args = [
+          "-ec",
+          <<-EOF
+            export APP_ENV=production
+            export PORT=5000
+            export DATABASE_URL=sqlite:////state/data/accounta.db
+            export CORS_ORIGINS=https://accounta.bcgen.ie
+            export TRUST_PROXY_COUNT=1
+            export GUNICORN_WORKERS=1
+            export GUNICORN_TIMEOUT=120
+            export ALLOW_PASSWORD_AUTH=false
+            exec gunicorn --bind "0.0.0.0:$PORT" --workers "$GUNICORN_WORKERS" --timeout "$GUNICORN_TIMEOUT" app:app
+          EOF
+        ]
       }
 
       env {
         APP_ENV             = "production"
         PORT                = "5000"
+        DATABASE_URL        = "sqlite:////state/data/accounta.db"
+        CORS_ORIGINS        = "https://accounta.bcgen.ie"
         ALLOW_PASSWORD_AUTH = "false"
         TRUST_PROXY_COUNT   = "1"
+        GUNICORN_WORKERS    = "1"
+        GUNICORN_TIMEOUT    = "120"
       }
 
       template {

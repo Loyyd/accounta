@@ -45,24 +45,28 @@ ghcr.io/loyyd/accounta:main
 ```
 
 The Nomad deployment should use the immutable short Git SHA tag so Nomad sees
-a real image change on every deploy. From the `private-cloud-federation` repo:
+a real image change on every deploy. The source of truth is this repository's
+[`deploy/nomad/accounta.nomad.hcl`](./deploy/nomad/accounta.nomad.hcl), and
+pushes to `main` are deployed by the `Deploy Nomad` GitHub Actions workflow
+after the image build completes.
+
+For a manual deploy from this repo, use:
 
 ```bash
-./deploy/nomad/scripts/deploy_accounta.sh <git-sha>
+./scripts/deploy-nomad.sh <git-sha-or-image-ref>
 ```
 
-If no SHA is provided, that script fetches the sibling `accounta` repository
-and uses its `origin/main` revision.
+If no SHA or image reference is provided, the wrapper uses the current local
+commit's short SHA tag. When Docker and `jq` are available, it resolves the tag
+to a pinned digest before submitting the Nomad job.
 
-From this repo, use the wrapper:
-
-```bash
-./scripts/deploy-nomad.sh
-```
+The `private-cloud-federation` repository may keep a mirrored copy of the job
+for cluster inventory, but it should not be treated as the deploy authority for
+Accounta unless ownership is intentionally moved back there.
 
 Do not use the Nomad UI "Restart" action as a deploy mechanism. Restarting an
 allocation only restarts the image reference already stored in the Nomad job.
-The deploy script updates the job to the new GHCR SHA tag and pinned digest,
+The deploy workflow updates the job to the new GHCR SHA tag and pinned digest,
 then verifies `/api/version`.
 
 ## Files For Production
